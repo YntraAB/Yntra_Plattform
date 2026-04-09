@@ -1,0 +1,251 @@
+/**
+ * =============================================================================
+ * APP-SPECIFIC STYLES
+ * =============================================================================
+ * Additional styles specific to the Volt Scheduler application.
+ * These complement the global styles in index.css.
+ * =============================================================================
+ */
+
+/* Main app container - ensures full viewport coverage */
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 
+ * Calendar-specific styles
+ * These styles enhance the calendar grid and event rendering
+ */
+
+/* Event hover effect enhancement */
+.event-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.event-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Time slot grid line styling */
+.time-slot-line {
+  position: relative;
+}
+
+.time-slot-line::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    hsl(220, 12%, 14%) 0%, 
+    hsl(220, 12%, 18%) 50%, 
+    hsl(220, 12%, 14%) 100%
+  );
+}
+
+/* 
+ * Sidebar animation
+ * Smooth transitions for sidebar interactions
+ */
+.sidebar-item {
+  position: relative;
+}
+
+.sidebar-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 0;
+  background: hsl(250, 85%, 65%);
+  border-radius: 0 2px 2px 0;
+  transition: height 0.2s ease;
+}
+
+.sidebar-item.active::before {
+  height: 60%;
+}
+
+/* 
+ * Modal animations
+ * Smooth entrance and exit animations for modals
+ */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-enter {
+  animation: modalEnter 0.2s ease-out forwards;
+}
+
+/* 
+ * Loading spinner
+ * Custom spinner for loading states
+ */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid hsl(220, 12%, 25%);
+  border-top-color: hsl(250, 85%, 65%);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 
+ * Focus styles
+ * Custom focus indicators for better accessibility
+ */
+*:focus-visible {
+  outline: 2px solid hsl(250, 85%, 65%);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline for mouse users */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 
+ * Selection colors
+ * Custom text selection colors matching the theme
+ */
+::selection {
+  background: hsl(250, 85%, 65% / 0.3);
+  color: white;
+}
+
+::-moz-selection {
+  background: hsl(250, 85%, 65% / 0.3);
+  color: white;
+}
+
+/* 
+ * Scrollbar styling for webkit browsers
+ * Dark theme scrollbar matching the app design
+ */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(220, 15%, 8%);
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220, 12%, 25%);
+  border-radius: 5px;
+  border: 2px solid hsl(220, 15%, 8%);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220, 12%, 35%);
+}
+
+::-webkit-scrollbar-corner {
+  background: hsl(220, 15%, 8%);
+}
+
+/* 
+ * Button press effect
+ * Subtle press animation for interactive elements
+ */
+.btn-press:active {
+  transform: scale(0.98);
+}
+
+/* 
+ * Glass morphism utility
+ * For overlay elements with blur effect
+ */
+.glass-overlay {
+  background: rgba(15, 17, 23, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 
+ * Gradient borders
+ * Subtle gradient borders for elevated elements
+ */
+.gradient-border {
+  position: relative;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, 
+    hsl(250, 85%, 65%) 0%, 
+    hsl(270, 85%, 60%) 50%,
+    hsl(250, 85%, 65%) 100%
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* 
+ * Tooltip styles
+ * Custom tooltip appearance
+ */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 6px 10px;
+  background: hsl(220, 15%, 12%);
+  color: white;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  border: 1px solid hsl(220, 12%, 20%);
+  z-index: 1000;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
