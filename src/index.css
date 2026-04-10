@@ -60,8 +60,8 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 220 12% 18%;
     --muted-foreground: 220 10% 55%;     /* Muted gray text */
-    --accent: 250 85% 65%;               /* Purple accent */
-    --accent-foreground: 0 0% 100%;
+    --accent: 220 12% 16%;               /* Subtle highlight background */
+    --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 220 12% 18%;               /* Subtle border color */

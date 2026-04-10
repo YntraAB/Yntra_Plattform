@@ -370,7 +370,22 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                   </Badge>
                </div>
 
-               <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+               <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                 {(userRole === 'admin' || userRole === 'platform_admin') && (
+                   <button 
+                      onClick={async (e) => {
+                         e.stopPropagation();
+                         if (confirm(`Är du säker på att du vill ta bort teamet "${team.name}"?`)) {
+                            const { error } = await supabase.from('teams').delete().eq('id', team.id);
+                            if (error) alert("Fel vid borttagning: " + error.message);
+                         }
+                      }} 
+                      className="hover:text-red-500 transition-colors"
+                      title="Ta bort team"
+                   >
+                     <Trash2 className="w-4 h-4" />
+                   </button>
+                 )}
                  <ChevronRight className="w-5 h-5" />
                </div>
              </div>
@@ -382,7 +397,27 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
 
   const renderMembers = () => {
     const teamMembers = dbMembers.filter(p => p.teamId === selectedTeam);
-    // Vi filtrerar inte ut 'Patient' längre eftersom bara personal finns
+
+    const getRoleName = (role: string) => {
+       if (role === 'platform_admin') return 'Utvecklare';
+       if (role === 'admin') return 'Administratörer';
+       if (role === 'assistant') return 'Assistenter';
+       if (role === 'user') return 'Användare';
+       return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Okänd roll';
+    };
+
+    const groupedMembers = teamMembers.reduce((acc, member) => {
+       const roleGroup = getRoleName(member.role);
+       if (!acc[roleGroup]) acc[roleGroup] = [];
+       acc[roleGroup].push(member);
+       return acc;
+    }, {} as Record<string, typeof teamMembers>);
+
+    const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
+       if (a === 'Utvecklare') return -1;
+       if (a === 'Administratörer' && b !== 'Utvecklare') return -1;
+       return a.localeCompare(b);
+    });
 
     return (
       <div className="flex-1 flex flex-col h-full bg-background relative">
@@ -401,30 +436,67 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
           </div>
 
           <div className="pb-8">
-            {teamMembers.map((member) => (
-              <div 
-                 key={member.id}
-                 onClick={() => setSelectedEntity(member)}
-                 className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-               >
-                 <Avatar className="w-10 h-10 border border-border mr-4 shrink-0">
-                   <AvatarImage src={member.avatar} />
-                   <AvatarFallback className="bg-muted text-primary font-bold text-xs">{member.name.charAt(0)}</AvatarFallback>
-                 </Avatar>
-                 
-                 <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                   {member.name}
-                   <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                     {member.role === 'platform_admin' ? 'Dev' : member.role}
-                   </div>
-                 </div>
+            {sortedRoles.map((roleGroup) => (
+              <div key={roleGroup}>
+                <div className="px-8 py-2 bg-muted/40 border-b border-border flex items-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider sticky top-16 z-0 backdrop-blur-md">
+                  {roleGroup} ({groupedMembers[roleGroup].length})
+                </div>
+                {groupedMembers[roleGroup].map((member) => {
+                  const displayName = member.name === member.email ? "Namn ej angivet" : member.name;
+                  const displayInitial = (displayName !== "Namn ej angivet" ? displayName.charAt(0) : member.email.charAt(0)).toUpperCase();
+                  
+                  return (
+                    <div 
+                       key={member.id}
+                       onClick={() => setSelectedEntity(member)}
+                       className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                     >
+                       <Avatar className="w-10 h-10 border border-border mr-4 shrink-0">
+                         <AvatarImage src={member.avatar} />
+                         <AvatarFallback className="bg-muted text-primary font-bold text-xs">{displayInitial}</AvatarFallback>
+                       </Avatar>
+                       
+                       <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[14px]">
+                         {displayName}
+                         <div className="text-[12px] text-muted-foreground font-normal overflow-hidden text-ellipsis mt-0.5">
+                           {member.email}
+                         </div>
+                       </div>
 
-                 <div className="flex-1 min-w-0 pr-4"></div>
+                       <div className="flex-1 min-w-0 pr-4"></div>
 
-                 <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
-                   <ChevronRight className="w-5 h-5" />
-                 </div>
-               </div>
+                       <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                         {(userRole === 'admin' || userRole === 'platform_admin') && (
+                           <button 
+                              onClick={async (e) => {
+                                 e.stopPropagation();
+                                 if (selectedTeam !== 'all_members') {
+                                    if (confirm(`Är du säker på att du vill ta bort ${member.name} från teamet?`)) {
+                                       const { error } = await supabase.from('team_members').delete().eq('user_id', member.id).eq('team_id', selectedTeam);
+                                       if (error) alert("Fel vid borttagning: " + error.message);
+                                    }
+                                 } else {
+                                    if (confirm(`Är du säker på att du vill ta bort ${member.name} från organisationen?`)) {
+                                       const { error } = await supabase.from('users').update({ workspace_id: null }).eq('id', member.id);
+                                       if (error) alert("Fel vid borttagning: " + error.message);
+                                       else {
+                                          await supabase.from('team_members').delete().eq('user_id', member.id);
+                                       }
+                                    }
+                                 }
+                              }} 
+                              className="hover:text-red-500 transition-colors"
+                              title={selectedTeam !== 'all_members' ? "Ta bort från team" : "Ta bort från organisationen"}
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                         )}
+                         <ChevronRight className="w-5 h-5" />
+                       </div>
+                     </div>
+                  );
+                })}
+              </div>
             ))}
           </div>
         </div>
