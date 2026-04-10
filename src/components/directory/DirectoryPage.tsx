@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { 
-  Building2, 
-  Users, 
+import {
+  Building2,
+  Users,
   HeartPulse,
   User,
   MapPin,
@@ -18,11 +18,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetDescription, 
-  SheetHeader, 
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
 import { supabase } from '@/lib/supabase';
@@ -41,9 +41,9 @@ import { useAuth } from '@/hooks/useAuth';
 export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode }) => {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
-  
+
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
-  
+
   const [currentLevel, setCurrentLevel] = useState<DirectoryLevel>('teams');
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
@@ -76,9 +76,9 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
   const [workspaceUsers, setWorkspaceUsers] = useState<any[]>([]);
 
   React.useEffect(() => {
-     if (userRole === 'platform_admin' && !selectedWorkspace && currentLevel === 'teams') {
-        setCurrentLevel('workspaces');
-     }
+    if (userRole === 'platform_admin' && !selectedWorkspace && currentLevel === 'teams') {
+      setCurrentLevel('workspaces');
+    }
   }, [userRole, selectedWorkspace, currentLevel]);
 
   React.useEffect(() => {
@@ -87,7 +87,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         const targetWS = selectedWorkspace || workspaceId;
         const { data: usersData } = await supabase.from('users').select('*').eq('workspace_id', targetWS);
         const { data: teamMembersData } = await supabase.from('team_members').select('user_id').eq('team_id', selectedTeam);
-        
+
         const existingMemberIds = (teamMembersData || []).map(tm => tm.user_id);
         const availableUsers = (usersData || []).filter(u => !existingMemberIds.includes(u.id));
         setWorkspaceUsers(availableUsers);
@@ -113,8 +113,8 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
       // Load Teams
       const filterWs = selectedWorkspace || workspaceId;
       if (filterWs) {
-         const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', filterWs);
-         if (teamData) setDbTeams(teamData.map(t => ({ id: t.id, name: t.name, workspaceId: t.workspace_id, membersCount: 0, patientsCount: 0, leader: 'Unknown' })));
+        const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', filterWs);
+        if (teamData) setDbTeams(teamData.map(t => ({ id: t.id, name: t.name, workspaceId: t.workspace_id, membersCount: 0, patientsCount: 0, leader: 'Unknown' })));
       }
 
       // Load Members if Team selected
@@ -126,9 +126,9 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         }
 
         const { data: usersData } = await supabase.from('users').select('*').eq('workspace_id', filterWs);
-        
-        const actualTeamUsers = selectedTeam === 'all_members' 
-          ? (usersData || []) 
+
+        const actualTeamUsers = selectedTeam === 'all_members'
+          ? (usersData || [])
           : (usersData || []).filter(u => memberIds.includes(u.id));
 
         const mappedUsers = actualTeamUsers.map(u => ({
@@ -194,13 +194,12 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
     const bNode = (
       <div className="flex items-center animate-in fade-in slide-in-from-left-2 duration-200">
         {/* Root Node is always "Teams" */}
-        <button 
+        <button
           onClick={() => handleBreadcrumbClick(userRole === 'platform_admin' ? 'workspaces' : 'teams')}
-          className={`hover:text-foreground transition-colors flex items-center ${
-            currentLevel === 'workspaces' || (currentLevel === 'teams' && userRole !== 'platform_admin') 
-              ? 'text-foreground font-medium' 
-              : ''
-          }`}
+          className={`hover:text-foreground transition-colors flex items-center ${currentLevel === 'workspaces' || (currentLevel === 'teams' && userRole !== 'platform_admin')
+            ? 'text-foreground font-medium'
+            : ''
+            }`}
         >
           Teams
         </button>
@@ -212,7 +211,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         {/* Workspace Name (Only shown if user is a platform admin and drilled down past workspaces) */}
         {userRole === 'platform_admin' && ws && (
           <>
-            <button 
+            <button
               onClick={() => handleBreadcrumbClick('teams')}
               className={`hover:text-foreground transition-colors flex items-center ${currentLevel === 'teams' ? 'text-foreground font-medium' : ''}`}
             >
@@ -247,55 +246,55 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
       </div>
       <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
         {dbWorkspaces.map(ws => (
-          <div 
-             key={ws.id}
-             onClick={() => handleSelectWorkspace(ws.id)}
-             className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-           >
-             <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
-               <Building2 className="w-5 h-5" />
-             </div>
-             
-             <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-               {ws.name}
-               <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                 {ws.type}
-               </div>
-             </div>
+          <div
+            key={ws.id}
+            onClick={() => handleSelectWorkspace(ws.id)}
+            className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+          >
+            <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
+              <Building2 className="w-5 h-5" />
+            </div>
 
-             <div className="flex-1 min-w-0 pr-4"></div>
+            <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+              {ws.name}
+              <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                {ws.type}
+              </div>
+            </div>
 
-             <div className="w-48 shrink-0 flex items-center justify-end gap-6 text-[13px] text-muted-foreground">
-                <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> {ws.teamsCount} Teams</div>
-                <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {ws.membersCount} Ass.</div>
-             </div>
+            <div className="flex-1 min-w-0 pr-4"></div>
 
-             <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
-               {userRole === 'platform_admin' && (
-                 <button 
-                    onClick={(e) => {
-                       e.stopPropagation();
-                       if (confirm('Är du säker på att du vill ta bort detta bolag och alla dess användare?')) {
-                          supabase.rpc('delete_workspace', { target_workspace_id: ws.id }).then(() => {
-                             setDbWorkspaces(prev => prev.filter(w => w.id !== ws.id));
-                          });
-                       }
-                    }} 
-                    className="hover:text-red-500 transition-colors mr-2"
-                 >
-                   <Trash2 className="w-4 h-4" />
-                 </button>
-               )}
-               <ChevronRight className="w-5 h-5" />
-             </div>
-           </div>
+            <div className="w-48 shrink-0 flex items-center justify-end gap-6 text-[13px] text-muted-foreground mr-4">
+              <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> {ws.teamsCount} Teams</div>
+              <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {ws.membersCount} Ass.</div>
+            </div>
+
+            <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+              {userRole === 'platform_admin' && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm('Är du säker på att du vill ta bort detta bolag och alla dess användare?')) {
+                      supabase.rpc('delete_workspace', { target_workspace_id: ws.id }).then(() => {
+                        setDbWorkspaces(prev => prev.filter(w => w.id !== ws.id));
+                      });
+                    }
+                  }}
+                  className="hover:text-red-500 transition-colors mr-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+              <ChevronRight className="w-5 h-5" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
   );
 
   const renderTeams = () => {
-    const teams = userRole === 'platform_admin' 
+    const teams = userRole === 'platform_admin'
       ? dbTeams.filter(t => t.workspaceId === selectedWorkspace)
       : dbTeams;
 
@@ -320,75 +319,75 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         </div>
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
           {(userRole === 'admin' || userRole === 'platform_admin') && (
-            <div 
-               onClick={() => handleSelectTeam('all_members')}
-               className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors bg-primary/5"
-             >
-               <div className="w-10 h-10 rounded-[8px] bg-primary/20 flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
-                 <Users className="w-5 h-5" />
-               </div>
-               
-               <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                 Alla Konton i Organisationen
-                 <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
-                   Inkluderar personal utan team-tillhörighet
-                 </div>
-               </div>
+            <div
+              onClick={() => handleSelectTeam('all_members')}
+              className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors bg-primary/5"
+            >
+              <div className="w-10 h-10 rounded-[8px] bg-primary/20 flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
+                <Users className="w-5 h-5" />
+              </div>
 
-               <div className="flex-1 min-w-0 pr-4"></div>
+              <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                Alla Konton i Organisationen
+                <div className="text-[11px] text-muted-foreground font-normal mt-0.5">
+                  Inkluderar personal utan team-tillhörighet
+                </div>
+              </div>
 
-               <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
-                 <ChevronRight className="w-5 h-5" />
-               </div>
-             </div>
+              <div className="flex-1 min-w-0 pr-4"></div>
+
+              <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </div>
+            </div>
           )}
           {teams.map(team => (
-            <div 
-               key={team.id}
-               onClick={() => handleSelectTeam(team.id)}
-               className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-             >
-               <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
-                 {team.name.charAt(0)}
-               </div>
-               
-               <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                 {team.name}
-                 <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                   Leds av: <span className="text-muted-foreground">{team.leader}</span>
-                 </div>
-               </div>
+            <div
+              key={team.id}
+              onClick={() => handleSelectTeam(team.id)}
+              className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+            >
+              <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
+                {team.name.charAt(0)}
+              </div>
 
-               <div className="flex-1 min-w-0 pr-4"></div>
+              <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                {team.name}
+                <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                  Leds av: <span className="text-muted-foreground">{team.leader}</span>
+                </div>
+              </div>
 
-               <div className="w-48 shrink-0 flex items-center justify-end gap-3">
-                  <Badge variant="secondary" className="bg-secondary text-muted-foreground border border-border text-[10px] font-medium py-0.5">
-                    <User className="w-3 h-3 mr-1" /> {team.membersCount} Ass.
-                  </Badge>
-                  <Badge variant="secondary" className="bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[10px] font-medium py-0.5">
-                    <HeartPulse className="w-3 h-3 mr-1" /> {team.patientsCount} Brukare
-                  </Badge>
-               </div>
+              <div className="flex-1 min-w-0 pr-4"></div>
 
-               <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
-                 {(userRole === 'admin' || userRole === 'platform_admin') && (
-                   <button 
-                      onClick={async (e) => {
-                         e.stopPropagation();
-                         if (confirm(`Är du säker på att du vill ta bort teamet "${team.name}"?`)) {
-                            const { error } = await supabase.from('teams').delete().eq('id', team.id);
-                            if (error) alert("Fel vid borttagning: " + error.message);
-                         }
-                      }} 
-                      className="hover:text-red-500 transition-colors"
-                      title="Ta bort team"
-                   >
-                     <Trash2 className="w-4 h-4" />
-                   </button>
-                 )}
-                 <ChevronRight className="w-5 h-5" />
-               </div>
-             </div>
+              <div className="w-48 shrink-0 flex items-center justify-end gap-3">
+                <Badge variant="secondary" className="bg-secondary text-muted-foreground border border-border text-[10px] font-medium py-0.5">
+                  <User className="w-3 h-3 mr-1" /> {team.membersCount} Ass.
+                </Badge>
+                <Badge variant="secondary" className="bg-violet-500/10 text-violet-400 border border-violet-500/20 text-[10px] font-medium py-0.5">
+                  <HeartPulse className="w-3 h-3 mr-1" /> {team.patientsCount} Brukare
+                </Badge>
+              </div>
+
+              <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                {(userRole === 'admin' || userRole === 'platform_admin') && (
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (confirm(`Är du säker på att du vill ta bort teamet "${team.name}"?`)) {
+                        const { error } = await supabase.from('teams').delete().eq('id', team.id);
+                        if (error) alert("Fel vid borttagning: " + error.message);
+                      }
+                    }}
+                    className="hover:text-red-500 transition-colors"
+                    title="Ta bort team"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                <ChevronRight className="w-5 h-5" />
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -399,24 +398,24 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
     const teamMembers = dbMembers.filter(p => p.teamId === selectedTeam);
 
     const getRoleName = (role: string) => {
-       if (role === 'platform_admin') return 'Utvecklare';
-       if (role === 'admin') return 'Administratörer';
-       if (role === 'assistant') return 'Assistenter';
-       if (role === 'user') return 'Användare';
-       return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Okänd roll';
+      if (role === 'platform_admin') return 'Utvecklare';
+      if (role === 'admin') return 'Administratörer';
+      if (role === 'assistant') return 'Assistenter';
+      if (role === 'user') return 'Användare';
+      return role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Okänd roll';
     };
 
     const groupedMembers = teamMembers.reduce((acc, member) => {
-       const roleGroup = getRoleName(member.role);
-       if (!acc[roleGroup]) acc[roleGroup] = [];
-       acc[roleGroup].push(member);
-       return acc;
+      const roleGroup = getRoleName(member.role);
+      if (!acc[roleGroup]) acc[roleGroup] = [];
+      acc[roleGroup].push(member);
+      return acc;
     }, {} as Record<string, typeof teamMembers>);
 
-    const sortedRoles = Object.keys(groupedMembers).sort((a,b) => {
-       if (a === 'Utvecklare') return -1;
-       if (a === 'Administratörer' && b !== 'Utvecklare') return -1;
-       return a.localeCompare(b);
+    const sortedRoles = Object.keys(groupedMembers).sort((a, b) => {
+      if (a === 'Utvecklare') return -1;
+      if (a === 'Administratörer' && b !== 'Utvecklare') return -1;
+      return a.localeCompare(b);
     });
 
     return (
@@ -444,56 +443,56 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 {groupedMembers[roleGroup].map((member) => {
                   const displayName = member.name === member.email ? "Namn ej angivet" : member.name;
                   const displayInitial = (displayName !== "Namn ej angivet" ? displayName.charAt(0) : member.email.charAt(0)).toUpperCase();
-                  
+
                   return (
-                    <div 
-                       key={member.id}
-                       onClick={() => setSelectedEntity(member)}
-                       className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-                     >
-                       <Avatar className="w-10 h-10 border border-border mr-4 shrink-0">
-                         <AvatarImage src={member.avatar} />
-                         <AvatarFallback className="bg-muted text-primary font-bold text-xs">{displayInitial}</AvatarFallback>
-                       </Avatar>
-                       
-                       <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[14px]">
-                         {displayName}
-                         <div className="text-[12px] text-muted-foreground font-normal overflow-hidden text-ellipsis mt-0.5">
-                           {member.email}
-                         </div>
-                       </div>
+                    <div
+                      key={member.id}
+                      onClick={() => setSelectedEntity(member)}
+                      className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                    >
+                      <Avatar className="w-10 h-10 border border-border mr-4 shrink-0">
+                        <AvatarImage src={member.avatar} />
+                        <AvatarFallback className="bg-muted text-primary font-bold text-xs">{displayInitial}</AvatarFallback>
+                      </Avatar>
 
-                       <div className="flex-1 min-w-0 pr-4"></div>
+                      <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[14px]">
+                        {displayName}
+                        <div className="text-[12px] text-muted-foreground font-normal overflow-hidden text-ellipsis mt-0.5">
+                          {member.email}
+                        </div>
+                      </div>
 
-                       <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
-                         {(userRole === 'admin' || userRole === 'platform_admin') && (
-                           <button 
-                              onClick={async (e) => {
-                                 e.stopPropagation();
-                                 if (selectedTeam !== 'all_members') {
-                                    if (confirm(`Är du säker på att du vill ta bort ${member.name} från teamet?`)) {
-                                       const { error } = await supabase.from('team_members').delete().eq('user_id', member.id).eq('team_id', selectedTeam);
-                                       if (error) alert("Fel vid borttagning: " + error.message);
-                                    }
-                                 } else {
-                                    if (confirm(`Är du säker på att du vill ta bort ${member.name} från organisationen?`)) {
-                                       const { error } = await supabase.from('users').update({ workspace_id: null }).eq('id', member.id);
-                                       if (error) alert("Fel vid borttagning: " + error.message);
-                                       else {
-                                          await supabase.from('team_members').delete().eq('user_id', member.id);
-                                       }
-                                    }
-                                 }
-                              }} 
-                              className="hover:text-red-500 transition-colors"
-                              title={selectedTeam !== 'all_members' ? "Ta bort från team" : "Ta bort från organisationen"}
-                           >
-                             <Trash2 className="w-4 h-4" />
-                           </button>
-                         )}
-                         <ChevronRight className="w-5 h-5" />
-                       </div>
-                     </div>
+                      <div className="flex-1 min-w-0 pr-4"></div>
+
+                      <div className="w-16 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                        {(userRole === 'admin' || userRole === 'platform_admin') && (
+                          <button
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (selectedTeam !== 'all_members') {
+                                if (confirm(`Är du säker på att du vill ta bort ${member.name} från teamet?`)) {
+                                  const { error } = await supabase.from('team_members').delete().eq('user_id', member.id).eq('team_id', selectedTeam);
+                                  if (error) alert("Fel vid borttagning: " + error.message);
+                                }
+                              } else {
+                                if (confirm(`Är du säker på att du vill ta bort ${member.name} från organisationen?`)) {
+                                  const { error } = await supabase.from('users').update({ workspace_id: null }).eq('id', member.id);
+                                  if (error) alert("Fel vid borttagning: " + error.message);
+                                  else {
+                                    await supabase.from('team_members').delete().eq('user_id', member.id);
+                                  }
+                                }
+                              }
+                            }}
+                            className="hover:text-red-500 transition-colors"
+                            title={selectedTeam !== 'all_members' ? "Ta bort från team" : "Ta bort från organisationen"}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        <ChevronRight className="w-5 h-5" />
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -514,106 +513,106 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
     return (
       <Sheet open={!!selectedEntity} onOpenChange={(open) => !open && setSelectedEntity(null)}>
         <SheetContent className="bg-sidebar border-l-border text-foreground sm:max-w-md w-full p-0 overflow-y-auto scrollbar-dark flex flex-col h-full">
-            
-            <div className="p-6 border-b border-border bg-card relative">
-              <div className={`absolute top-0 left-0 w-full h-32 bg-gradient-to-b ${headerGradient} to-transparent pointer-events-none`} />
-              
-              <SheetHeader className="relative z-10 pt-4">
-                <div className="flex flex-col items-center text-center">
-                  <Avatar className="w-20 h-20 border-4 border-border shadow-md mb-3">
-                    <AvatarImage src={selectedEntity.avatar} />
-                    <AvatarFallback className="text-xl">{selectedEntity.name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                  <SheetTitle className="text-xl text-foreground">{selectedEntity.name}</SheetTitle>
-                  
-                  {isPatient ? (
-                    <SheetDescription className="text-muted-foreground mt-1 flex items-center gap-1.5 justify-center text-xs">
-                      <User className="w-3 h-3" /> {selectedEntity.ssn}
-                    </SheetDescription>
-                  ) : (
-                    <Badge variant="outline" className="mt-2 text-primary border-primary/30 bg-primary/10 text-[10px] capitalize">
-                      {selectedEntity.role === 'platform_admin' ? 'Dev' : selectedEntity.role}
-                    </Badge>
-                  )}
-                </div>
-              </SheetHeader>
 
-              {isPatient && (
-                <div className="flex gap-2 justify-center mt-4">
-                  <Badge variant="secondary" className="bg-muted text-muted-foreground text-[10px]">
-                    Nivå: {selectedEntity.careLevel}
+          <div className="p-6 border-b border-border bg-card relative">
+            <div className={`absolute top-0 left-0 w-full h-32 bg-gradient-to-b ${headerGradient} to-transparent pointer-events-none`} />
+
+            <SheetHeader className="relative z-10 pt-4">
+              <div className="flex flex-col items-center text-center">
+                <Avatar className="w-20 h-20 border-4 border-border shadow-md mb-3">
+                  <AvatarImage src={selectedEntity.avatar} />
+                  <AvatarFallback className="text-xl">{selectedEntity.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <SheetTitle className="text-xl text-foreground">{selectedEntity.name}</SheetTitle>
+
+                {isPatient ? (
+                  <SheetDescription className="text-muted-foreground mt-1 flex items-center gap-1.5 justify-center text-xs">
+                    <User className="w-3 h-3" /> {selectedEntity.ssn}
+                  </SheetDescription>
+                ) : (
+                  <Badge variant="outline" className="mt-2 text-primary border-primary/30 bg-primary/10 text-[10px] capitalize">
+                    {selectedEntity.role === 'platform_admin' ? 'Dev' : selectedEntity.role}
                   </Badge>
+                )}
+              </div>
+            </SheetHeader>
+
+            {isPatient && (
+              <div className="flex gap-2 justify-center mt-4">
+                <Badge variant="secondary" className="bg-muted text-muted-foreground text-[10px]">
+                  Nivå: {selectedEntity.careLevel}
+                </Badge>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 space-y-6 flex-1">
+
+            {/* Contact Info */}
+            <div className="space-y-3">
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Information</h4>
+              <div className="bg-background rounded-lg p-3 space-y-2 border border-border">
+                <div className="flex items-center gap-3 text-xs">
+                  <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-foreground">{selectedEntity.phone || 'Gömmer nummer / Ej angivet'}</span>
                 </div>
-              )}
+                {!isPatient && selectedEntity.email && (
+                  <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
+                    <Mail className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-foreground">{selectedEntity.email}</span>
+                  </div>
+                )}
+                {isPatient && selectedEntity.address && (
+                  <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
+                    <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span className="text-foreground">{selectedEntity.address}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="p-6 space-y-6 flex-1">
-              
-              {/* Contact Info */}
+            {/* Alerts */}
+            {selectedEntity.alerts.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Information</h4>
-                <div className="bg-background rounded-lg p-3 space-y-2 border border-border">
-                  <div className="flex items-center gap-3 text-xs">
-                    <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                    <span className="text-foreground">{selectedEntity.phone || 'Gömmer nummer / Ej angivet'}</span>
-                  </div>
-                  {!isPatient && selectedEntity.email && (
-                    <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
-                      <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-foreground">{selectedEntity.email}</span>
+                <h4 className="text-[10px] font-semibold text-rose-500/80 uppercase tracking-wider">Varningar</h4>
+                <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+                  {selectedEntity.alerts.map((alert: string, i: number) => (
+                    <div key={i} className="flex items-center gap-2 text-rose-400 text-xs font-medium">
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                      {alert}
                     </div>
-                  )}
-                  {isPatient && selectedEntity.address && (
-                    <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
-                      <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                      <span className="text-foreground">{selectedEntity.address}</span>
-                    </div>
-                  )}
+                  ))}
                 </div>
               </div>
+            )}
 
-              {/* Alerts */}
-              {selectedEntity.alerts.length > 0 && (
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-semibold text-rose-500/80 uppercase tracking-wider">Varningar</h4>
-                  <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
-                    {selectedEntity.alerts.map((alert: string, i: number) => (
-                      <div key={i} className="flex items-center gap-2 text-rose-400 text-xs font-medium">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        {alert}
-                      </div>
-                    ))}
-                  </div>
+            {/* Notes */}
+            {isPatient && selectedEntity.notes && (
+              <div className="space-y-3">
+                <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Genomförandeplan</h4>
+                <div className="bg-background rounded-lg p-4 border border-border">
+                  <p className="text-muted-foreground text-xs leading-relaxed">
+                    {selectedEntity.notes}
+                  </p>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
 
-              {/* Notes */}
-              {isPatient && selectedEntity.notes && (
-                <div className="space-y-3">
-                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Genomförandeplan</h4>
-                  <div className="bg-background rounded-lg p-4 border border-border">
-                    <p className="text-muted-foreground text-xs leading-relaxed">
-                      {selectedEntity.notes}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action Footer */}
-            <div className="p-4 border-t border-border bg-muted/30 flex gap-2">
-              {isPatient && (
-                <Button size="sm" className="flex-1 bg-violet-600 hover:bg-violet-700 text-foreground h-9 text-xs">
-                  <FileText className="w-3.5 h-3.5 mr-2" />
-                  Journal
-                </Button>
-              )}
-              {(userRole === 'platform_admin' || userRole === 'admin') && (
-                <Button size="sm" variant="outline" className={`flex-1 bg-transparent border-border text-foreground hover:bg-muted h-9 text-xs ${!isPatient && "w-full"}`}>
-                  Redigera {isPatient ? 'Brukare' : 'Personal'}
-                </Button>
-              )}
-            </div>
+          {/* Action Footer */}
+          <div className="p-4 border-t border-border bg-muted/30 flex gap-2">
+            {isPatient && (
+              <Button size="sm" className="flex-1 bg-violet-600 hover:bg-violet-700 text-foreground h-9 text-xs">
+                <FileText className="w-3.5 h-3.5 mr-2" />
+                Journal
+              </Button>
+            )}
+            {(userRole === 'platform_admin' || userRole === 'admin') && (
+              <Button size="sm" variant="outline" className={`flex-1 bg-transparent border-border text-foreground hover:bg-muted h-9 text-xs ${!isPatient && "w-full"}`}>
+                Redigera {isPatient ? 'Brukare' : 'Personal'}
+              </Button>
+            )}
+          </div>
         </SheetContent>
       </Sheet>
     );
@@ -637,8 +636,8 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-               <Button variant="ghost" onClick={() => setIsHubOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
-               <Button 
+              <Button variant="ghost" onClick={() => setIsHubOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
+              <Button
                 onClick={async () => {
                   setIsHubLoading(true);
                   const { error } = await supabase.functions.invoke('invite_user', {
@@ -648,11 +647,11 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                   if (error) alert("Fel: " + error.message);
                   else { alert('Skapat bolag & Inbjudan Skickad!'); setIsHubOpen(false); }
                 }}
-                disabled={isHubLoading || !hubWsName || !hubAdminEmail} 
+                disabled={isHubLoading || !hubWsName || !hubAdminEmail}
                 className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white"
-               >
-                 {isHubLoading ? 'Skapar...' : 'Skapa & Bjud in'}
-               </Button>
+              >
+                {isHubLoading ? 'Skapar...' : 'Skapa & Bjud in'}
+              </Button>
             </div>
           </div>
         </div>
@@ -674,21 +673,21 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-               <Button variant="ghost" onClick={() => setIsRoleManagerOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
-               <Button 
+              <Button variant="ghost" onClick={() => setIsRoleManagerOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
+              <Button
                 onClick={async () => {
                   const targetWS = selectedWorkspace || workspaceId;
                   const { error } = await supabase.from('workspace_roles').insert([
-                     { workspace_id: targetWS, name: newRoleName, permissions: { view_all_reports: viewAllReports } }
+                    { workspace_id: targetWS, name: newRoleName, permissions: { view_all_reports: viewAllReports } }
                   ]);
                   if (error) alert("Fel: " + error.message);
                   else { alert('Roll skapad!'); setIsRoleManagerOpen(false); }
                 }}
-                disabled={!newRoleName} 
+                disabled={!newRoleName}
                 className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white"
-               >
-                 Skapa Roll
-               </Button>
+              >
+                Skapa Roll
+              </Button>
             </div>
           </div>
         </div>
@@ -706,24 +705,24 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
               </div>
             </div>
             <div className="mt-6 flex justify-end gap-3">
-               <Button variant="ghost" onClick={() => setIsTeamManagerOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
-               <Button 
+              <Button variant="ghost" onClick={() => setIsTeamManagerOpen(false)} className="text-muted-foreground hover:text-foreground">Avbryt</Button>
+              <Button
                 onClick={async () => {
                   const targetWS = selectedWorkspace || workspaceId;
                   const { error } = await supabase.from('teams').insert([{ workspace_id: targetWS, name: newTeamName }]);
                   if (error) alert("Fel: " + error.message);
-                  else { 
-                     // Auto-uppdateras via Supabase realtime kanal!
-                     alert('Team skapat!');
-                     setIsTeamManagerOpen(false); 
-                     setNewTeamName('');
+                  else {
+                    // Auto-uppdateras via Supabase realtime kanal!
+                    alert('Team skapat!');
+                    setIsTeamManagerOpen(false);
+                    setNewTeamName('');
                   }
                 }}
-                disabled={!newTeamName} 
+                disabled={!newTeamName}
                 className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white"
-               >
-                 Skapa
-               </Button>
+              >
+                Skapa
+              </Button>
             </div>
           </div>
         </div>
@@ -735,17 +734,17 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
           <div className="bg-sidebar border border-border rounded-xl w-[450px] p-0 shadow-2xl overflow-hidden flex flex-col">
             <div className="p-6 pb-2 border-b border-border">
               <h3 className="text-foreground text-lg font-medium mb-4 flex items-center gap-2">
-                 <User className="w-5 h-5 text-primary" /> Lägg till i Team
+                <User className="w-5 h-5 text-primary" /> Lägg till i Team
               </h3>
-              
+
               <div className="flex bg-muted rounded-lg p-1 mb-4">
-                <button 
+                <button
                   className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'existing' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   onClick={() => setInviteTab('existing')}
                 >
                   Från Organisation
                 </button>
-                <button 
+                <button
                   className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'new' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   onClick={() => setInviteTab('new')}
                 >
@@ -760,23 +759,23 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                   <p className="text-xs text-muted-foreground">Välj personal i organisationen att lägga till i teamet.</p>
                   <div className="space-y-2">
                     {workspaceUsers.length === 0 ? (
-                       <div className="text-sm text-center py-4 text-muted-foreground">Hittade ingen mer personal i organisationen.</div>
+                      <div className="text-sm text-center py-4 text-muted-foreground">Hittade ingen mer personal i organisationen.</div>
                     ) : (
-                       workspaceUsers.map(u => (
-                          <div 
-                            key={u.id}
-                            onClick={() => setSelectedExistingUserId(u.id)}
-                            className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selectedExistingUserId === u.id ? 'bg-primary/10 border-primary/50' : 'bg-muted border-border hover:border-border'}`}
-                          >
-                             <div>
-                                <div className="text-foreground text-sm font-medium">{u.full_name || 'Anonym'}</div>
-                                <div className="text-muted-foreground text-xs">{u.email}</div>
-                             </div>
-                             <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedExistingUserId === u.id ? 'border-primary bg-primary' : 'border-muted-foreground/30'}`}>
-                                {selectedExistingUserId === u.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-                             </div>
+                      workspaceUsers.map(u => (
+                        <div
+                          key={u.id}
+                          onClick={() => setSelectedExistingUserId(u.id)}
+                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selectedExistingUserId === u.id ? 'bg-primary/10 border-primary/50' : 'bg-muted border-border hover:border-border'}`}
+                        >
+                          <div>
+                            <div className="text-foreground text-sm font-medium">{u.full_name || 'Anonym'}</div>
+                            <div className="text-muted-foreground text-xs">{u.email}</div>
                           </div>
-                       ))
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedExistingUserId === u.id ? 'border-primary bg-primary' : 'border-muted-foreground/30'}`}>
+                            {selectedExistingUserId === u.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
@@ -792,50 +791,50 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
             </div>
 
             <div className="p-5 border-t border-border bg-background flex justify-end gap-3">
-               <Button variant="ghost" onClick={() => { setIsInviteManagerOpen(false); setSelectedExistingUserId(''); }} className="text-muted-foreground hover:text-foreground text-xs h-9">Avbryt</Button>
-               {inviteTab === 'existing' ? (
-                 <Button 
-                   onClick={async () => {
-                     const { error } = await supabase.from('team_members').insert([{ team_id: selectedTeam, user_id: selectedExistingUserId }]);
-                     if (error) alert("Fel: " + error.message);
-                     else {
-                        alert('Personal tillagd i teamet!');
-                        setIsInviteManagerOpen(false);
-                        setSelectedExistingUserId('');
-                        // Hårdkodad trefres för att ladda om datan behövs egentligen, men i en produktionsapp lyssnar vi t.ex via realtime.
-                     }
-                   }}
-                   disabled={!selectedExistingUserId}
-                   className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
-                 >
-                   Lägg till i Team
-                 </Button>
-               ) : (
-                 <Button 
-                   onClick={async () => {
-                      setIsHubLoading(true);
-                      const { error } = await supabase.functions.invoke('invite_user', {
-                        body: { email: inviteEmail, role: 'assistant', workspaceId: selectedWorkspace || workspaceId, teamId: selectedTeam }
-                      });
-                      setIsHubLoading(false);
-                      if (error) alert("Fel: " + error.message);
-                      else { alert('Inbjudan Skickad!'); setIsInviteManagerOpen(false); setInviteEmail(''); }
-                   }}
-                   disabled={isHubLoading || !inviteEmail}
-                   className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
-                 >
-                   {isHubLoading ? 'Skickar...' : 'Skicka inbjudan'}
-                 </Button>
-               )}
+              <Button variant="ghost" onClick={() => { setIsInviteManagerOpen(false); setSelectedExistingUserId(''); }} className="text-muted-foreground hover:text-foreground text-xs h-9">Avbryt</Button>
+              {inviteTab === 'existing' ? (
+                <Button
+                  onClick={async () => {
+                    const { error } = await supabase.from('team_members').insert([{ team_id: selectedTeam, user_id: selectedExistingUserId }]);
+                    if (error) alert("Fel: " + error.message);
+                    else {
+                      alert('Personal tillagd i teamet!');
+                      setIsInviteManagerOpen(false);
+                      setSelectedExistingUserId('');
+                      // Hårdkodad trefres för att ladda om datan behövs egentligen, men i en produktionsapp lyssnar vi t.ex via realtime.
+                    }
+                  }}
+                  disabled={!selectedExistingUserId}
+                  className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
+                >
+                  Lägg till i Team
+                </Button>
+              ) : (
+                <Button
+                  onClick={async () => {
+                    setIsHubLoading(true);
+                    const { error } = await supabase.functions.invoke('invite_user', {
+                      body: { email: inviteEmail, role: 'assistant', workspaceId: selectedWorkspace || workspaceId, teamId: selectedTeam }
+                    });
+                    setIsHubLoading(false);
+                    if (error) alert("Fel: " + error.message);
+                    else { alert('Inbjudan Skickad!'); setIsInviteManagerOpen(false); setInviteEmail(''); }
+                  }}
+                  disabled={isHubLoading || !inviteEmail}
+                  className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
+                >
+                  {isHubLoading ? 'Skickar...' : 'Skicka inbjudan'}
+                </Button>
+              )}
             </div>
           </div>
         </div>
       )}
 
       <div className="flex-1 flex flex-col w-full h-full">
-         {currentLevel === 'workspaces' && renderWorkspaces()}
-         {currentLevel === 'teams' && renderTeams()}
-         {currentLevel === 'members' && renderMembers()}
+        {currentLevel === 'workspaces' && renderWorkspaces()}
+        {currentLevel === 'teams' && renderTeams()}
+        {currentLevel === 'members' && renderMembers()}
       </div>
 
       {renderDetailSheet()}
