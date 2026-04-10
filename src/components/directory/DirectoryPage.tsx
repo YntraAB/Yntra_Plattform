@@ -39,7 +39,7 @@ interface DirectoryPageProps {
 import { useAuth } from '@/hooks/useAuth';
 
 export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode }) => {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
 
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
@@ -99,22 +99,22 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
   React.useEffect(() => {
     async function loadDirectory() {
       // Load Workspaces for Platform Admin
-      const { data: wsData } = await supabase.from('workspaces').select('*');
+      const { data: wsData } = await supabase.from('workspaces').select('*, teams(count), users(count)');
       if (wsData) {
         setDbWorkspaces(wsData.map(w => ({
           id: w.id,
           name: w.name,
           type: 'Assistance',
-          teamsCount: 0,
-          membersCount: 0
+          teamsCount: w.teams?.[0]?.count || 0,
+          membersCount: w.users?.[0]?.count || 0
         })));
       }
 
       // Load Teams
       const filterWs = selectedWorkspace || workspaceId;
       if (filterWs) {
-        const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', filterWs);
-        if (teamData) setDbTeams(teamData.map(t => ({ id: t.id, name: t.name, workspaceId: t.workspace_id, membersCount: 0, patientsCount: 0, leader: 'Unknown' })));
+        const { data: teamData } = await supabase.from('teams').select('*, team_members(count)').eq('workspace_id', filterWs);
+        if (teamData) setDbTeams(teamData.map(t => ({ id: t.id, name: t.name, workspaceId: t.workspace_id, membersCount: t.team_members?.[0]?.count || 0, patientsCount: 0, leader: 'Unknown' })));
       }
 
       // Load Members if Team selected
@@ -168,6 +168,9 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
 
   const handleSelectWorkspace = (wId: string) => {
     setSelectedWorkspace(wId);
+    if (userRole === 'platform_admin' && setAdminWorkspace) {
+      setAdminWorkspace(wId);
+    }
     setCurrentLevel('teams');
   };
 
@@ -266,7 +269,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
 
             <div className="w-48 shrink-0 flex items-center justify-end gap-6 text-[13px] text-muted-foreground mr-4">
               <div className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> {ws.teamsCount} Teams</div>
-              <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {ws.membersCount} Ass.</div>
+              <div className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {ws.membersCount} Anv.</div>
             </div>
 
             <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
@@ -640,12 +643,13 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
               <Button
                 onClick={async () => {
                   setIsHubLoading(true);
-                  const { error } = await supabase.functions.invoke('invite_user', {
+                  const { data, error } = await supabase.functions.invoke('invite_user', {
                     body: { newWorkspaceName: hubWsName, email: hubAdminEmail, role: 'admin' }
                   });
                   setIsHubLoading(false);
                   if (error) alert("Fel: " + error.message);
-                  else { alert('Skapat bolag & Inbjudan Skickad!'); setIsHubOpen(false); }
+                  else if (data && data.success === false) alert("Fel: " + data.error);
+                  else { alert('Skapat bolag & Inbjudan Skickad!'); setIsHubOpen(false); setHubWsName(''); setHubAdminEmail(''); }
                 }}
                 disabled={isHubLoading || !hubWsName || !hubAdminEmail}
                 className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white"
@@ -813,11 +817,12 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 <Button
                   onClick={async () => {
                     setIsHubLoading(true);
-                    const { error } = await supabase.functions.invoke('invite_user', {
+                    const { data, error } = await supabase.functions.invoke('invite_user', {
                       body: { email: inviteEmail, role: 'assistant', workspaceId: selectedWorkspace || workspaceId, teamId: selectedTeam }
                     });
                     setIsHubLoading(false);
                     if (error) alert("Fel: " + error.message);
+                    else if (data && data.success === false) alert("Fel: " + data.error);
                     else { alert('Inbjudan Skickad!'); setIsInviteManagerOpen(false); setInviteEmail(''); }
                   }}
                   disabled={isHubLoading || !inviteEmail}

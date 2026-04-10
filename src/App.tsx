@@ -143,6 +143,19 @@ function App() {
              }} className="w-full bg-primary hover:bg-primary/80 text-white h-12 rounded-lg font-medium transition-colors disabled:opacity-50">
                {resetLoading ? 'Sparar...' : 'Spara & Fortsätt'}
              </button>
+
+             <button 
+                disabled={resetLoading} 
+                onClick={() => {
+                   localStorage.removeItem('pending_invite_path');
+                   setNeedsPasswordReset(false);
+                   window.location.hash = '';
+                   handleLogout();
+                }} 
+                className="w-full mt-3 bg-transparent hover:bg-muted text-muted-foreground h-10 rounded-lg text-sm font-medium transition-colors"
+             >
+               Avbryt och Logga ut
+             </button>
            </div>
         </div>
       ) : isAuthenticated && user ? (

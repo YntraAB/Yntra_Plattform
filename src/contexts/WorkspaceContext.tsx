@@ -15,6 +15,7 @@ interface WorkspaceState {
   modules: WorkspaceModules;
   isLoading: boolean;
   updateModules: (newModules: Partial<WorkspaceModules>) => Promise<boolean>;
+  setAdminWorkspace: (id: string) => void;
 }
 
 // Default values before data has loaded
@@ -29,6 +30,7 @@ const WorkspaceContext = createContext<WorkspaceState>({
   modules: defaultModules,
   isLoading: true,
   updateModules: async () => false,
+  setAdminWorkspace: () => {},
 });
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -58,11 +60,28 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         .single();
 
       if (userError || !userData?.workspace_id) {
-        console.error("Kunde inte hämta arbetsyta (workspace) för användare.");
         if (user.role === 'platform_admin') {
           const stored = localStorage.getItem('dev_override_modules');
           if (stored) {
              try { setModules(JSON.parse(stored)); } catch(e){}
+          }
+          // Om dev redan har switchat arbetsyta i UI:t, behåll den
+          let targetWsId = workspaceId;
+
+          // Annars ladda första bästa workspace
+          if (!targetWsId) {
+            const { data: firstWs } = await supabase.from('workspaces').select('id, name, modules_active').limit(1).single();
+            if (firstWs) targetWsId = firstWs.id;
+          }
+
+          if (targetWsId) {
+             const { data: explicitWs } = await supabase.from('workspaces').select('id, name, modules_active').eq('id', targetWsId).single();
+             if (explicitWs) {
+               setWorkspaceId(explicitWs.id);
+               setWorkspaceName(explicitWs.name);
+               const dbM = explicitWs.modules_active as any;
+               if (!stored) setModules({ school: !!dbM?.school, assistance: !!dbM?.assistance });
+             }
           }
         }
         setIsLoading(false);
@@ -175,8 +194,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     return true;
   };
 
+  const setAdminWorkspace = (id: string) => {
+    if (user?.role === 'platform_admin') {
+      setWorkspaceId(id);
+    }
+  };
+
   return (
-    <WorkspaceContext.Provider value={{ workspaceId, workspaceName, modules, isLoading, updateModules }}>
+    <WorkspaceContext.Provider value={{ workspaceId, workspaceName, modules, isLoading, updateModules, setAdminWorkspace }}>
       {children}
     </WorkspaceContext.Provider>
   );
