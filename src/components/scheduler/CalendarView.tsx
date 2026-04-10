@@ -157,6 +157,7 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
       <div className="flex min-h-full">
         {/* Time column */}
         <div className="w-16 flex-shrink-0 border-r border-border bg-sidebar">
+          <div className="h-4 border-b border-border" />
           {timeSlots.map((slot, index) => (
             <div key={index} className="h-[60px] border-b border-border relative">
               <span className="absolute -top-2 right-2 text-[10px] text-muted-foreground">
@@ -168,12 +169,14 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
         
         {/* Day column with events */}
         <div className="flex-1 relative">
+          <div className="h-4 border-b border-border" />
+          
           {/* Current time indicator */}
           {isToday(selectedDate) && (
             <div
               className="absolute left-0 right-0 z-20 pointer-events-none"
               style={{
-                top: `${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px`,
+                top: `calc(1rem + ${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
               }}
             >
               <div className="flex items-center">
@@ -189,7 +192,7 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
           ))}
           
           {/* Events */}
-          <div className="absolute inset-0">
+          <div className="absolute inset-x-0 bottom-0 top-4">
             {dayEvents.map((event) => (
               <EventCard
                 key={event.id}
@@ -242,6 +245,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, events, onEventClick 
       <div className="flex min-h-full">
         {/* Time column */}
         <div className="w-16 flex-shrink-0 border-r border-border bg-sidebar">
+          <div className="h-4 border-b border-border" />
           {timeSlots.map((slot, index) => (
             <div key={index} className="h-[60px] border-b border-border relative">
               <span className="absolute -top-2 right-2 text-[10px] text-muted-foreground">
@@ -258,7 +262,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, events, onEventClick 
             <div
               className="absolute left-0 right-0 z-20 pointer-events-none"
               style={{
-                top: `${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px`,
+                top: `calc(1rem + ${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
               }}
             >
               <div className="flex items-center">
@@ -277,13 +281,15 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, events, onEventClick 
                 day.isWeekend && 'bg-muted/50 dark:bg-[#0F1115]'
               )}
             >
+              <div className="h-4 border-b border-border" />
+              
               {/* Hour grid lines */}
               {timeSlots.map((_, hourIndex) => (
                 <div key={hourIndex} className="h-[60px] border-b border-border" />
               ))}
               
               {/* Events for this day */}
-              <div className="absolute inset-0">
+              <div className="absolute inset-x-0 bottom-0 top-4">
                 {getEventsForDay(day.date).map((event) => (
                   <EventCard
                     key={event.id}
@@ -727,7 +733,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     if (view === 'day') {
       // Day view shows single day header
       return (
-        <div className="flex border-b border-border">
+        <div className="flex border-b border-border overflow-y-scroll scrollbar-dark" style={{ scrollbarColor: 'transparent transparent' }}>
           <div className="w-16 flex-shrink-0 border-r border-border" />
           <div className="flex-1 px-2 py-3 text-center">
             <div className={cn(
@@ -751,7 +757,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     
     // Week view - show all 7 days
     return (
-      <div className="flex border-b border-border">
+      <div className="flex border-b border-border overflow-y-scroll scrollbar-dark" style={{ scrollbarColor: 'transparent transparent' }}>
         <div className="w-16 flex-shrink-0 border-r border-border" />
         <div className="flex-1 grid grid-cols-7">
           {weekDays.map((day, index) => (
