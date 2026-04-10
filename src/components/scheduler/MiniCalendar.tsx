@@ -17,8 +17,10 @@ import { cn, formatMonthYear, isSameDay, isToday } from '@/lib/utils';
 interface MiniCalendarProps {
   /** Currently selected date */
   selectedDate: Date;
+  /** End date for range selection */
+  selectedEndDate?: Date | null;
   /** Callback when a date is selected */
-  onSelectDate: (date: Date) => void;
+  onSelectDate: (date: Date, isShiftClick?: boolean) => void;
   /** Dates that have events (for indicators) */
   datesWithEvents?: Date[];
 }
@@ -29,6 +31,7 @@ interface MiniCalendarProps {
  */
 export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   selectedDate,
+  selectedEndDate = null,
   onSelectDate,
   datesWithEvents = [],
 }) => {
@@ -171,7 +174,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         {calendarDays.map((day, index) => (
           <button
             key={index}
-            onClick={() => onSelectDate(day.date)}
+            onClick={(e) => onSelectDate(day.date, e.shiftKey)}
             className={cn(
               'relative h-8 w-8 mx-auto rounded-full flex items-center justify-center',
               'text-sm transition-all duration-150',
@@ -179,10 +182,12 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
               day.isCurrentMonth && 'text-foreground hover:bg-muted',
               // Other month days (dimmed)
               !day.isCurrentMonth && 'text-muted-foreground/50',
-              // Selected day
-              isSameDay(day.date, selectedDate) && 'bg-primary text-white hover:bg-primary/80',
+              // Range selection highlight
+              selectedEndDate && day.date > selectedDate && day.date < selectedEndDate && 'bg-primary/20 text-foreground',
+              // Selected date points
+              (isSameDay(day.date, selectedDate) || (selectedEndDate && isSameDay(day.date, selectedEndDate))) && 'bg-primary text-white hover:bg-primary/80',
               // Today (if not selected)
-              day.isToday && !isSameDay(day.date, selectedDate) && 'ring-1 ring-primary text-primary',
+              day.isToday && !isSameDay(day.date, selectedDate) && (!selectedEndDate || !isSameDay(day.date, selectedEndDate)) && 'ring-1 ring-primary text-primary',
             )}
           >
             {day.dayOfMonth}

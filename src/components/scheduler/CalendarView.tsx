@@ -214,17 +214,34 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
  */
 interface WeekViewProps {
   selectedDate: Date;
+  selectedEndDate?: Date | null;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const WeekView: React.FC<WeekViewProps> = ({ selectedDate, events, onEventClick }) => {
+const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, events, onEventClick }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timeSlots = useMemo(() => generateTimeSlots(), []);
+  
   const weekDays = useMemo(() => {
+    if (selectedEndDate) {
+      const days = [];
+      const current = new Date(selectedDate);
+      while (current <= selectedEndDate) {
+        days.push({
+          date: new Date(current),
+          name: current.toLocaleDateString('en-US', { weekday: 'short' }),
+          dayOfMonth: current.getDate(),
+          isToday: isToday(current),
+          isWeekend: current.getDay() === 0 || current.getDay() === 6
+        });
+        current.setDate(current.getDate() + 1);
+      }
+      return days;
+    }
     const weekStart = getStartOfWeek(selectedDate);
     return generateWeekDays(weekStart);
-  }, [selectedDate]);
+  }, [selectedDate, selectedEndDate]);
   const HOUR_HEIGHT = 60;
   
   // Auto-scroll to current time
@@ -256,7 +273,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, events, onEventClick 
         </div>
         
         {/* Day columns with events */}
-        <div className="flex-1 grid grid-cols-7 relative">
+        <div className="flex-1 grid relative divide-x divide-border" style={{ gridTemplateColumns: `repeat(${weekDays.length}, minmax(0, 1fr))` }}>
           {/* Current time indicator */}
           {weekDays.some(day => day.isToday) && (
             <div
@@ -608,6 +625,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
  */
 interface CalendarViewProps {
   selectedDate: Date;
+  selectedEndDate?: Date | null;
   view: ViewType;
   events: CalendarEvent[];
   onDateChange: (date: Date) => void;
@@ -620,6 +638,7 @@ interface CalendarViewProps {
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
   selectedDate,
+  selectedEndDate,
   view,
   events,
   onDateChange,
@@ -631,9 +650,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 }) => {
   // Generate week days for header display
   const weekDays = useMemo(() => {
+    if (selectedEndDate && view === 'week') {
+      const days = [];
+      const current = new Date(selectedDate);
+      while (current <= selectedEndDate) {
+        days.push({
+          date: new Date(current),
+          name: current.toLocaleDateString('en-US', { weekday: 'short' }),
+          dayOfMonth: current.getDate(),
+          isToday: isToday(current),
+          isWeekend: current.getDay() === 0 || current.getDay() === 6
+        });
+        current.setDate(current.getDate() + 1);
+      }
+      return days;
+    }
     const weekStart = getStartOfWeek(selectedDate);
     return generateWeekDays(weekStart);
-  }, [selectedDate]);
+  }, [selectedDate, selectedEndDate, view]);
   
   /**
    * Format the date range for the header based on current view
@@ -650,7 +684,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       
       case 'week':
         const start = weekDays[0].date;
-        const end = weekDays[6].date;
+        const end = weekDays[weekDays.length - 1].date;
         if (start.getMonth() === end.getMonth()) {
           return `${start.toLocaleDateString('en-US', { month: 'long' })} ${start.getDate()} - ${end.getDate()}, ${start.getFullYear()}`;
         } else if (start.getFullYear() === end.getFullYear()) {
@@ -688,6 +722,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         return (
           <WeekView
             selectedDate={selectedDate}
+            selectedEndDate={selectedEndDate}
             events={events}
             onEventClick={onEventClick}
           />
@@ -755,11 +790,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       );
     }
     
-    // Week view - show all 7 days
+    // Week view - show dynamic days
     return (
       <div className="flex border-b border-border overflow-y-scroll scrollbar-dark" style={{ scrollbarColor: 'transparent transparent' }}>
-        <div className="w-16 flex-shrink-0 border-r border-border" />
-        <div className="flex-1 grid grid-cols-7">
+        <div className="w-16 flex-shrink-0 border-r border-border bg-sidebar">
+          <div className="h-4 border-b border-border" />
+        </div>
+        <div className="flex-1 grid divide-x divide-border" style={{ gridTemplateColumns: `repeat(${weekDays.length}, minmax(0, 1fr))` }}>
           {weekDays.map((day, index) => (
             <div
               key={index}

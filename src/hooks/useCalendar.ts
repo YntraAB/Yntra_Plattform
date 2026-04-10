@@ -11,11 +11,11 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
-import type { 
-  CalendarEvent, 
-  CalendarView, 
+import type {
+  CalendarEvent,
+  CalendarView,
   EventCategory,
-  CalendarState 
+  CalendarState
 } from '@/types';
 
 
@@ -30,8 +30,9 @@ export function useCalendar() {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
 
-  const [state, setState] = useState<CalendarState & { selectedTeamId: string | 'all', selectedAssigneeId: string | 'all' }>({
+  const [state, setState] = useState<CalendarState & { selectedTeamId: string | 'all', selectedAssigneeId: string | 'all', selectedEndDate?: Date | null }>({
     selectedDate: new Date(),
+    selectedEndDate: null,
     view: 'week',
     events: [],
     selectedEvent: null,
@@ -47,12 +48,12 @@ export function useCalendar() {
         query = query.eq('workspace_id', workspaceId);
       }
       const { data, error } = await query;
-      
+
       if (error) {
         console.error('Failed to load events:', error);
         return;
       }
-      
+
       const mappedEvents: CalendarEvent[] = (data || []).map(event => ({
         id: event.id,
         title: event.title,
@@ -80,10 +81,37 @@ export function useCalendar() {
   }, [workspaceId]);
 
   /**
-   * Set the currently selected date
+   * Set the currently selected date (or range if shiftClick is true)
    */
-  const setSelectedDate = useCallback((date: Date) => {
-    setState(prev => ({ ...prev, selectedDate: date }));
+  const setSelectedDate = useCallback((date: Date, isShiftClick?: boolean) => {
+    setState(prev => {
+      let newStart = date;
+      let newEnd = null;
+
+      if (isShiftClick && prev.selectedDate) {
+        if (date < prev.selectedDate) {
+          newStart = date;
+          newEnd = prev.selectedDate;
+        } else {
+          newStart = prev.selectedDate;
+          newEnd = date;
+        }
+
+        const diffDiff = Math.abs(newEnd.getTime() - newStart.getTime());
+        const daysDiff = Math.ceil(diffDiff / (1000 * 60 * 60 * 24));
+        if (daysDiff > 14) {
+          newEnd = new Date(newStart);
+          newEnd.setDate(newStart.getDate() + 14);
+        }
+      }
+
+      return {
+        ...prev,
+        selectedDate: newStart,
+        selectedEndDate: newEnd,
+        view: newEnd ? 'week' : prev.view
+      };
+    });
   }, []);
 
   /**
@@ -112,7 +140,7 @@ export function useCalendar() {
    */
   const addEvent = useCallback(async (event: Omit<CalendarEvent, 'id'>) => {
     if (!workspaceId || !user) return;
-    
+
     const dbPayload = {
       workspace_id: workspaceId,
       user_id: user.id,
@@ -148,11 +176,11 @@ export function useCalendar() {
     if (updates.endTime) dbPayload.end_time = updates.endTime.toISOString();
     if (updates.teamId !== undefined) dbPayload.team_id = updates.teamId || null;
     if (updates.assigneeId !== undefined) dbPayload.assignee_id = updates.assigneeId || null;
-    
+
     // Simplification for metadata: we just merge it all if category/desc/location changes
     // In a real app we'd fetch the old metadata and merge it...
     // For simplicity, we just trigger optimistic UI update and do basic backend override if possible
-    
+
     await supabase.from('events').update(dbPayload).eq('id', eventId);
 
     // The realtime subscription handles triggering UI updates instantly based on this update
@@ -271,24 +299,24 @@ export function useCalendar() {
    */
   const filteredEvents = useMemo(() => {
     let result = state.events;
-    
+
     // Filter by team
     if (state.selectedTeamId !== 'all') {
       result = result.filter(event => event.teamId === state.selectedTeamId);
     }
-    
+
     // Filter by category
     if (state.filterCategories.length > 0) {
-      result = result.filter(event => 
+      result = result.filter(event =>
         state.filterCategories.includes(event.category)
       );
     }
-    
+
     // Filter by assignee
     if (state.selectedAssigneeId !== 'all') {
       result = result.filter(event => event.assigneeId === state.selectedAssigneeId);
     }
-    
+
     return result;
   }, [state.events, state.filterCategories, state.selectedTeamId, state.selectedAssigneeId]);
 
@@ -309,6 +337,7 @@ export function useCalendar() {
   return {
     // State
     selectedDate: state.selectedDate,
+    selectedEndDate: state.selectedEndDate,
     view: state.view,
     events: state.events,
     filteredEvents,

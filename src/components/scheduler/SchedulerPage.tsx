@@ -251,6 +251,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
   // Calendar state from custom hook
   const {
     selectedDate,
+    selectedEndDate,
     view,
     filteredEvents,
     selectedEvent,
@@ -364,6 +365,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
               {/* Mini Calendar */}
               <MiniCalendar
                 selectedDate={selectedDate}
+                selectedEndDate={selectedEndDate}
                 onSelectDate={setSelectedDate}
                 datesWithEvents={filteredEvents.map(e => e.startTime)}
               />
@@ -447,6 +449,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
             <div className="flex-1 min-w-0">
               <CalendarView
                 selectedDate={selectedDate}
+                selectedEndDate={selectedEndDate}
                 view={view}
                 events={filteredEvents}
                 onDateChange={setSelectedDate}
