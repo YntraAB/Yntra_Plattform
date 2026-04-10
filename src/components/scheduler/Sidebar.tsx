@@ -8,9 +8,9 @@
  * =============================================================================
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Clock, 
+  Clock,
   FileText,
   ChevronDown,
   ChevronRight,
@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Navigation item structure
@@ -92,19 +95,22 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
             )}
           </span>
         )}
-        
+
         {/* Icon */}
         {!hasChildren && <span className="w-4" />}
         <Icon className="w-5 h-5" />
-        
+
         {/* Label */}
         <span className="flex-1 text-sm">{item.label}</span>
-        
+
         {/* Badge */}
         {item.badge && (
-          <span className="px-2 py-0.5 text-xs bg-primary text-white rounded-full">
+          <Badge
+            variant="default"
+            className="h-5 px-1.5 min-w-[20px] justify-center text-[10px] font-bold"
+          >
             {item.badge}
-          </span>
+          </Badge>
         )}
       </div>
 
@@ -140,8 +146,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeSection,
   onSectionChange,
 }) => {
-  const { modules } = useWorkspace();
-  
+  const { modules, workspaceId } = useWorkspace();
+  const { user } = useAuth();
+
+  const [unreadMessages, setUnreadMessages] = useState<number>(0);
+
+  // Fetch unread messages
+  useEffect(() => {
+    async function fetchUnreadCounts() {
+      if (!workspaceId || !user) return;
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('workspace_id', workspaceId)
+        .is('read_at', null)
+        .neq('sender_id', user.id);
+
+      if (count !== null) setUnreadMessages(count);
+    }
+    fetchUnreadCounts();
+  }, [workspaceId, user]);
+
   // Track expanded sections
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['time'])
@@ -162,13 +187,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'work-notes',
       label: 'Anteckningar',
       icon: FileText,
-      badge: 3,
     },
     {
       id: 'inbox',
       label: 'Inkorg',
       icon: Mail,
-      badge: 12,
+      badge: unreadMessages > 0 ? unreadMessages : undefined,
     },
     {
       id: 'directory',
@@ -203,11 +227,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
           {/* Volt Logo */}
-          <svg 
-            width="28" 
-            height="28" 
-            viewBox="0 0 48 48" 
-            fill="none" 
+          <svg
+            width="28"
+            height="28"
+            viewBox="0 0 48 48"
+            fill="none"
             xmlns="http://www.w3.org/2000/svg"
             className="transform -rotate-12"
           >
