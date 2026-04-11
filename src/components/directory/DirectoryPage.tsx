@@ -184,6 +184,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
       .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { loadDirectory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => { loadDirectory(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'team_members' }, () => { loadDirectory(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspace_roles' }, () => { loadDirectory(); })
       .subscribe();
 
     return () => {
