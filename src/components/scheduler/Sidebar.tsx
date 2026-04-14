@@ -146,8 +146,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeSection,
   onSectionChange,
 }) => {
-  const { modules, workspaceId } = useWorkspace();
+  const { modules, workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
+
+  const [adminWorkspaces, setAdminWorkspaces] = useState<{id: string, name: string}[]>([]);
+  useEffect(() => {
+    if (user?.role === 'platform_admin') {
+      supabase.from('workspaces').select('id, name').then(({data}) => {
+        if (data) setAdminWorkspaces(data);
+      });
+    }
+  }, [user]);
 
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
 
@@ -245,7 +254,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </svg>
           <div>
             <h2 className="text-foreground font-semibold text-sm">Volt Scheduler</h2>
-            <p className="text-muted-foreground text-xs">EE24</p>
+            {user?.role === 'platform_admin' ? (
+              <select 
+                className="mt-0.5 bg-transparent border-none text-xs text-muted-foreground outline-none cursor-pointer p-0 appearance-none underline decoration-dashed underline-offset-4 pointer-events-auto w-full max-w-[120px] truncate"
+                value={workspaceId || ''}
+                onChange={(e) => setAdminWorkspace(e.target.value)}
+              >
+                {adminWorkspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+              </select>
+            ) : (
+              <p className="text-muted-foreground text-xs">EE24</p>
+            )}
           </div>
         </div>
       </div>

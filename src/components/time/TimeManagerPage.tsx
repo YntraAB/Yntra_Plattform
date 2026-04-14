@@ -26,6 +26,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   
   const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
   const [shifts, setShifts] = useState<any[]>([]);
+  const [dbTeams, setDbTeams] = useState<any[]>([]);
 
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
   const [selectedContext, setSelectedContext] = useState<{ type: 'employee' | 'team' | null, id: string | null }>({ type: null, id: null });
@@ -39,24 +40,33 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   useEffect(() => {
     async function fetchData() {
       if (!workspaceId) return;
+      // Fetch teams
+      const { data: teamsData } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
+      const fetchedTeams = teamsData || [];
+      setDbTeams(fetchedTeams);
+
       const { data } = await supabase.from('time_reports').select('*, user:users(*)').eq('workspace_id', workspaceId);
       
       if (data) {
-        const mapped = data.map(dbShift => ({
-          id: dbShift.id,
-          employeeId: dbShift.user_id,
-          employee: (dbShift.user as any)?.full_name || 'Okänd',
-          role: 'Assistent',
-          team: dbShift.team_id || 'Odelat team',
-          date: new Date(dbShift.date).toLocaleDateString(),
-          start: dbShift.hours.toString(), // Mock mapping for now 
-          end: dbShift.hours.toString(),
-          duration: dbShift.hours,
-          break: 0,
-          status: dbShift.status,
-          location: '',
-          note: ''
-        }));
+        const mapped = data.map(dbShift => {
+          const teamName = fetchedTeams.find(t => t.id === dbShift.team_id)?.name || 'Odelat team';
+          return {
+            id: dbShift.id,
+            employeeId: dbShift.user_id,
+            employee: (dbShift.user as any)?.full_name || 'Okänd',
+            role: 'Assistent',
+            teamId: dbShift.team_id,
+            team: teamName,
+            date: new Date(dbShift.date).toLocaleDateString(),
+            start: dbShift.hours.toString(), // Mock mapping for now 
+            end: dbShift.hours.toString(),
+            duration: dbShift.hours,
+            break: 0,
+            status: dbShift.status,
+            location: '',
+            note: ''
+          };
+        });
         setShifts(mapped);
       }
     }
@@ -65,6 +75,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     // Auto-update system för tidsrapporter
     const channel = supabase.channel('timemanager-reports')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_reports' }, () => { fetchData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { fetchData(); })
       .subscribe();
 
     return () => {

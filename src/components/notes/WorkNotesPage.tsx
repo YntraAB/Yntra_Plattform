@@ -8,7 +8,8 @@ import {
   History, 
   Trash2,
   Check,
-  PenSquare
+  PenSquare,
+  Building2
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ interface Note {
   date: string;
   timestamp: string;
   author: string;
+  authorId: string;
   subject: string;
   content: string;
   editHistory: { editedBy: string; editedAt: string }[];
@@ -33,20 +35,49 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 
 export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNode) => void }> = ({ setBreadcrumbNode }) => {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
-  const activeRole: DevRole = 'admin';
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [dbTeams, setDbTeams] = useState<any[]>([]);
+  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([]);
+  
+  const [exploreLevel, setExploreLevel] = useState<'workspaces' | 'teams'>('workspaces');
+
+  // Ladda bolag för platform_admin
+  React.useEffect(() => {
+    if (userRole === 'platform_admin') {
+      supabase.from('workspaces').select('*').then(({data}) => {
+        if (data) setDbWorkspaces(data);
+      });
+    }
+  }, [userRole]);
+
+  // Se till att exploreLevel startar rätt
+  React.useEffect(() => {
+    // Endast utvärdera när user har laddats in, annars faller vi igenom till teams av misstag under mount.
+    if (user && userRole !== 'platform_admin' && exploreLevel === 'workspaces') {
+      setExploreLevel('teams');
+    }
+    // Om user laddades in och ÄR admin, och vi av misstag hamnade på teams (fast vi är root)
+    if (user && userRole === 'platform_admin' && exploreLevel === 'teams' && !workspaceId && !selectedTeam) {
+       setExploreLevel('workspaces');
+    }
+  }, [user, userRole, exploreLevel, workspaceId, selectedTeam]);
 
   // Fetch teams map
   React.useEffect(() => {
     async function loadTeams() {
       if (!workspaceId) return;
-      const { data } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
-      if (data) setDbTeams(data);
+      const { data } = await supabase.from('teams').select('*, team_members(count)').eq('workspace_id', workspaceId);
+      if (data) {
+        setDbTeams(data.map(t => ({
+           ...t,
+           members: t.team_members?.[0]?.count || 0
+        })));
+      }
     }
     loadTeams();
   }, [workspaceId]);
@@ -70,6 +101,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             date: dateObj.toLocaleDateString(),
             timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             author: (dbNote.author as any)?.full_name || 'Okänd Agent',
+            authorId: dbNote.author_id,
             subject: dbNote.subject,
             content: dbNote.content,
             editHistory: dbNote.edit_history || []
@@ -81,8 +113,8 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     fetchNotes();
   }, [selectedTeam]);
   
-  // Authorization Mock
-  const currentUser = activeRole === 'admin' ? 'SuperAdmin' : 'Inloggad Assistent';
+  // Authorization
+  const currentUser = user?.id;
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
@@ -180,16 +212,39 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     if (!setBreadcrumbNode) return;
 
     const baseBreadcrumb = (
-      <span 
-        className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-        onClick={() => {
-          setSelectedTeam(null);
-          setActiveNoteId(null);
-          setIsComposing(false);
-        }}
-      >
-        Anteckningar
-      </span>
+      <>
+        {userRole === 'platform_admin' && (
+          <>
+            <span 
+              className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+              onClick={() => {
+                setExploreLevel('workspaces');
+                setSelectedTeam(null);
+                setActiveNoteId(null);
+                setIsComposing(false);
+              }}
+            >
+              Organisationer
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
+          </>
+        )}
+        <span 
+          className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+          onClick={() => {
+            setSelectedTeam(null);
+            setActiveNoteId(null);
+            setIsComposing(false);
+            if (userRole === 'platform_admin' && !workspaceId) {
+              setExploreLevel('workspaces');
+            } else {
+              setExploreLevel('teams');
+            }
+          }}
+        >
+          Anteckningar
+        </span>
+      </>
     );
 
     if (isComposing && selectedTeam) {
@@ -239,6 +294,71 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
 
   // ==========================================
+  // PANE 0: WORKSPACE OVERVIEW (Admin Only)
+  // ==========================================
+  const renderWorkspaceOverview = () => {
+    let wss = dbWorkspaces;
+    if (searchQuery) wss = wss.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return (
+      <div className="flex-1 flex flex-col h-full bg-background relative">
+        <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
+          <h2 className="text-foreground font-medium text-base flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-primary" /> Välj Organisation
+          </h2>
+          <div className="flex items-center gap-4">
+             <div className="relative w-64">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+               <Input 
+                 placeholder="Sök efter organisation..."
+                 value={searchQuery}
+                 onChange={(e) => setSearchQuery(e.target.value)}
+                 className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
+               />
+             </div>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+          {wss.length === 0 ? (
+             <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
+               <Building2 className="w-12 h-12 mb-4 opacity-20" />
+               <p className="text-sm">Inga organisationer hittades</p>
+             </div>
+          ) : (
+            wss.map((ws) => (
+              <div 
+                key={ws.id} 
+                onClick={() => { 
+                  if (setAdminWorkspace) setAdminWorkspace(ws.id);
+                  setExploreLevel('teams'); 
+                  setSearchQuery(''); 
+                }}
+                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+              >
+                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                
+                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                  {ws.name}
+                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{ws.type || 'Assistance'}</div>
+                </div>
+
+                <div className="flex-1 min-w-0 pr-4"></div>
+
+                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                  <ChevronRight className="w-5 h-5" />
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // ==========================================
   // PANE 1: TEAM OVERVIEW
   // ==========================================
   const renderTeamOverview = () => {
@@ -274,20 +394,28 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               <div 
                 key={team.id} 
                 onClick={() => { setSelectedTeam(team); setSearchQuery(''); }}
-                className="group flex items-center px-8 py-5 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
               >
-                <div className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                  <Users className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
+                  <Users className="w-5 h-5" />
                 </div>
                 
-                <div className="ml-5 flex-1 min-w-0 pr-4">
-                  <div className="text-[16px] font-medium text-foreground mb-0.5">{team.name}</div>
-                  <div className="text-[13px] text-muted-foreground">{team.members} assistenter kopplade</div>
+                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                  {team.name}
+                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{team.members || 0} medlemmar kopplade</div>
                 </div>
 
-                <div className="w-48 shrink-0 flex flex-col items-end pr-4 text-right">
-                  <div className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Senast uppdaterad</div>
-                  <span className="text-[13px] text-muted-foreground mt-1">{team.recentNote}</span>
+                <div className="flex-1 min-w-0 pr-4 flex items-center justify-end">
+                  {team.recentNote && (
+                    <div className="text-right mr-4">
+                      <div className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Senast uppdaterad</div>
+                      <div className="text-[13px] text-muted-foreground mt-0.5">{team.recentNote}</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
+                  <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
             ))
@@ -349,8 +477,8 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           ) : (
             <div className="flex flex-col w-full text-sm">
               {teamNotes.map((note) => {
-                const canEdit = note.author === currentUser;
-                const canDelete = canEdit || activeRole === 'admin' || activeRole === 'platform_admin';
+                const canEdit = note.authorId === currentUser;
+                const canDelete = canEdit || userRole === 'admin' || userRole === 'platform_admin';
 
                 return (
                 <div 
@@ -426,12 +554,12 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           </div>
 
           <div className="flex items-center gap-2">
-             {activeNote.author === currentUser && (
+             {activeNote.authorId === currentUser && (
                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground" onClick={(e) => handleEditNote(e, activeNote.id)}>
                  <PenSquare className="w-4 h-4" />
                </Button>
              )}
-             {(activeNote.author === currentUser || activeRole === 'admin' || activeRole === 'platform_admin') && (
+             {(activeNote.authorId === currentUser || userRole === 'admin' || userRole === 'platform_admin') && (
                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-rose-400" onClick={(e) => handleDeleteNote(e, activeNote.id)}>
                  <Trash2 className="w-4 h-4" />
                </Button>
@@ -537,13 +665,13 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         <div className="flex-1 overflow-y-auto px-8 md:px-24 lg:px-48 py-10 scrollbar-dark flex flex-col gap-8">
           
           {/* Subject Field */}
-          <div className="flex flex-col border-b border-border focus-within:border-primary/50 pb-2 transition-colors">
+          <div className="flex flex-col border-b border-border pb-2 transition-colors">
             <label className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Rubrik</label>
-            <Input 
+            <input 
               placeholder="Ex. Eftermiddagspasset eller Incident"
               value={composeSubject}
               onChange={(e) => setComposeSubject(e.target.value)}
-              className="px-0 bg-transparent border-none text-foreground text-lg font-medium focus-visible:ring-0 h-10 w-full"
+              className="px-0 bg-transparent border-none text-foreground text-lg font-medium focus:outline-none focus:ring-0 h-10 w-full placeholder:text-[15px] placeholder:font-medium placeholder:text-muted-foreground/50"
               autoFocus
             />
           </div>
@@ -571,7 +699,9 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           ? renderReadPane() 
           : selectedTeam 
             ? renderNoteList() 
-            : renderTeamOverview()
+            : (exploreLevel === 'workspaces' && userRole === 'platform_admin')
+              ? renderWorkspaceOverview()
+              : renderTeamOverview()
       }
     </div>
   );
