@@ -71,16 +71,29 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
           } else if (m.receiver_id === user.id) {
             toName = 'Du';
           } else {
+<<<<<<< HEAD
             toName = (m.receiver as any)?.full_name || 'Okänd';
+=======
+             const rcvrData = Array.isArray(m.receiver) ? m.receiver[0] : m.receiver;
+             toName = rcvrData ? (rcvrData.full_name || rcvrData.email || 'Okänd Agent') : 'Okänd Agent';
+>>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
           }
+          
+          const sndrData = Array.isArray(m.sender) ? m.sender[0] : m.sender;
+          const senderName = sndrData ? (sndrData.full_name || sndrData.email || 'System') : 'System';
 
           return {
             id: m.id,
+<<<<<<< HEAD
             sender_id: m.sender_id,
             receiver_id: m.receiver_id,
             target_team_id: m.target_team_id,
             folderId: m.sender_id === user.id ? 'sent' : 'inbox',
             sender: { name: (m.sender as any)?.full_name || 'System', avatar: '' },
+=======
+            folderId: m.sender_id === user.id ? 'sent' : 'inbox', // Simplify folder logic for now
+            sender: { name: senderName, avatar: '' },
+>>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
             to: toName,
             isTeamMessage: !!m.target_team_id,
             subject: m.subject || 'Ingen rubrik',
@@ -239,8 +252,13 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   const handleReply = () => {
     if (activeMessage) {
       setComposeData({
+<<<<<<< HEAD
         targetType: activeMessage.isTeamMessage ? 'team' : 'user',
         targetId: activeMessage.sender_id, // We need to ensure sender_id is accessible
+=======
+        targetType: 'user',
+        targetId: activeMessage.sender.id,
+>>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
         subject: activeMessage.subject.startsWith('Svar:') ? activeMessage.subject : `Svar: ${activeMessage.subject}`,
         content: '',
         quote: {

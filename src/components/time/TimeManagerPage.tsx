@@ -26,6 +26,11 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   
   const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
   const [shifts, setShifts] = useState<any[]>([]);
+<<<<<<< HEAD
+=======
+  // @ts-ignore
+  const [dbTeams, setDbTeams] = useState<any[]>([]);
+>>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
 
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
   const [selectedContext, setSelectedContext] = useState<{ type: 'employee' | 'team' | null, id: string | null }>({ type: null, id: null });
@@ -47,11 +52,18 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       
       if (data) {
         const mapped = data.map(dbShift => {
+<<<<<<< HEAD
           const teamName = fetchedTeams.find((t: any) => t.id === dbShift.team_id)?.name || 'Odelat team';
+=======
+          const teamName = fetchedTeams.find(t => t.id === dbShift.team_id)?.name || 'Odelat team';
+          const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user;
+          const employeeName = uData ? (uData.full_name || uData.email || 'Okänd Agent') : 'Okänd Agent';
+
+>>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
           return {
             id: dbShift.id,
             employeeId: dbShift.user_id,
-            employee: (dbShift.user as any)?.full_name || 'Okänd',
+            employee: employeeName,
             role: 'Assistent',
             teamId: dbShift.team_id,
             team: teamName,

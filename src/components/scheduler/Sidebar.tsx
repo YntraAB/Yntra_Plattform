@@ -138,6 +138,8 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
   );
 };
 
+import { useUnreadNotes } from '@/hooks/useUnreadNotes';
+
 /**
  * Main Sidebar Component
  * Provides navigation and user profile section
@@ -148,6 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { modules, workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const unreadNotes = useUnreadNotes();
 
   const [adminWorkspaces, setAdminWorkspaces] = useState<{id: string, name: string}[]>([]);
   useEffect(() => {
@@ -168,7 +171,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('workspace_id', workspaceId)
-        .is('read_at', null)
+        .eq('is_read', false)
         .neq('sender_id', user.id);
 
       if (count !== null) setUnreadMessages(count);
@@ -196,6 +199,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'work-notes',
       label: 'Anteckningar',
       icon: FileText,
+      badge: unreadNotes.total > 0 ? unreadNotes.total : undefined,
     },
     {
       id: 'inbox',
