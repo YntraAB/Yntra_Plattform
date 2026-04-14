@@ -128,8 +128,8 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         const teamIds = teamData?.map(t => t.id) || [];
         let allMemberships: any[] = [];
         if (teamIds.length > 0) {
-           const { data: memberships } = await supabase.from('team_members').select('team_id, user_id, role_id').in('team_id', teamIds);
-           allMemberships = memberships || [];
+          const { data: memberships } = await supabase.from('team_members').select('team_id, user_id, role_id').in('team_id', teamIds);
+          allMemberships = memberships || [];
         }
 
         if (teamData) {
@@ -137,17 +137,17 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
             const teamLinks = allMemberships.filter(tm => tm.team_id === t.id);
             // Räkna bara in användare som är rena 'assistant' utan skräddarsydd team-roll
             const assistantLinks = teamLinks.filter(tm => {
-               const u = allUsers?.find(u => u.id === tm.user_id);
-               return u && u.role === 'assistant' && !tm.role_id;
+              const u = allUsers?.find(u => u.id === tm.user_id);
+              return u && u.role === 'assistant' && !tm.role_id;
             });
 
-            return { 
-              id: t.id, 
-              name: t.name, 
-              workspaceId: t.workspace_id, 
-              membersCount: assistantLinks.length, 
-              patientsCount: 0, 
-              leader: 'Unknown' 
+            return {
+              id: t.id,
+              name: t.name,
+              workspaceId: t.workspace_id,
+              membersCount: assistantLinks.length,
+              patientsCount: 0,
+              leader: 'Unknown'
             };
           }));
         }
@@ -169,19 +169,15 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
           ? (usersData || [])
           : (usersData || []).filter(u => memberIds.includes(u.id));
 
-<<<<<<< HEAD
-        const mappedUsers = actualTeamUsers.map(u => {
-=======
         const mappedUsers = actualTeamUsers.map((u: any) => {
->>>>>>> 2300fd5e0745fa241c4bf12c9d4936b5b95fcbf9
           let customRoleName: string | null = null;
           let customRoleId: string | null = null;
           if (selectedTeam !== 'all_members') {
             const link = teamMembersLinkData.find(tm => tm.user_id === u.id);
             if (link?.role_id) {
-               customRoleId = link.role_id;
-               const roleDef = dbWorkspaceRoles.find(r => r.id === customRoleId);
-               if (roleDef) customRoleName = roleDef.name;
+              customRoleId = link.role_id;
+              const roleDef = dbWorkspaceRoles.find(r => r.id === customRoleId);
+              if (roleDef) customRoleName = roleDef.name;
             }
           }
 
@@ -525,7 +521,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                       <div className="flex-1 min-w-0 pr-4 flex items-center justify-end">
                         {selectedTeam !== 'all_members' && (userRole === 'admin' || userRole === 'platform_admin') ? (
                           <div className="w-48" onClick={e => e.stopPropagation()}>
-                            <select 
+                            <select
                               className="w-full bg-muted border border-border text-foreground rounded-md px-2 py-1 text-xs focus:outline-none focus:border-primary appearance-none cursor-pointer"
                               value={member.roleId || ''}
                               onChange={async (e) => {
@@ -748,7 +744,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
               </div>
               <div className="flex-1 overflow-y-auto p-2">
                 {/* Default Assistant Role (Read Only) */}
-                <div 
+                <div
                   className={`p-3 rounded-lg cursor-pointer transition-colors mb-1 ${editingRole === null ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted border border-transparent'}`}
                   onClick={() => { setEditingRole(null); setRoleForm({ name: '', can_manage_schedule: false, can_manage_notes: false, can_approve_time_reports: false }); }}
                 >
@@ -757,13 +753,13 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 </div>
 
                 {dbWorkspaceRoles.map(role => (
-                  <div 
+                  <div
                     key={role.id}
                     className={`p-3 rounded-lg cursor-pointer transition-colors mb-1 ${editingRole?.id === role.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted border border-transparent'}`}
-                    onClick={() => { 
-                      setEditingRole(role); 
-                      setRoleForm({ 
-                        name: role.name, 
+                    onClick={() => {
+                      setEditingRole(role);
+                      setRoleForm({
+                        name: role.name,
                         can_manage_schedule: role.permissions?.can_manage_schedule || false,
                         can_manage_notes: role.permissions?.can_manage_notes || false,
                         can_approve_time_reports: role.permissions?.can_approve_time_reports || false
@@ -776,8 +772,8 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 ))}
               </div>
               <div className="p-4 border-t border-border">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="w-full text-xs h-8"
                   onClick={() => {
                     setEditingRole('new');
@@ -797,28 +793,28 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                     <h3 className="text-lg font-medium text-foreground">{editingRole === 'new' ? 'Skapa anpassad roll' : 'Redigera roll'}</h3>
                     <p className="text-xs text-muted-foreground mt-1">Konfigurera behörigheter för denna specifik roll. Rollen kan sedan tilldelas valfri assistent inuti ett specifikt team.</p>
                   </div>
-                  
+
                   <div className="flex-1 p-6 overflow-y-auto space-y-6">
                     <div>
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2 block">Rollnamn</label>
-                      <input 
-                        value={roleForm.name} 
-                        onChange={(e) => setRoleForm({...roleForm, name: e.target.value})} 
-                        className="w-full bg-muted border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors" 
-                        placeholder="T.ex. Schemaläggare, Arbetsledare..." 
+                      <input
+                        value={roleForm.name}
+                        onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
+                        className="w-full bg-muted border border-border text-foreground rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 transition-colors"
+                        placeholder="T.ex. Schemaläggare, Arbetsledare..."
                       />
                     </div>
 
                     <div className="space-y-4">
                       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest block border-b border-border pb-2">Behörigheter / Makt</label>
-                      
+
                       <div className="flex items-start gap-3 bg-muted/40 p-4 rounded-lg border border-border">
-                        <input 
-                          type="checkbox" 
-                          id="p_sched" 
-                          checked={roleForm.can_manage_schedule} 
-                          onChange={(e) => setRoleForm({...roleForm, can_manage_schedule: e.target.checked})} 
-                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary" 
+                        <input
+                          type="checkbox"
+                          id="p_sched"
+                          checked={roleForm.can_manage_schedule}
+                          onChange={(e) => setRoleForm({ ...roleForm, can_manage_schedule: e.target.checked })}
+                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary"
                         />
                         <label htmlFor="p_sched" className="cursor-pointer">
                           <div className="text-sm font-medium text-foreground">Hantera Schema & Arbetspass</div>
@@ -827,12 +823,12 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                       </div>
 
                       <div className="flex items-start gap-3 bg-muted/40 p-4 rounded-lg border border-border">
-                        <input 
-                          type="checkbox" 
-                          id="p_notes" 
-                          checked={roleForm.can_manage_notes} 
-                          onChange={(e) => setRoleForm({...roleForm, can_manage_notes: e.target.checked})} 
-                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary" 
+                        <input
+                          type="checkbox"
+                          id="p_notes"
+                          checked={roleForm.can_manage_notes}
+                          onChange={(e) => setRoleForm({ ...roleForm, can_manage_notes: e.target.checked })}
+                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary"
                         />
                         <label htmlFor="p_notes" className="cursor-pointer">
                           <div className="text-sm font-medium text-foreground">Hantera Anteckningar (Admin)</div>
@@ -841,12 +837,12 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                       </div>
 
                       <div className="flex items-start gap-3 bg-muted/40 p-4 rounded-lg border border-border">
-                        <input 
-                          type="checkbox" 
-                          id="p_time" 
-                          checked={roleForm.can_approve_time_reports} 
-                          onChange={(e) => setRoleForm({...roleForm, can_approve_time_reports: e.target.checked})} 
-                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary" 
+                        <input
+                          type="checkbox"
+                          id="p_time"
+                          checked={roleForm.can_approve_time_reports}
+                          onChange={(e) => setRoleForm({ ...roleForm, can_approve_time_reports: e.target.checked })}
+                          className="w-5 h-5 cursor-pointer mt-0.5 accent-primary"
                         />
                         <label htmlFor="p_time" className="cursor-pointer">
                           <div className="text-sm font-medium text-foreground">Godkänn Tidrapporter</div>
@@ -859,32 +855,32 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                   <div className="p-4 border-t border-border flex justify-end gap-3 bg-sidebar">
                     <Button variant="ghost" onClick={() => setIsRoleManagerOpen(false)} className="text-muted-foreground hover:text-foreground">Stäng</Button>
                     {editingRole !== 'new' && (
-                       <Button 
+                      <Button
                         variant="ghost"
                         onClick={async () => {
                           if (confirm("Är du säker på att du vill radera rollen? Personer som har rollen kommer återgå till standard.")) {
-                             await supabase.from('workspace_roles').delete().eq('id', editingRole.id);
-                             setEditingRole(null);
+                            await supabase.from('workspace_roles').delete().eq('id', editingRole.id);
+                            setEditingRole(null);
                           }
                         }}
                         className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                       >
-                         Radera Roll
-                       </Button>
+                      >
+                        Radera Roll
+                      </Button>
                     )}
                     <Button
                       onClick={async () => {
                         const targetWS = selectedWorkspace || workspaceId;
-                        const payload = { 
-                          workspace_id: targetWS, 
-                          name: roleForm.name, 
-                          permissions: { 
+                        const payload = {
+                          workspace_id: targetWS,
+                          name: roleForm.name,
+                          permissions: {
                             can_manage_schedule: roleForm.can_manage_schedule,
                             can_manage_notes: roleForm.can_manage_notes,
                             can_approve_time_reports: roleForm.can_approve_time_reports
-                          } 
+                          }
                         };
-                        
+
                         let error;
                         if (editingRole === 'new') {
                           const res = await supabase.from('workspace_roles').insert([payload]);
@@ -895,9 +891,9 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                         }
 
                         if (error) alert("Fel: " + error.message);
-                        else { 
-                          alert(editingRole === 'new' ? 'Roll skapad!' : 'Roll uppdaterad!'); 
-                          setEditingRole(null); 
+                        else {
+                          alert(editingRole === 'new' ? 'Roll skapad!' : 'Roll uppdaterad!');
+                          setEditingRole(null);
                           // The subscription channel at the top will automatically reload these
                         }
                       }}
