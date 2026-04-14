@@ -122,8 +122,35 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
         const { data: rolesData } = await supabase.from('workspace_roles').select('*').eq('workspace_id', filterWs);
         if (rolesData) setDbWorkspaceRoles(rolesData);
 
-        const { data: teamData } = await supabase.from('teams').select('*, team_members(count)').eq('workspace_id', filterWs);
-        if (teamData) setDbTeams(teamData.map(t => ({ id: t.id, name: t.name, workspaceId: t.workspace_id, membersCount: t.team_members?.[0]?.count || 0, patientsCount: 0, leader: 'Unknown' })));
+        const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', filterWs);
+        const { data: allUsers } = await supabase.from('users').select('id, role').eq('workspace_id', filterWs);
+        // We only care about memberships of teams in this workspace.
+        const teamIds = teamData?.map(t => t.id) || [];
+        let allMemberships: any[] = [];
+        if (teamIds.length > 0) {
+           const { data: memberships } = await supabase.from('team_members').select('team_id, user_id, role_id').in('team_id', teamIds);
+           allMemberships = memberships || [];
+        }
+
+        if (teamData) {
+          setDbTeams(teamData.map(t => {
+            const teamLinks = allMemberships.filter(tm => tm.team_id === t.id);
+            // Räkna bara in användare som är rena 'assistant' utan skräddarsydd team-roll
+            const assistantLinks = teamLinks.filter(tm => {
+               const u = allUsers?.find(u => u.id === tm.user_id);
+               return u && u.role === 'assistant' && !tm.role_id;
+            });
+
+            return { 
+              id: t.id, 
+              name: t.name, 
+              workspaceId: t.workspace_id, 
+              membersCount: assistantLinks.length, 
+              patientsCount: 0, 
+              leader: 'Unknown' 
+            };
+          }));
+        }
       }
 
       // Load Members if Team selected
@@ -142,9 +169,9 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
           ? (usersData || [])
           : (usersData || []).filter(u => memberIds.includes(u.id));
 
-        const mappedUsers = actualTeamUsers.map(u => {
-          let customRoleName = null;
-          let customRoleId = null;
+        const mappedUsers = actualTeamUsers.map((u: any) => {
+          let customRoleName: string | null = null;
+          let customRoleId: string | null = null;
           if (selectedTeam !== 'all_members') {
             const link = teamMembersLinkData.find(tm => tm.user_id === u.id);
             if (link?.role_id) {
@@ -469,7 +496,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 <div className="px-8 py-2 bg-muted/40 border-b border-border flex items-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider sticky top-16 z-0 backdrop-blur-md">
                   {roleGroup} ({groupedMembers[roleGroup].length})
                 </div>
-                {groupedMembers[roleGroup].map((member) => {
+                {groupedMembers[roleGroup].map((member: any) => {
                   const displayName = member.name === member.email ? "Namn ej angivet" : member.name;
                   const displayInitial = (displayName !== "Namn ej angivet" ? displayName.charAt(0) : member.email.charAt(0)).toUpperCase();
 

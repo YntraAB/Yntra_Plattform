@@ -411,7 +411,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
                       <>
                         <option value="all">Alla assistenter</option>
                         {dbUsers.map(u => (
-                          <option key={u.id} value={u.id}>{u.full_name || 'Okänd'}</option>
+                          <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
                         ))}
                       </>
                     )}

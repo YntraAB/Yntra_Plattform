@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-type DevRole = 'platform_admin' | 'admin' | 'assistant';
+
 
 // Mock dependencies removed
 import { supabase } from '@/lib/supabase';
@@ -33,10 +33,12 @@ interface Note {
 
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useUnreadNotes } from '@/hooks/useUnreadNotes';
 
 export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNode) => void }> = ({ setBreadcrumbNode }) => {
   const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const unreadNotes = useUnreadNotes();
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
   const [notes, setNotes] = useState<Note[]>([]);
@@ -71,12 +73,26 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
   React.useEffect(() => {
     async function loadTeams() {
       if (!workspaceId) return;
-      const { data } = await supabase.from('teams').select('*, team_members(count)').eq('workspace_id', workspaceId);
-      if (data) {
-        setDbTeams(data.map(t => ({
-           ...t,
-           members: t.team_members?.[0]?.count || 0
-        })));
+      
+      const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
+      
+      const teamIds = teamData?.map(t => t.id) || [];
+      let allNotes: any[] = [];
+      if (teamIds.length > 0) {
+         // Hämta enbart team_id för att räkna antalet loggböcker blixtsnabbt
+         const { data: notes } = await supabase.from('work_notes').select('team_id').in('team_id', teamIds);
+         allNotes = notes || [];
+      }
+
+      if (teamData) {
+        setDbTeams(teamData.map(t => {
+           const notesCount = allNotes.filter(n => n.team_id === t.id).length;
+           
+           return {
+             ...t,
+             notesCount: notesCount
+           }
+        }));
       }
     }
     loadTeams();
@@ -88,19 +104,28 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       if (!selectedTeam) return;
       const { data } = await supabase
         .from('work_notes')
-        .select(`*, author:users(full_name)`)
+        .select(`*, author:users(full_name, email)`)
         .eq('team_id', selectedTeam.id)
         .order('created_at', { ascending: false });
 
       if (data) {
         const mappedNotes: Note[] = data.map(dbNote => {
           const dateObj = new Date(dbNote.created_at);
+          
+          let authorName = 'Okänd Agent';
+          if (dbNote.author) {
+            const authorData = Array.isArray(dbNote.author) ? dbNote.author[0] : dbNote.author;
+            if (authorData) {
+               authorName = authorData.full_name || authorData.email || 'Okänd Agent';
+            }
+          }
+
           return {
             id: dbNote.id,
             teamId: dbNote.team_id,
             date: dateObj.toLocaleDateString(),
             timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            author: (dbNote.author as any)?.full_name || 'Okänd Agent',
+            author: authorName,
             authorId: dbNote.author_id,
             subject: dbNote.subject,
             content: dbNote.content,
@@ -172,6 +197,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         const newNote: Note = {
           id: data.id,
           teamId: data.team_id,
+          authorId: data.author_id,
           date: dateObj.toLocaleDateString(),
           timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           author: (user as any)?.email || 'Me',
@@ -369,7 +395,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     return (
       <div className="flex-1 flex flex-col h-full bg-background relative">
         <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium">Välj Loggbok</h2>
+          <h2 className="text-foreground font-medium">Välj Anteckningsbok</h2>
           <div className="flex items-center gap-4">
              <div className="relative w-64">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -390,19 +416,36 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                <p className="text-sm">Inga team hittades</p>
              </div>
           ) : (
-            teams.map((team) => (
+            teams.map((team) => {
+              const unreadInTeam = unreadNotes?.byTeam[team.id] || 0;
+              return (
               <div 
                 key={team.id} 
-                onClick={() => { setSelectedTeam(team); setSearchQuery(''); }}
+                onClick={async () => { 
+                  setSelectedTeam(team); 
+                  setSearchQuery(''); 
+                  // Markera teamets anteckningar som lästa i databasen om man har olästa
+                  if (unreadInTeam > 0 && user) {
+                    await supabase.from('team_members').update({ notes_last_read_at: new Date().toISOString() }).eq('team_id', team.id).eq('user_id', user.id);
+                  }
+                }}
                 className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
               >
                 <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
-                  <Users className="w-5 h-5" />
+                  <FileText className="w-5 h-5 relative" />
+                  {unreadInTeam > 0 && (
+                    <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border border-sidebar shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                  )}
                 </div>
                 
                 <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
                   {team.name}
-                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{team.members || 0} medlemmar kopplade</div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider">{team.notesCount || 0} anteckningar skapade</div>
+                    {unreadInTeam > 0 && (
+                      <span className="text-red-500 font-bold bg-red-500/10 px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">{unreadInTeam} Nya</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex-1 min-w-0 pr-4 flex items-center justify-end">
@@ -418,7 +461,8 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -452,13 +496,13 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               >
                 <ChevronLeft className="w-5 h-5" />
              </Button>
-             <h2 className="text-foreground font-medium">{selectedTeam.name} Loggbok</h2>
+             <h2 className="text-foreground font-medium">{selectedTeam.name} Anteckningar</h2>
           </div>
           <div className="flex items-center gap-4">
              <div className="relative w-64">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                <Input 
-                 placeholder="Sök i loggbok..."
+                 placeholder="Sök i anteckningar..."
                  value={noteSearchQuery}
                  onChange={(e) => setNoteSearchQuery(e.target.value)}
                  className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
@@ -657,7 +701,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               onClick={handleSaveNote}
             >
               <Check className="w-4 h-4 mr-2" />
-              Spara i Loggbok
+              Spara Anteckning
             </Button>
           </div>
         </div>

@@ -73,13 +73,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
           } else if (m.receiver_id === user.id) {
              toName = 'Du';
           } else {
-             toName = (m.receiver as any)?.full_name || 'Okänd';
+             const rcvrData = Array.isArray(m.receiver) ? m.receiver[0] : m.receiver;
+             toName = rcvrData ? (rcvrData.full_name || rcvrData.email || 'Okänd Agent') : 'Okänd Agent';
           }
+          
+          const sndrData = Array.isArray(m.sender) ? m.sender[0] : m.sender;
+          const senderName = sndrData ? (sndrData.full_name || sndrData.email || 'System') : 'System';
 
           return {
             id: m.id,
             folderId: m.sender_id === user.id ? 'sent' : 'inbox', // Simplify folder logic for now
-            sender: { name: (m.sender as any)?.full_name || 'System', avatar: '' },
+            sender: { name: senderName, avatar: '' },
             to: toName,
             isTeamMessage: !!m.target_team_id,
             subject: m.subject || 'Ingen rubrik',
@@ -238,7 +242,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   const handleReply = () => {
     if (activeMessage) {
       setComposeData({
-        to: activeMessage.sender.name,
+        targetType: 'user',
+        targetId: activeMessage.sender.id,
         subject: activeMessage.subject.startsWith('Svar:') ? activeMessage.subject : `Svar: ${activeMessage.subject}`,
         content: '',
         quote: {
@@ -258,7 +263,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   const handleForward = () => {
     if (activeMessage) {
       setComposeData({
-        to: '',
+        targetType: 'user',
+        targetId: '',
         subject: activeMessage.subject.startsWith('VB:') ? activeMessage.subject : `VB: ${activeMessage.subject}`,
         content: '',
         quote: {
