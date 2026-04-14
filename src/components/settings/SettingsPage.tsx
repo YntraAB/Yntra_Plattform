@@ -4,12 +4,43 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/components/theme-provider';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Building2, School, HeartPulse, Sparkles, Moon, Sun, Monitor } from 'lucide-react';
+import { Building2, School, HeartPulse, Sparkles, Moon, Sun, Monitor, Mail, BellRing } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export const SettingsPage: React.FC = () => {
   const { workspaceName, modules, updateModules, isLoading } = useWorkspace();
   const { user } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  const [notifSettings, setNotifSettings] = React.useState({
+    on: true,
+    type: 'full_content'
+  });
+
+  React.useEffect(() => {
+    async function loadUserSettings() {
+      if (!user) return;
+      const { data } = await supabase.from('users').select('notifications_on, notification_type').eq('id', user.id).single();
+      if (data) {
+        setNotifSettings({
+          on: !!data.notifications_on,
+          type: data.notification_type || 'full_content'
+        });
+      }
+    }
+    loadUserSettings();
+  }, [user]);
+
+  const updateNotifSetting = async (key: 'on' | 'type', value: any) => {
+    if (!user) return;
+    const newSettings = { ...notifSettings, [key]: value };
+    setNotifSettings(newSettings);
+
+    await supabase.from('users').update({
+      notifications_on: newSettings.on,
+      notification_type: newSettings.type
+    }).eq('id', user.id);
+  };
 
   const handleToggle = (moduleKey: 'school' | 'assistance', checked: boolean) => {
     if (checked) {
@@ -106,6 +137,59 @@ export const SettingsPage: React.FC = () => {
           </CardContent>
         </Card>
         
+        {/* E-POSTNOTISER */}
+        <Card className={`relative overflow-hidden transition-all duration-300 border-2 border-primary/20 bg-card/40 backdrop-blur-sm md:col-span-2`}>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-primary" />
+                <CardTitle className="text-xl">E-postnotiser</CardTitle>
+              </div>
+              <Switch 
+                checked={notifSettings.on} 
+                onCheckedChange={(c) => updateNotifSetting('on', c)} 
+                className="data-[state=checked]:bg-primary"
+              />
+            </div>
+            <CardDescription className="pt-2">
+              Få ett mejl när du får ett nytt meddelande eller när en tidsrapport blir godkänd.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+             <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <button 
+                     disabled={!notifSettings.on}
+                     onClick={() => updateNotifSetting('type', 'full_content')}
+                     className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${notifSettings.type === 'full_content' ? 'border-primary bg-primary/10' : 'border-border bg-background hover:border-primary/40'} ${!notifSettings.on && 'opacity-50 cursor-not-allowed'}`}
+                   >
+                     <div className={`mt-1 p-2 rounded-lg ${notifSettings.type === 'full_content' ? 'bg-primary text-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        <BellRing className="w-4 h-4" />
+                     </div>
+                     <div>
+                        <div className={`text-sm font-semibold ${notifSettings.type === 'full_content' ? 'text-foreground' : 'text-muted-foreground'}`}>Fullständigt innehåll</div>
+                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">Mejlet innehåller hela meddelandetexten eller detaljer om beslutet. Mest praktiskt.</div>
+                     </div>
+                   </button>
+
+                   <button 
+                     disabled={!notifSettings.on}
+                     onClick={() => updateNotifSetting('type', 'alert_only')}
+                     className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all text-left ${notifSettings.type === 'alert_only' ? 'border-primary bg-primary/10' : 'border-border bg-background hover:border-primary/40'} ${!notifSettings.on && 'opacity-50 cursor-not-allowed'}`}
+                   >
+                     <div className={`mt-1 p-2 rounded-lg ${notifSettings.type === 'alert_only' ? 'bg-primary text-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        <Mail className="w-4 h-4" />
+                     </div>
+                     <div>
+                        <div className={`text-sm font-semibold ${notifSettings.type === 'alert_only' ? 'text-foreground' : 'text-muted-foreground'}`}>Endast avisering</div>
+                        <div className="text-xs text-muted-foreground mt-1 leading-relaxed">Vi skickar bara ett kort mejl om att "Du har ett nytt meddelande". Bättre för integritet.</div>
+                     </div>
+                   </button>
+                </div>
+             </div>
+          </CardContent>
+        </Card>
+
         {/* UTSEENDE & TEMA */}
         <Card className={`relative overflow-hidden transition-all duration-300 border-2 border-primary/20 bg-card/40 backdrop-blur-sm md:col-span-2`}>
           <CardHeader className="pb-4">

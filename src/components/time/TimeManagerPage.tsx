@@ -26,7 +26,6 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   
   const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
   const [shifts, setShifts] = useState<any[]>([]);
-  const [dbTeams, setDbTeams] = useState<any[]>([]);
 
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
   const [selectedContext, setSelectedContext] = useState<{ type: 'employee' | 'team' | null, id: string | null }>({ type: null, id: null });
@@ -43,13 +42,12 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       // Fetch teams
       const { data: teamsData } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
       const fetchedTeams = teamsData || [];
-      setDbTeams(fetchedTeams);
 
       const { data } = await supabase.from('time_reports').select('*, user:users(*)').eq('workspace_id', workspaceId);
       
       if (data) {
         const mapped = data.map(dbShift => {
-          const teamName = fetchedTeams.find(t => t.id === dbShift.team_id)?.name || 'Odelat team';
+          const teamName = fetchedTeams.find((t: any) => t.id === dbShift.team_id)?.name || 'Odelat team';
           return {
             id: dbShift.id,
             employeeId: dbShift.user_id,

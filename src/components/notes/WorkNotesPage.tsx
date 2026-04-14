@@ -14,8 +14,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
-type DevRole = 'platform_admin' | 'admin' | 'assistant';
-
 // Mock dependencies removed
 import { supabase } from '@/lib/supabase';
 
@@ -175,6 +173,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           date: dateObj.toLocaleDateString(),
           timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           author: (user as any)?.email || 'Me',
+          authorId: user.id,
           subject: data.subject,
           content: data.content,
           editHistory: []

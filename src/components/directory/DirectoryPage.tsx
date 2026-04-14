@@ -143,8 +143,8 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
           : (usersData || []).filter(u => memberIds.includes(u.id));
 
         const mappedUsers = actualTeamUsers.map(u => {
-          let customRoleName = null;
-          let customRoleId = null;
+          let customRoleName: string | null = null;
+          let customRoleId: string | null = null;
           if (selectedTeam !== 'all_members') {
             const link = teamMembersLinkData.find(tm => tm.user_id === u.id);
             if (link?.role_id) {
@@ -469,7 +469,7 @@ export const DirectoryPage: React.FC<DirectoryPageProps> = ({ setBreadcrumbNode 
                 <div className="px-8 py-2 bg-muted/40 border-b border-border flex items-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider sticky top-16 z-0 backdrop-blur-md">
                   {roleGroup} ({groupedMembers[roleGroup].length})
                 </div>
-                {groupedMembers[roleGroup].map((member) => {
+                {groupedMembers[roleGroup].map((member: any) => {
                   const displayName = member.name === member.email ? "Namn ej angivet" : member.name;
                   const displayInitial = (displayName !== "Namn ej angivet" ? displayName.charAt(0) : member.email.charAt(0)).toUpperCase();
 

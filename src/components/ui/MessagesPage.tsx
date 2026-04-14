@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  Inbox, 
-  Send, 
-  Archive, 
-  Trash2, 
+import {
+  Inbox,
+  Send,
+  Archive,
+  Trash2,
   Search,
   Reply,
   Forward,
@@ -20,8 +20,6 @@ import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 
-// Mock messages removed
-
 interface MessagesPageProps {
   setBreadcrumbNode?: (node: React.ReactNode) => void;
 }
@@ -29,8 +27,8 @@ interface MessagesPageProps {
 export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode }) => {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
-  
-  const [filterType, setFilterType] = useState('inbox'); 
+
+  const [filterType, setFilterType] = useState('inbox');
   const [activeMessageId, setActiveMessageId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [composeData, setComposeData] = useState<{
@@ -57,7 +55,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   React.useEffect(() => {
     async function fetchData() {
       if (!workspaceId || !user) return;
-      
+
       const { data: teams } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
       if (teams) setDbTeams(teams);
 
@@ -71,14 +69,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
           if (m.target_team_id) {
             toName = teams?.find(t => t.id === m.target_team_id)?.name || 'Ett Team';
           } else if (m.receiver_id === user.id) {
-             toName = 'Du';
+            toName = 'Du';
           } else {
-             toName = (m.receiver as any)?.full_name || 'Okänd';
+            toName = (m.receiver as any)?.full_name || 'Okänd';
           }
 
           return {
             id: m.id,
-            folderId: m.sender_id === user.id ? 'sent' : 'inbox', // Simplify folder logic for now
+            sender_id: m.sender_id,
+            receiver_id: m.receiver_id,
+            target_team_id: m.target_team_id,
+            folderId: m.sender_id === user.id ? 'sent' : 'inbox',
             sender: { name: (m.sender as any)?.full_name || 'System', avatar: '' },
             to: toName,
             isTeamMessage: !!m.target_team_id,
@@ -87,7 +88,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             content: m.body,
             timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             date: new Date(m.created_at).toLocaleDateString(),
-            unread: !m.is_read // Using is_read from DB
+            unread: !m.is_read
           };
         }));
       }
@@ -105,9 +106,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
 
   // Sök och filtrera
   const filteredMessages = dbMessages.filter(m => {
-    const searchMatch = m.subject.toLowerCase().includes(searchQuery.toLowerCase()) || 
-     m.sender.name.toLowerCase().includes(searchQuery.toLowerCase());
-     
+    const searchMatch = m.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.sender.name.toLowerCase().includes(searchQuery.toLowerCase());
+
     let match = false;
     if (filterType === 'inbox') match = m.folderId === 'inbox';
     if (filterType === 'unread') match = m.folderId === 'inbox' && m.unread === true;
@@ -123,7 +124,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   // Pagination logic
   const itemsPerPage = 10;
   const totalPages = Math.max(1, Math.ceil(filteredMessages.length / itemsPerPage));
-  
+
   React.useEffect(() => {
     // Reset page if filtered results change
     setCurrentPage(1);
@@ -143,7 +144,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   React.useEffect(() => {
     if (setBreadcrumbNode) {
       const inboxBtn = (
-        <button 
+        <button
           onClick={() => {
             setFilterType('inbox');
             setIsComposing(false);
@@ -173,7 +174,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             {filterType !== 'inbox' && (
               <>
                 <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-                <button 
+                <button
                   onClick={() => setActiveMessageId(null)}
                   className="hover:text-foreground transition-colors flex items-center"
                 >
@@ -211,7 +212,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
 
   const handleSendMessage = async () => {
     if (!workspaceId || !user || !composeData.targetId || !composeData.content) return;
-    
+
     // Set is_read to true if we send to ourselves, otherwise false. But logic normally false.
     const payload = {
       workspace_id: workspaceId,
@@ -222,23 +223,24 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
     } as any;
 
     if (composeData.targetType === 'user') {
-       payload.receiver_id = composeData.targetId;
+      payload.receiver_id = composeData.targetId;
     } else {
-       payload.target_team_id = composeData.targetId;
+      payload.target_team_id = composeData.targetId;
     }
 
     const { error } = await supabase.from('messages').insert(payload);
     if (error) {
       alert("Fel vid sändning: " + error.message);
     } else {
-       setIsComposing(false);
+      setIsComposing(false);
     }
   };
 
   const handleReply = () => {
     if (activeMessage) {
       setComposeData({
-        to: activeMessage.sender.name,
+        targetType: activeMessage.isTeamMessage ? 'team' : 'user',
+        targetId: activeMessage.sender_id, // We need to ensure sender_id is accessible
         subject: activeMessage.subject.startsWith('Svar:') ? activeMessage.subject : `Svar: ${activeMessage.subject}`,
         content: '',
         quote: {
@@ -258,7 +260,8 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   const handleForward = () => {
     if (activeMessage) {
       setComposeData({
-        to: '',
+        targetType: 'user',
+        targetId: '',
         subject: activeMessage.subject.startsWith('VB:') ? activeMessage.subject : `VB: ${activeMessage.subject}`,
         content: '',
         quote: {
@@ -290,7 +293,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
   };
 
   const isAllSelected = filteredMessages.length > 0 && selectedMsgs.length === filteredMessages.length;
-  
+
   const toggleSelectAll = () => {
     if (isAllSelected) {
       setSelectedMsgs([]);
@@ -313,10 +316,10 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
       <div className="flex-1 flex flex-col h-full bg-background relative">
         {/* Top Header Controls */}
         <div className="h-16 px-8 flex items-center justify-between border-b border-border">
-          
+
           <div className="flex items-center gap-4">
             {/* Master Checkbox */}
-            <div 
+            <div
               className="w-8 shrink-0 flex items-center justify-center cursor-pointer group"
               onClick={toggleSelectAll}
             >
@@ -328,7 +331,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             <h2 className="text-foreground font-semibold flex items-center ml-2 mr-2">
               {getTitle()}
             </h2>
-            
+
             <MoreHorizontal className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
 
             {selectedMsgs.length > 0 && (
@@ -346,17 +349,17 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
           <div className="flex items-center gap-6">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input 
+              <Input
                 placeholder="Sök meddelanden..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
               />
             </div>
-            
+
             <div className="flex items-center gap-1 text-xs text-muted-foreground relative group">
-              <select 
-                value={filterType} 
+              <select
+                value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
                 className="bg-accent border border-border text-foreground font-medium hover:bg-secondary cursor-pointer rounded-md pl-3 pr-6 py-1.5 appearance-none focus:outline-none focus:border-primary/50 transition-colors"
                 style={{ WebkitAppearance: 'none' }}
@@ -371,14 +374,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             </div>
 
             <div className="flex items-center gap-2 text-muted-foreground">
-              <ChevronLeft 
-                 className={`w-4 h-4 transition-colors ${currentPage > 1 ? 'cursor-pointer hover:text-foreground' : 'opacity-30 cursor-not-allowed'}`} 
-                 onClick={() => currentPage > 1 && setCurrentPage(prev => prev - 1)}
+              <ChevronLeft
+                className={`w-4 h-4 transition-colors ${currentPage > 1 ? 'cursor-pointer hover:text-foreground' : 'opacity-30 cursor-not-allowed'}`}
+                onClick={() => currentPage > 1 && setCurrentPage(prev => prev - 1)}
               />
               <span className="text-xs font-medium">{currentPage} / {totalPages}</span>
-              <ChevronRight 
-                 className={`w-4 h-4 transition-colors ${currentPage < totalPages ? 'cursor-pointer hover:text-foreground' : 'opacity-30 cursor-not-allowed'}`} 
-                 onClick={() => currentPage < totalPages && setCurrentPage(prev => prev + 1)}
+              <ChevronRight
+                className={`w-4 h-4 transition-colors ${currentPage < totalPages ? 'cursor-pointer hover:text-foreground' : 'opacity-30 cursor-not-allowed'}`}
+                onClick={() => currentPage < totalPages && setCurrentPage(prev => prev + 1)}
               />
             </div>
           </div>
@@ -396,14 +399,14 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
               {currentMessages.map((msg) => {
                 const isSelected = selectedMsgs.includes(msg.id);
                 return (
-                  <div 
+                  <div
                     key={msg.id}
                     onClick={() => handleSelectMessage(msg.id)}
                     className={`group flex items-center px-6 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors ${isSelected ? 'bg-primary/5 hover:bg-primary/10' : ''}`}
                   >
-                    
+
                     {/* Checkbox */}
-                    <div 
+                    <div
                       className="w-10 shrink-0 flex items-center justify-start p-1"
                       onClick={(e) => toggleSelect(msg.id, e)}
                     >
@@ -433,7 +436,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
 
                     {/* Quick Actions (Hover) & Date */}
                     <div className="w-48 shrink-0 flex items-center justify-end">
-                      
+
                       <div className="hidden group-hover:flex items-center gap-4 mr-6 text-muted-foreground">
                         <Archive className="w-[18px] h-[18px] hover:text-foreground transition-colors" />
                         <Trash2 className="w-[18px] h-[18px] hover:text-rose-400 transition-colors" />
@@ -453,7 +456,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
 
         {/* Floating Action Button */}
         <div className="absolute bottom-8 right-8">
-          <Button 
+          <Button
             onClick={handleCompose}
             className="rounded-full pl-4 pr-5 h-12 bg-white text-black hover:bg-neutral-200 shadow-xl shadow-black/50 font-medium flex items-center gap-2 transition-transform hover:scale-105"
           >
@@ -473,18 +476,18 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
       <div className="flex-1 flex flex-col h-full bg-background relative">
         <div className="h-16 px-8 flex items-center justify-between border-b border-border bg-sidebar shadow-sm z-10 shrink-0">
           <div className="flex items-center gap-4 min-w-0 pr-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setActiveMessageId(null)}
               className="text-muted-foreground hover:text-foreground shrink-0"
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            
+
             <h2 className="text-foreground font-medium truncate text-base">{activeMessage.subject}</h2>
           </div>
-          
+
           <div className="flex items-center gap-2 shrink-0">
             <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground w-8 h-8">
               <Archive className="w-4 h-4" />
@@ -496,7 +499,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
         </div>
 
         <div className="flex-1 overflow-y-auto px-8 md:px-24 lg:px-48 py-10 scrollbar-dark">
-          
+
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <Avatar className="w-10 h-10 border border-border">
@@ -507,7 +510,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
               </Avatar>
               <div>
                 <div className="text-sm font-medium text-foreground flex items-center gap-2">
-                  {activeMessage.sender.name} 
+                  {activeMessage.sender.name}
                   <span className="text-[10px] text-muted-foreground font-normal">{`<${activeMessage.sender.name.toLowerCase().replace(' ', '.')}@yntra.se>`}</span>
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -515,7 +518,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <span className="text-xs text-muted-foreground">
                 {activeMessage.date} {activeMessage.timestamp}
@@ -552,9 +555,9 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
       <div className="flex-1 flex flex-col h-full bg-background relative">
         <div className="h-16 px-8 flex items-center justify-between border-b border-border">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setIsComposing(false)}
               className="text-muted-foreground hover:text-foreground"
             >
@@ -562,65 +565,65 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             </Button>
             <h2 className="text-foreground font-medium">Nytt Meddelande</h2>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => setIsComposing(false)}>
               Avbryt
             </Button>
-            <Button 
-               onClick={handleSendMessage}
-               disabled={!composeData.targetId || !composeData.content.trim()}
-               className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white pl-4 pr-5 rounded-full"
+            <Button
+              onClick={handleSendMessage}
+              disabled={!composeData.targetId || !composeData.content.trim()}
+              className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white pl-4 pr-5 rounded-full"
             >
               <Send className="w-3.5 h-3.5 mr-2" />
               Skicka
             </Button>
           </div>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto px-8 md:px-24 lg:px-48 py-8 scrollbar-dark flex flex-col gap-6">
           <div className="flex items-center border-b border-border pb-2 transition-colors focus-within:border-primary/50">
             <label className="text-xs font-medium text-muted-foreground w-16">Till</label>
             <select
-               value={composeData.targetType}
-               onChange={(e) => setComposeData({...composeData, targetType: e.target.value as any, targetId: ''})}
-               className="bg-transparent text-sm font-medium focus:outline-none"
+              value={composeData.targetType}
+              onChange={(e) => setComposeData({ ...composeData, targetType: e.target.value as any, targetId: '' })}
+              className="bg-transparent text-sm font-medium focus:outline-none"
             >
-               <option value="user" className="bg-card text-foreground">Person</option>
-               <option value="team" className="bg-card text-foreground">Hela Teamet</option>
+              <option value="user" className="bg-card text-foreground">Person</option>
+              <option value="team" className="bg-card text-foreground">Hela Teamet</option>
             </select>
             <div className="h-4 w-[1px] bg-border mx-3" />
             <select
               value={composeData.targetId}
-              onChange={(e) => setComposeData({...composeData, targetId: e.target.value})}
+              onChange={(e) => setComposeData({ ...composeData, targetId: e.target.value })}
               className="flex-1 bg-transparent border-none text-foreground text-sm focus-visible:ring-0 px-0 h-8 font-medium focus:outline-none"
             >
               <option value="" disabled className="bg-card text-foreground">Välj mottagare...</option>
               {composeData.targetType === 'user' ? (
-                 dbUsers.filter(u => u.id !== user?.id).map(u => (
-                    <option key={u.id} value={u.id} className="bg-card text-foreground">{u.full_name || u.email}</option>
-                 ))
+                dbUsers.filter(u => u.id !== user?.id).map(u => (
+                  <option key={u.id} value={u.id} className="bg-card text-foreground">{u.full_name || u.email}</option>
+                ))
               ) : (
-                 dbTeams.map(t => (
-                    <option key={t.id} value={t.id} className="bg-card text-foreground">{t.name}</option>
-                 ))
+                dbTeams.map(t => (
+                  <option key={t.id} value={t.id} className="bg-card text-foreground">{t.name}</option>
+                ))
               )}
             </select>
           </div>
           <div className="flex items-center border-b border-border pb-2 transition-colors focus-within:border-primary/50">
             <label className="text-xs font-medium text-muted-foreground w-16">Ämne</label>
-            <Input 
+            <Input
               placeholder=""
               value={composeData.subject}
-              onChange={(e) => setComposeData({...composeData, subject: e.target.value})}
+              onChange={(e) => setComposeData({ ...composeData, subject: e.target.value })}
               className="flex-1 bg-transparent border-none text-foreground text-sm focus-visible:ring-0 px-0 h-8 font-medium"
             />
           </div>
 
           <div className="flex-1 pt-4 pb-10 flex flex-col">
-            <textarea 
+            <textarea
               value={composeData.content}
-              onChange={(e) => setComposeData({...composeData, content: e.target.value})}
+              onChange={(e) => setComposeData({ ...composeData, content: e.target.value })}
               className="w-full bg-transparent border-none text-foreground text-sm leading-relaxed resize-none focus:outline-none placeholder:text-muted-foreground flex-1 min-h-[200px]"
               placeholder="Skriv ditt meddelande här..."
               autoFocus={!!composeData.targetId}
@@ -649,7 +652,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             )}
 
             <div className="mt-12 flex items-center">
-              <Button 
+              <Button
                 onClick={handleSendMessage}
                 disabled={!composeData.targetId || !composeData.content.trim()}
                 className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white px-8 font-medium"
@@ -665,12 +668,12 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
 
   if (isComposing) return renderComposePane();
   if (activeMessageId) return renderReadPane();
-  
+
   return renderList();
 };
 
 const PlusIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 5v14M5 12h14"/>
+    <path d="M12 5v14M5 12h14" />
   </svg>
 );
