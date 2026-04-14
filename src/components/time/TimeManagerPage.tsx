@@ -25,8 +25,10 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
   const [shifts, setShifts] = useState<any[]>([]);
 
-  // @ts-ignore
   const [dbTeams, setDbTeams] = useState<any[]>([]);
+  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([]);
+  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
   const [selectedContext, setSelectedContext] = useState<{ type: 'employee' | 'team' | null, id: string | null }>({ type: null, id: null });
@@ -39,56 +41,108 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
 
   useEffect(() => {
     async function fetchData() {
-      if (!workspaceId) return;
-      // Fetch teams
-      const { data: teamsData } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
-      const fetchedTeams = teamsData || [];
+      if (!workspaceId && activeRole !== 'platform_admin') return;
 
-      const { data } = await supabase.from('time_reports').select('*, user:users(*)').eq('workspace_id', workspaceId);
+      setLoading(true);
+      let reportsData: any[] = [];
+      let teamsData: any[] = [];
+      let workspacesData: any[] = [];
+      let usersData: any[] = [];
 
-      if (data) {
-        const mapped = data.map(dbShift => {
-          const teamName = fetchedTeams.find(t => t.id === dbShift.team_id)?.name || 'Odelat team';
-          const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user;
-          const employeeName = uData ? (uData.full_name || uData.email || 'Okänd Agent') : 'Okänd Agent';
-          return {
-            id: dbShift.id,
-            employeeId: dbShift.user_id,
-            employee: employeeName,
-            role: 'Assistent',
-            teamId: dbShift.team_id,
-            team: teamName,
-            date: new Date(dbShift.date).toLocaleDateString(),
-            start: dbShift.hours.toString(), // Mock mapping for now 
-            end: dbShift.hours.toString(),
-            duration: dbShift.hours,
-            break: 0,
-            status: dbShift.status,
-            location: '',
-            note: ''
-          };
-        });
-        setShifts(mapped);
+      // 1. Fetch Workspaces (Only for Platform Admin)
+      if (activeRole === 'platform_admin') {
+        const { data: ws } = await supabase.from('workspaces').select('*');
+        workspacesData = ws || [];
+        setDbWorkspaces(workspacesData);
       }
+
+      // 2. Fetch Teams
+      if (activeRole === 'platform_admin') {
+        const { data: t } = await supabase.from('teams').select('*');
+        teamsData = t || [];
+      } else {
+        const { data: t } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
+        teamsData = t || [];
+      }
+      setDbTeams(teamsData);
+
+      // 3. Fetch Users in Workspace
+      if (activeRole === 'platform_admin') {
+        const { data: u } = await supabase.from('users').select('*');
+        usersData = u || [];
+      } else {
+        const { data: u } = await supabase.from('users').select('*').eq('workspace_id', workspaceId);
+        usersData = u || [];
+      }
+      setDbUsers(usersData);
+
+      // 4. Fetch Time Reports
+      let query = supabase.from('time_reports').select('*, user:users(*)');
+
+      if (activeRole === 'platform_admin') {
+        // Fetch all
+      } else if (activeRole === 'admin') {
+        query = query.eq('workspace_id', workspaceId);
+      } else {
+        // Assistant: Only their own
+        query = query.eq('user_id', user?.id);
+      }
+
+      const { data: r } = await query;
+      reportsData = r || [];
+
+      // 5. Map to UI State
+      const mapped = reportsData.map(dbShift => {
+        const team = teamsData.find(t => t.id === dbShift.team_id);
+        const teamName = team?.name || 'Odelat team';
+        const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user;
+        const employeeName = uData ? (uData.full_name || uData.email || 'Okänd Agent') : 'Okänd Agent';
+
+        return {
+          id: dbShift.id,
+          employeeId: dbShift.user_id,
+          employee: employeeName,
+          role: uData?.role === 'admin' ? 'Administratör' : 'Assistent',
+          teamId: dbShift.team_id,
+          team: teamName,
+          workspaceId: dbShift.workspace_id,
+          date: new Date(dbShift.date).toLocaleDateString('sv-SE'),
+          start: dbShift.start_time || '08:00',
+          end: dbShift.end_time || '17:00',
+          duration: dbShift.hours || 0,
+          break: 0,
+          status: dbShift.status,
+          location: '',
+          note: dbShift.note || ''
+        };
+      });
+      setShifts(mapped);
+      setLoading(false);
     }
+
     fetchData();
 
     // Auto-update system för tidsrapporter
     const channel = supabase.channel('timemanager-reports')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_reports' }, () => { fetchData(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { fetchData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces' }, () => { fetchData(); })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId]);
+  }, [workspaceId, activeRole, user?.id]);
 
   // Initial Level Setup
   useEffect(() => {
-    setCurrentLevel('team_overview');
+    if (activeRole === 'platform_admin') {
+      setCurrentLevel('platform_overview');
+    } else {
+      setCurrentLevel('team_overview');
+    }
     setSelectedContext({ type: null, id: null });
-  }, []);
+  }, [activeRole]);
 
   // Breadcrumbs Logic
   useEffect(() => {
@@ -107,7 +161,13 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
         </React.Fragment>
       );
 
-      parts.push(renderPart('Verksamhetsöversikt', () => { setCurrentLevel('team_overview'); }, currentLevel === 'team_overview'));
+      if (activeRole === 'platform_admin') {
+        parts.push(renderPart('Organisationer', () => { setCurrentLevel('platform_overview'); }, currentLevel === 'platform_overview'));
+      }
+
+      if (currentLevel !== 'platform_overview') {
+        parts.push(renderPart('Verksamhetsöversikt', () => { setCurrentLevel('team_overview'); }, currentLevel === 'team_overview'));
+      }
 
       if (currentLevel === 'shift_list') {
         const name = selectedContext.type === 'employee' ?
@@ -123,7 +183,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
         </div>
       );
     }
-  }, [currentLevel, shifts, selectedContext, setBreadcrumbNode]);
+  }, [currentLevel, shifts, selectedContext, setBreadcrumbNode, activeRole]);
 
   // View Handlers
   const openEmployeeShifts = (empId: string) => {
@@ -152,42 +212,55 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
           </h2>
         </div>
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {[{ id: workspaceId, name: 'Nuvarande Organisation', type: 'Assistance', totalHours: shifts.reduce((acc, s) => acc + s.duration, 0), pendingAttest: shifts.filter(s => s.status === 'pending_attest').length }].map((ws) => (
-            <div
-              key={ws.id}
-              onClick={() => { }}
-              className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-            >
-              <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
-                <Building2 className="w-4 h-4" />
-              </div>
-
-              <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                {ws.name}
-                <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                  {ws.type}
-                </div>
-              </div>
-
-              <div className="flex-1 min-w-0 pr-4"></div>
-
-              <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                <span className="text-[15px] font-bold text-foreground">{ws.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
-              </div>
-
-              <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                {ws.pendingAttest > 0 ? (
-                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">{ws.pendingAttest} oattesterat</span>
-                ) : (
-                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
-                )}
-              </div>
-
-              <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </div>
+          {dbWorkspaces.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
+              <Building2 className="w-12 h-12 mb-4 opacity-20" />
+              <p className="text-sm">Inga organisationer hittades</p>
             </div>
-          ))}
+          ) : (
+            dbWorkspaces.map((ws) => {
+              const wsShifts = shifts.filter(s => s.workspaceId === ws.id);
+              const totalHours = wsShifts.reduce((acc, s) => acc + s.duration, 0);
+              const pendingAttest = wsShifts.filter(s => s.status === 'pending_attest').length;
+
+              return (
+                <div
+                  key={ws.id}
+                  onClick={() => { }}
+                  className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+
+                  <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                    {ws.name}
+                    <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                      {ws.type}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-w-0 pr-4"></div>
+
+                  <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
+                    <span className="text-[15px] font-bold text-foreground">{totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                  </div>
+
+                  <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
+                    {pendingAttest > 0 ? (
+                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">{pendingAttest} oattesterat</span>
+                    ) : (
+                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
+                    )}
+                  </div>
+
+                  <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                    <ChevronRight className="w-5 h-5" />
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     );
@@ -203,48 +276,59 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
           </h2>
         </div>
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {Array.from(new Set(shifts.map(s => s.employeeId))).map(empId => {
-            const eSh = shifts.filter(s => s.employeeId === empId);
-            const statusStr = eSh.some(s => s.status === 'pending_attest') ? 'pending' : 'approved';
-            return { id: empId, name: eSh[0].employee, role: eSh[0].role, totalHours: eSh.reduce((a, b) => a + b.duration, 0), status: statusStr };
-          }).map((emp) => (
-            <div
-              key={emp.id}
-              onClick={() => openEmployeeShifts(emp.id)}
-              className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-            >
-              <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-foreground font-bold mr-4 shrink-0 transition-colors">
-                {emp.name.charAt(0)}
-              </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : dbUsers.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
+              <User className="w-12 h-12 mb-4 opacity-20" />
+              <p className="text-sm">Inga anställda hittades i teamet</p>
+            </div>
+          ) : (
+            dbUsers.map(u => {
+              const eSh = shifts.filter(s => s.employeeId === u.id);
+              const statusStr = eSh.length === 0 ? 'not_submitted' : (eSh.some(s => s.status === 'pending_attest') ? 'pending' : 'approved');
+              return { id: u.id, name: u.full_name || u.email || 'Okänd Agent', role: u.role === 'admin' ? 'Administratör' : 'Assistent', totalHours: eSh.reduce((a, b) => a + b.duration, 0), status: statusStr };
+            }).map((emp) => (
+              <div
+                key={emp.id}
+                onClick={() => openEmployeeShifts(emp.id)}
+                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+              >
+                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-foreground font-bold mr-4 shrink-0 transition-colors">
+                  {emp.name.charAt(0)}
+                </div>
 
-              <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                {emp.name}
-                <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                  {emp.role}
+                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                  {emp.name}
+                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                    {emp.role}
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0 pr-4"></div>
+
+                <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
+                  <span className="text-[15px] font-bold text-foreground">{emp.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                </div>
+
+                <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
+                  {emp.status === 'pending' ? (
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Väntar attest</span>
+                  ) : emp.status === 'approved' ? (
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
+                  ) : (
+                    <span className="bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded text-[10px] font-medium">Ej inlämnad</span>
+                  )}
+                </div>
+
+                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                  <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
-
-              <div className="flex-1 min-w-0 pr-4"></div>
-
-              <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                <span className="text-[15px] font-bold text-foreground">{emp.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
-              </div>
-
-              <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                {emp.status === 'pending' ? (
-                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Väntar attest</span>
-                ) : emp.status === 'approved' ? (
-                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
-                ) : (
-                  <span className="bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded text-[10px] font-medium">Ej inlämnad</span>
-                )}
-              </div>
-
-              <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     );
@@ -260,45 +344,52 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
           </h2>
         </div>
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {Array.from(new Set(shifts.map(s => s.team))).map(teamName => {
-            const tSh = shifts.filter(s => s.team === teamName);
-            return { id: teamName, name: teamName, totalHours: tSh.reduce((a, b) => a + b.duration, 0), status: tSh.some(s => s.status === 'pending_attest') ? 'pending_assistant' : 'approved' };
-          }).map(team => (
-            <div
-              key={team.id}
-              onClick={() => openTeamShifts(team.name)}
-              className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-            >
-              <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
-                {team.name.charAt(0)}
-              </div>
+          {dbTeams.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
+              <Calendar className="w-12 h-12 mb-4 opacity-20" />
+              <p className="text-sm">Inga team eller uppdrag hittades</p>
+            </div>
+          ) : (
+            dbTeams.filter(t => activeRole === 'platform_admin' || t.workspace_id === workspaceId).map(team => {
+              const tSh = shifts.filter(s => s.teamId === team.id);
+              return { id: team.id, name: team.name, totalHours: tSh.reduce((a, b) => a + b.duration, 0), status: tSh.some(s => s.status === 'pending_attest') ? 'pending_assistant' : 'approved' };
+            }).map(team => (
+              <div
+                key={team.id}
+                onClick={() => openTeamShifts(team.name)}
+                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+              >
+                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
+                  {team.name.charAt(0)}
+                </div>
 
-              <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                {team.name}
-                <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                  Team ID: {team.id}
+                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
+                  {team.name}
+                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                    Team ID: {team.id}
+                  </div>
+                </div>
+
+                <div className="flex-1 min-w-0 pr-4"></div>
+
+                <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
+                  <span className="text-[15px] font-bold text-foreground">{team.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                </div>
+
+                <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
+                  {team.status === 'pending_assistant' ? (
+                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Agerande krävs</span>
+                  ) : (
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt godkänt</span>
+                  )}
+                </div>
+
+                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                  <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
-
-              <div className="flex-1 min-w-0 pr-4"></div>
-
-              <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                <span className="text-[15px] font-bold text-foreground">{team.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
-              </div>
-
-              <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                {team.status === 'pending_assistant' ? (
-                  <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Agerande krävs</span>
-                ) : (
-                  <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt godkänt</span>
-                )}
-              </div>
-
-              <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
-                <ChevronRight className="w-5 h-5" />
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     );
@@ -347,6 +438,19 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       const { error } = await supabase.from('time_reports').update({ status: 'approved' }).in('id', selectedShifts);
       if (error) {
         alert("Kunde inte godkänna rapporter: " + error.message);
+        return;
+      }
+
+      setSelectedShifts([]);
+    };
+
+    const handleDelete = async () => {
+      if (selectedShifts.length === 0) return;
+      if (!confirm(`Är du säker på att du vill radera ${selectedShifts.length} rapporter?`)) return;
+
+      const { error } = await supabase.from('time_reports').delete().in('id', selectedShifts);
+      if (error) {
+        alert("Kunde inte radera rapporter: " + error.message);
         return;
       }
 
@@ -454,19 +558,24 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
                     className="bg-transparent text-foreground font-semibold text-sm appearance-none cursor-pointer focus:outline-none pr-4"
                   >
                     <option value="all" className="bg-card text-foreground">Alla Rapporter</option>
-                    <option value="pending_attest" className="bg-card text-foreground">Väntar ({filteredShifts.length})</option>
-                    <option value="approved" className="bg-card text-foreground">Godkända ({filteredShifts.length})</option>
+                    <option value="pending_attest" className="bg-card text-foreground">Väntar ({filteredShifts.filter(s => s.status === 'pending_attest').length})</option>
+                    <option value="approved" className="bg-card text-foreground">Godkända ({filteredShifts.filter(s => s.status === 'approved').length})</option>
                   </select>
                 </div>
 
                 {selectedShifts.length > 0 && (
                   <div className="flex items-center gap-2 border-l border-border ml-2 pl-4">
-                    {activeRole !== 'assistant' && (
+                    {hasApprovePermission && (
                       <Button onClick={handleApprove} size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-foreground h-7 text-xs px-3">
                         <FileCheck className="w-3.5 h-3.5 mr-1" /> Godkänn ({selectedShifts.length})
                       </Button>
                     )}
-                    <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground hover:text-rose-400">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-7 h-7 text-muted-foreground hover:text-rose-400"
+                      onClick={handleDelete}
+                    >
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -546,6 +655,31 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       </div>
     );
   };
+
+  const [hasApprovePermission, setHasApprovePermission] = useState(false);
+
+  useEffect(() => {
+    async function checkPerms() {
+      if (activeRole === 'admin' || activeRole === 'platform_admin') {
+        setHasApprovePermission(true);
+        return;
+      }
+
+      const { data: memberships } = await supabase.from('team_members').select('role_id').eq('user_id', user?.id);
+      if (memberships) {
+        const roleIds = memberships.map(m => m.role_id).filter(Boolean);
+        if (roleIds.length > 0) {
+          const { data: roles } = await supabase.from('workspace_roles').select('permissions').in('id', roleIds);
+          if (roles?.some(r => r.permissions?.can_approve_time_reports)) {
+            setHasApprovePermission(true);
+            return;
+          }
+        }
+      }
+      setHasApprovePermission(false);
+    }
+    checkPerms();
+  }, [activeRole, user?.id]);
 
   return (
     <div className="h-full flex flex-col bg-background relative">
