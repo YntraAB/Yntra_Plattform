@@ -1,10 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Check, ChevronLeft, ChevronRight, Search, Trash2,
-  FileCheck, User, Calendar, Building2, CheckCircle2
+  FileCheck, User, Calendar, Building2, CheckCircle2,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,9 +32,48 @@ import { useAuth } from '@/hooks/useAuth';
 type DevRole = 'platform_admin' | 'admin' | 'assistant';
 type NavLevel = 'platform_overview' | 'team_overview' | 'assistant_teams' | 'shift_list';
 
+interface TimeReportUI {
+  id: string;
+  employeeId: string;
+  employee: string;
+  role: string;
+  teamId: string | null;
+  team: string;
+  workspaceId: string;
+  date: string;
+  start: string;
+  end: string;
+  duration: number;
+  break: number;
+  status: string;
+  location: string;
+  note: string;
+}
+
 interface TimeManagerPageProps {
   setBreadcrumbNode?: (node: React.ReactNode) => void;
 }
+
+const StatusBadge = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'pending_attest':
+      return <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 font-medium">Väntar attest</Badge>;
+    case 'approved':
+      return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Godkänd</Badge>;
+    case 'not_submitted':
+      return <Badge variant="secondary" className="text-muted-foreground font-medium">Ej inlämnad</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+};
+
+const EmptyState = ({ icon: Icon, title, description }: { icon: any, title: string, description: string }) => (
+  <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12 animate-in fade-in zoom-in duration-300">
+    <Icon className="w-12 h-12 mb-4 opacity-20" />
+    <h3 className="text-lg font-medium text-foreground">{title}</h3>
+    <p className="text-sm max-w-[250px] text-center mt-1">{description}</p>
+  </div>
+);
 
 export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   setBreadcrumbNode
@@ -23,7 +82,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   const { user } = useAuth();
 
   const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
-  const [shifts, setShifts] = useState<any[]>([]);
+  const [shifts, setShifts] = useState<TimeReportUI[]>([]);
 
   const [dbTeams, setDbTeams] = useState<any[]>([]);
   const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([]);
@@ -33,96 +92,89 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
   const [selectedContext, setSelectedContext] = useState<{ type: 'employee' | 'team' | null, id: string | null }>({ type: null, id: null });
 
-  const [filterType, setFilterType] = useState('pending_attest');
+  const [filterType, setFilterType] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedShifts, setSelectedShifts] = useState<string[]>([]);
   const [listMode, setListMode] = useState<'current' | 'history'>('current');
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+
+  const [hasApprovePermission, setHasApprovePermission] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
       if (!workspaceId && activeRole !== 'platform_admin') return;
 
       setLoading(true);
-      let reportsData: any[] = [];
-      let teamsData: any[] = [];
-      let workspacesData: any[] = [];
-      let usersData: any[] = [];
+      try {
+        let reportsData: any[] = [];
+        let teamsData: any[] = [];
+        let workspacesData: any[] = [];
+        let usersData: any[] = [];
 
-      // 1. Fetch Workspaces (Only for Platform Admin)
-      if (activeRole === 'platform_admin') {
-        const { data: ws } = await supabase.from('workspaces').select('*');
-        workspacesData = ws || [];
+        const promises = [];
+
+        if (activeRole === 'platform_admin') {
+          promises.push(supabase.from('workspaces').select('*').then(({ data }) => workspacesData = data || []));
+          promises.push(supabase.from('teams').select('*').then(({ data }) => teamsData = data || []));
+          promises.push(supabase.from('users').select('*').then(({ data }) => usersData = data || []));
+        } else {
+          promises.push(supabase.from('teams').select('*').eq('workspace_id', workspaceId).then(({ data }) => teamsData = data || []));
+          promises.push(supabase.from('users').select('*').eq('workspace_id', workspaceId).then(({ data }) => usersData = data || []));
+        }
+
+        await Promise.all(promises);
         setDbWorkspaces(workspacesData);
+        setDbTeams(teamsData);
+        setDbUsers(usersData);
+
+        let query = supabase.from('time_reports').select('*, user:users(*)');
+
+        if (activeRole === 'admin') {
+          query = query.eq('workspace_id', workspaceId);
+        } else if (activeRole === 'assistant') {
+          query = query.eq('user_id', user?.id);
+        }
+
+        const { data: r, error } = await query;
+        if (error) throw error;
+        reportsData = r || [];
+
+        const mapped: TimeReportUI[] = reportsData.map(dbShift => {
+          const team = teamsData.find(t => t.id === dbShift.team_id);
+          const teamName = team?.name || 'Odelat team';
+          const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user;
+          const employeeName = uData ? (uData.full_name || uData.email || 'Okänd Agent') : 'Okänd Agent';
+
+          return {
+            id: dbShift.id,
+            employeeId: dbShift.user_id,
+            employee: employeeName,
+            role: uData?.role === 'admin' ? 'Administratör' : 'Assistent',
+            teamId: dbShift.team_id,
+            team: teamName,
+            workspaceId: dbShift.workspace_id,
+            date: new Date(dbShift.date).toLocaleDateString('sv-SE'),
+            start: dbShift.start_time || '08:00',
+            end: dbShift.end_time || '17:00',
+            duration: dbShift.hours || 0,
+            break: 0,
+            status: dbShift.status,
+            location: '',
+            note: dbShift.note || ''
+          };
+        });
+        setShifts(mapped);
+      } catch (error: any) {
+        console.error('Error fetching data:', error);
+        toast.error('Kunde inte hämta data: ' + error.message);
+      } finally {
+        setLoading(false);
       }
-
-      // 2. Fetch Teams
-      if (activeRole === 'platform_admin') {
-        const { data: t } = await supabase.from('teams').select('*');
-        teamsData = t || [];
-      } else {
-        const { data: t } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
-        teamsData = t || [];
-      }
-      setDbTeams(teamsData);
-
-      // 3. Fetch Users in Workspace
-      if (activeRole === 'platform_admin') {
-        const { data: u } = await supabase.from('users').select('*');
-        usersData = u || [];
-      } else {
-        const { data: u } = await supabase.from('users').select('*').eq('workspace_id', workspaceId);
-        usersData = u || [];
-      }
-      setDbUsers(usersData);
-
-      // 4. Fetch Time Reports
-      let query = supabase.from('time_reports').select('*, user:users(*)');
-
-      if (activeRole === 'platform_admin') {
-        // Fetch all
-      } else if (activeRole === 'admin') {
-        query = query.eq('workspace_id', workspaceId);
-      } else {
-        // Assistant: Only their own
-        query = query.eq('user_id', user?.id);
-      }
-
-      const { data: r } = await query;
-      reportsData = r || [];
-
-      // 5. Map to UI State
-      const mapped = reportsData.map(dbShift => {
-        const team = teamsData.find(t => t.id === dbShift.team_id);
-        const teamName = team?.name || 'Odelat team';
-        const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user;
-        const employeeName = uData ? (uData.full_name || uData.email || 'Okänd Agent') : 'Okänd Agent';
-
-        return {
-          id: dbShift.id,
-          employeeId: dbShift.user_id,
-          employee: employeeName,
-          role: uData?.role === 'admin' ? 'Administratör' : 'Assistent',
-          teamId: dbShift.team_id,
-          team: teamName,
-          workspaceId: dbShift.workspace_id,
-          date: new Date(dbShift.date).toLocaleDateString('sv-SE'),
-          start: dbShift.start_time || '08:00',
-          end: dbShift.end_time || '17:00',
-          duration: dbShift.hours || 0,
-          break: 0,
-          status: dbShift.status,
-          location: '',
-          note: dbShift.note || ''
-        };
-      });
-      setShifts(mapped);
-      setLoading(false);
     }
 
     fetchData();
 
-    // Auto-update system för tidsrapporter
     const channel = supabase.channel('timemanager-reports')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_reports' }, () => { fetchData(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => { fetchData(); })
@@ -134,7 +186,6 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     };
   }, [workspaceId, activeRole, user?.id]);
 
-  // Initial Level Setup
   useEffect(() => {
     if (activeRole === 'platform_admin') {
       setCurrentLevel('platform_overview');
@@ -144,16 +195,15 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     setSelectedContext({ type: null, id: null });
   }, [activeRole]);
 
-  // Breadcrumbs Logic
   useEffect(() => {
     if (setBreadcrumbNode) {
       const parts: React.ReactNode[] = [];
       const renderPart = (label: string, onClick?: () => void, isLast?: boolean) => (
         <React.Fragment key={label}>
-          {parts.length > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />}
+          {parts.length > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 mx-1.5" />}
           <button
             onClick={onClick}
-            className={`flex items-center transition-colors ${isLast ? 'text-foreground font-medium cursor-default' : 'hover:text-foreground cursor-pointer text-muted-foreground'}`}
+            className={`flex items-center text-sm transition-all duration-200 ${isLast ? 'text-foreground font-semibold cursor-default' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
             disabled={isLast}
           >
             {label}
@@ -178,7 +228,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       }
 
       setBreadcrumbNode(
-        <div className="flex items-center animate-in fade-in slide-in-from-left-2 duration-200">
+        <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-300">
           {parts}
         </div>
       );
@@ -202,21 +252,25 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     setListMode('current');
   };
 
-  // 1. Platform Overview (List Layout)
+  // Platform Overview
   const renderPlatformOverview = () => {
     return (
-      <div className="flex-1 flex flex-col h-full bg-background relative">
-        <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium text-base flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-primary" /> Organisationer
+      <div className="flex-1 flex flex-col h-full bg-background relative animate-in fade-in slide-in-from-bottom-2 duration-400">
+        <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 shrink-0">
+          <h2 className="text-foreground font-semibold text-base flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <Building2 className="w-4 h-4 text-primary" />
+            </div>
+            Organisationer
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+        <div className="flex-1 overflow-y-auto w-full scrollbar-none">
           {dbWorkspaces.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-              <Building2 className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Inga organisationer hittades</p>
-            </div>
+            <EmptyState
+              icon={Building2}
+              title="Inga organisationer"
+              description="Det finns inga registrerade organisationer i systemet just nu."
+            />
           ) : (
             dbWorkspaces.map((ws) => {
               const wsShifts = shifts.filter(s => s.workspaceId === ws.id);
@@ -227,34 +281,42 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
                 <div
                   key={ws.id}
                   onClick={() => { }}
-                  className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                  className="group flex items-center px-8 py-4 border-b border-border/40 hover:bg-muted/50 cursor-pointer transition-all duration-200"
                 >
-                  <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
-                    <Building2 className="w-4 h-4" />
+                  <div className="w-11 h-11 rounded-lg bg-secondary/80 flex items-center justify-center text-primary font-bold mr-5 shrink-0 group-hover:bg-primary/10 transition-colors">
+                    <Building2 className="w-5 h-5" />
                   </div>
 
-                  <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                    {ws.name}
-                    <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                      {ws.type}
+                  <div className="w-64 md:w-80 shrink-0 pr-4">
+                    <div className="text-foreground font-semibold text-[15px] group-hover:text-primary transition-colors">{ws.name}</div>
+                    <div className="text-[11px] text-muted-foreground/80 font-medium uppercase tracking-widest mt-0.5">
+                      {ws.type || 'Företag'}
                     </div>
                   </div>
 
                   <div className="flex-1 min-w-0 pr-4"></div>
 
                   <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                    <span className="text-[15px] font-bold text-foreground">{totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-lg font-bold text-foreground">{totalHours}</span>
+                      <span className="text-[11px] text-muted-foreground font-medium uppercase">h</span>
+                    </div>
+                    <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-tighter">Totalt klara</span>
                   </div>
 
-                  <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
+                  <div className="w-40 shrink-0 pr-4 flex items-center justify-end">
                     {pendingAttest > 0 ? (
-                      <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">{pendingAttest} oattesterat</span>
+                      <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 px-2.5 py-1 text-[10px] font-bold">
+                        {pendingAttest} OATTESTERAT
+                      </Badge>
                     ) : (
-                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 px-2.5 py-1 text-[10px] font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> ALLT KLART
+                      </Badge>
                     )}
                   </div>
 
-                  <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                  <div className="w-8 shrink-0 flex items-center justify-end text-muted-foreground/30 group-hover:text-foreground group-hover:translate-x-1 transition-all">
                     <ChevronRight className="w-5 h-5" />
                   </div>
                 </div>
@@ -266,43 +328,53 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     );
   };
 
-  // 2. Admin Team Overview (List Layout)
+  // Admin Team Overview
   const renderTeamOverview = () => {
     return (
-      <div className="flex-1 flex flex-col h-full bg-background relative">
-        <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium text-base flex items-center gap-2">
-            <User className="w-4 h-4 text-primary" /> Anställda i teamet
+      <div className="flex-1 flex flex-col h-full bg-background relative animate-in fade-in slide-in-from-bottom-2 duration-400">
+        <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 shrink-0">
+          <h2 className="text-foreground font-semibold text-base flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <User className="w-4 h-4 text-primary" />
+            </div>
+            Teammedlemmar
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+        <div className="flex-1 overflow-y-auto w-full scrollbar-none">
           {loading ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex items-center justify-center h-full">
+              <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
             </div>
           ) : dbUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-              <User className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Inga anställda hittades i teamet</p>
-            </div>
+            <EmptyState
+              icon={User}
+              title="Inga teammedlemmar"
+              description="Det finns inga anställda registrerade i detta team."
+            />
           ) : (
             dbUsers.map(u => {
               const eSh = shifts.filter(s => s.employeeId === u.id);
-              const statusStr = eSh.length === 0 ? 'not_submitted' : (eSh.some(s => s.status === 'pending_attest') ? 'pending' : 'approved');
-              return { id: u.id, name: u.full_name || u.email || 'Okänd Agent', role: u.role === 'admin' ? 'Administratör' : 'Assistent', totalHours: eSh.reduce((a, b) => a + b.duration, 0), status: statusStr };
+              const statusStr = eSh.length === 0 ? 'not_submitted' : (eSh.some(s => s.status === 'pending_attest') ? 'pending_attest' : 'approved');
+              return {
+                id: u.id,
+                name: u.full_name || u.email || 'Okänd Agent',
+                role: u.role === 'admin' ? 'Administratör' : 'Assistent',
+                totalHours: eSh.reduce((a, b) => a + b.duration, 0),
+                status: statusStr
+              };
             }).map((emp) => (
               <div
                 key={emp.id}
                 onClick={() => openEmployeeShifts(emp.id)}
-                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                className="group flex items-center px-8 py-4 border-b border-border/40 hover:bg-muted/50 cursor-pointer transition-all duration-200"
               >
-                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-foreground font-bold mr-4 shrink-0 transition-colors">
+                <div className="w-11 h-11 rounded-lg bg-secondary/80 flex items-center justify-center text-foreground font-bold mr-5 shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                   {emp.name.charAt(0)}
                 </div>
 
-                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                  {emp.name}
-                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                <div className="w-64 md:w-80 shrink-0 pr-4">
+                  <div className="text-foreground font-semibold text-[15px] group-hover:text-primary transition-colors">{emp.name}</div>
+                  <div className="text-[11px] text-muted-foreground/80 font-medium uppercase tracking-widest mt-0.5">
                     {emp.role}
                   </div>
                 </div>
@@ -310,20 +382,18 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
                 <div className="flex-1 min-w-0 pr-4"></div>
 
                 <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                  <span className="text-[15px] font-bold text-foreground">{emp.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold text-foreground">{emp.totalHours}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium uppercase">h</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-tighter">Rapporterat</span>
                 </div>
 
-                <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                  {emp.status === 'pending' ? (
-                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Väntar attest</span>
-                  ) : emp.status === 'approved' ? (
-                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt klart</span>
-                  ) : (
-                    <span className="bg-muted border border-border text-muted-foreground px-2 py-0.5 rounded text-[10px] font-medium">Ej inlämnad</span>
-                  )}
+                <div className="w-40 shrink-0 pr-4 flex items-center justify-end">
+                  <StatusBadge status={emp.status} />
                 </div>
 
-                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                <div className="w-8 shrink-0 flex items-center justify-end text-muted-foreground/30 group-hover:text-foreground group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
@@ -334,57 +404,66 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     );
   };
 
-  // 3. Assistant Teams (List Layout)
+  // Assistant Teams
   const renderAssistantTeamsOverview = () => {
     return (
-      <div className="flex-1 flex flex-col h-full bg-background relative">
-        <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium text-base flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-primary" /> Mina Teams / Uppdrag
+      <div className="flex-1 flex flex-col h-full bg-background relative animate-in fade-in slide-in-from-bottom-2 duration-400">
+        <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 shrink-0">
+          <h2 className="text-foreground font-semibold text-base flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-primary/10">
+              <Calendar className="w-4 h-4 text-primary" />
+            </div>
+            Mina Team / Uppdrag
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+        <div className="flex-1 overflow-y-auto w-full scrollbar-none">
           {dbTeams.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-              <Calendar className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Inga team eller uppdrag hittades</p>
-            </div>
+            <EmptyState
+              icon={Calendar}
+              title="Inga team"
+              description="Du har inte blivit tilldelad några team eller uppdrag ännu."
+            />
           ) : (
             dbTeams.filter(t => activeRole === 'platform_admin' || t.workspace_id === workspaceId).map(team => {
               const tSh = shifts.filter(s => s.teamId === team.id);
-              return { id: team.id, name: team.name, totalHours: tSh.reduce((a, b) => a + b.duration, 0), status: tSh.some(s => s.status === 'pending_attest') ? 'pending_assistant' : 'approved' };
+              return {
+                id: team.id,
+                name: team.name,
+                totalHours: tSh.reduce((a, b) => a + b.duration, 0),
+                status: tSh.some(s => s.status === 'pending_attest') ? 'pending_attest' : 'approved'
+              };
             }).map(team => (
               <div
                 key={team.id}
                 onClick={() => openTeamShifts(team.name)}
-                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
+                className="group flex items-center px-8 py-4 border-b border-border/40 hover:bg-muted/50 cursor-pointer transition-all duration-200"
               >
-                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
+                <div className="w-11 h-11 rounded-lg bg-secondary/80 flex items-center justify-center text-primary font-bold mr-5 shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
                   {team.name.charAt(0)}
                 </div>
 
-                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                  {team.name}
-                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
-                    Team ID: {team.id}
+                <div className="w-64 md:w-80 shrink-0 pr-4">
+                  <div className="text-foreground font-semibold text-[15px] group-hover:text-primary transition-colors">{team.name}</div>
+                  <div className="text-[11px] text-muted-foreground/80 font-medium uppercase tracking-widest mt-0.5">
+                    ID: {team.id.substring(0, 8)}...
                   </div>
                 </div>
 
                 <div className="flex-1 min-w-0 pr-4"></div>
 
                 <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
-                  <span className="text-[15px] font-bold text-foreground">{team.totalHours} <span className="text-[11px] text-muted-foreground font-normal">h klara</span></span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-lg font-bold text-foreground">{team.totalHours}</span>
+                    <span className="text-[11px] text-muted-foreground font-medium uppercase">h</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground/60 font-medium uppercase tracking-tighter">Total tid</span>
                 </div>
 
-                <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                  {team.status === 'pending_assistant' ? (
-                    <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Agerande krävs</span>
-                  ) : (
-                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Allt godkänt</span>
-                  )}
+                <div className="w-40 shrink-0 pr-4 flex items-center justify-end">
+                  <StatusBadge status={team.status} />
                 </div>
 
-                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                <div className="w-8 shrink-0 flex items-center justify-end text-muted-foreground/30 group-hover:text-foreground group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
@@ -395,7 +474,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     );
   };
 
-  // 4. Shift List
+  // Shift List
   const renderShiftSystem = () => {
     let contextShifts = shifts;
     if (selectedContext.type === 'employee') {
@@ -404,18 +483,19 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       contextShifts = shifts.filter(s => s.team === selectedContext.id);
     }
 
-    const filteredShifts = contextShifts.filter(s => {
-      const searchMatch = s.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.team.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredShifts = useMemo(() => {
+      return contextShifts.filter(s => {
+        const searchMatch = s.employee.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          s.team.toLowerCase().includes(searchQuery.toLowerCase());
 
-      let match = false;
-      if (filterType === 'all') match = true;
-      if (filterType === 'pending_attest') match = s.status === 'pending_attest';
-      if (filterType === 'approved') match = s.status === 'approved';
-      if (filterType === 'not_submitted') match = s.status === 'not_submitted';
+        let statusMatch = true;
+        if (filterType !== 'all') {
+          statusMatch = s.status === filterType;
+        }
 
-      return searchMatch && match;
-    });
+        return searchMatch && statusMatch;
+      });
+    }, [contextShifts, searchQuery, filterType]);
 
     const itemsPerPage = 10;
     const totalPages = Math.max(1, Math.ceil(filteredShifts.length / itemsPerPage));
@@ -437,24 +517,26 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
 
       const { error } = await supabase.from('time_reports').update({ status: 'approved' }).in('id', selectedShifts);
       if (error) {
-        alert("Kunde inte godkänna rapporter: " + error.message);
+        toast.error("Kunde inte godkänna rapporter: " + error.message);
         return;
       }
 
+      toast.success(`${selectedShifts.length} rapporter har godkänts`);
       setSelectedShifts([]);
     };
 
     const handleDelete = async () => {
       if (selectedShifts.length === 0) return;
-      if (!confirm(`Är du säker på att du vill radera ${selectedShifts.length} rapporter?`)) return;
 
       const { error } = await supabase.from('time_reports').delete().in('id', selectedShifts);
       if (error) {
-        alert("Kunde inte radera rapporter: " + error.message);
+        toast.error("Kunde inte radera rapporter: " + error.message);
         return;
       }
 
+      toast.success(`${selectedShifts.length} rapporter har raderats`);
       setSelectedShifts([]);
+      setIsDeleteAlertOpen(false);
     };
 
     const renderHistory = () => {
@@ -472,46 +554,47 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
       }
 
       return (
-        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+        <div className="flex-1 overflow-y-auto w-full scrollbar-none animate-in fade-in slide-in-from-bottom-2 duration-400">
           {history.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-              <Calendar className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Ingen historik hittades</p>
-            </div>
+            <EmptyState
+              icon={Calendar}
+              title="Ingen historik"
+              description="Det finns inga tidigare godkända rapporter för detta urval."
+            />
           ) : (
             history.map(h => (
-              <div key={h.id} className="group flex items-center px-8 py-4 border-b border-border hover:bg-muted cursor-pointer transition-colors">
-                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary font-bold mr-4 shrink-0 transition-colors">
-                  <FileCheck className="w-5 h-5 opacity-70" />
+              <div key={h.id} className="group flex items-center px-8 py-5 border-b border-border/40 hover:bg-muted/50 transition-all">
+                <div className="w-11 h-11 rounded-lg bg-emerald-500/5 flex items-center justify-center text-emerald-500 font-bold mr-5 shrink-0">
+                  <FileCheck className="w-5 h-5" />
                 </div>
-                <div className="w-48 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                  {h.month}
-                  <div className="text-[11px] text-emerald-400 font-normal uppercase tracking-wider mt-0.5 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Godkänd & Attesterad
+                <div className="w-56 shrink-0 pr-4">
+                  <div className="text-foreground font-semibold text-[15px]">{h.month}</div>
+                  <div className="text-[11px] text-emerald-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> ATTESTERAD
                   </div>
                 </div>
 
-                <div className="flex-1 min-w-0 pr-4 flex items-center gap-6">
-                  <div>
-                    <div className="text-muted-foreground text-[10px] uppercase tracking-wider mb-0.5">Arbetstid</div>
-                    <div className="text-foreground font-mono text-[13px]">{h.hours}h</div>
+                <div className="flex-1 min-w-0 pr-4 flex items-center gap-10">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">Arbetstid</div>
+                    <div className="text-foreground font-mono font-bold text-[14px]">{h.hours}h</div>
                   </div>
-                  <div>
-                    <div className="text-muted-foreground text-[10px] uppercase tracking-wider mb-0.5">OB-Tillägg</div>
-                    <div className="text-foreground font-mono text-[13px]">{h.ob}h</div>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">OB-Tillägg</div>
+                    <div className="text-foreground font-mono font-bold text-[14px]">{h.ob}h</div>
                   </div>
-                  <div>
-                    <div className="text-rose-400/70 text-[10px] uppercase tracking-wider mb-0.5">Frånvaro</div>
-                    <div className="text-foreground font-mono text-[13px]">{h.absence > 0 ? `${h.absence}h` : '-'}</div>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-rose-400/40 text-[10px] uppercase font-bold tracking-widest">Frånvaro</div>
+                    <div className="text-foreground font-mono font-bold text-[14px]">{h.absence > 0 ? `${h.absence}h` : '-'}</div>
                   </div>
                 </div>
 
-                <div className="w-48 shrink-0 flex flex-col items-end justify-center pr-4">
-                  <div className="text-muted-foreground text-[10px] uppercase tracking-wider">Lön före skatt</div>
-                  <span className="text-[15px] font-bold text-foreground">{h.salary}</span>
+                <div className="w-48 shrink-0 flex flex-col items-end justify-center pr-6">
+                  <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest mb-0.5">Lön före skatt</div>
+                  <span className="text-[16px] font-bold text-foreground">{h.salary}</span>
                 </div>
 
-                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground group-hover:text-foreground transition-colors">
+                <div className="w-8 shrink-0 flex items-center justify-end text-muted-foreground/30 group-hover:text-foreground group-hover:translate-x-1 transition-all">
                   <ChevronRight className="w-5 h-5" />
                 </div>
               </div>
@@ -522,20 +605,20 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     };
 
     return (
-      <div className="flex-1 flex flex-col h-full bg-background relative">
+      <div className="flex-1 flex flex-col h-full bg-background relative animate-in fade-in duration-300">
         {/* TAB HEADER */}
-        <div className="h-14 px-8 flex items-center border-b border-border shrink-0 gap-6">
+        <div className="h-14 px-8 flex items-center border-b border-border/50 shrink-0 gap-8">
           <button
             onClick={() => setListMode('current')}
-            className={`h-full border-b-2 text-sm font-medium transition-colors flex items-center ${listMode === 'current' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-muted-foreground'}`}
+            className={`h-full border-b-2 text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${listMode === 'current' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground/70'}`}
           >
             Aktuella tidsrapporter
           </button>
           <button
             onClick={() => setListMode('history')}
-            className={`h-full border-b-2 text-sm font-medium transition-colors flex items-center ${listMode === 'history' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-muted-foreground'}`}
+            className={`h-full border-b-2 text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${listMode === 'history' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground/70'}`}
           >
-            Tidigare månader (Historik)
+            Tidigare månader
           </button>
         </div>
 
@@ -543,107 +626,114 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
           renderHistory()
         ) : (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-              <div className="flex items-center gap-4">
+            <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 shrink-0">
+              <div className="flex items-center gap-5">
                 <div className="w-8 flex justify-center cursor-pointer group" onClick={toggleSelectAll}>
-                  <div className={`w-4 h-4 rounded-[4px] border ${isAllSelected ? 'border-primary bg-primary' : 'border-border'} flex items-center justify-center`}>
-                    {isAllSelected && <Check className="w-3 h-3 text-foreground" />}
+                  <div className={`w-4.5 h-4.5 rounded-[5px] border-2 transition-all ${isAllSelected ? 'border-primary bg-primary' : 'border-border group-hover:border-primary/50'} flex items-center justify-center`}>
+                    {isAllSelected && <Check className="w-3.5 h-3.5 text-primary-foreground stroke-[3]" />}
                   </div>
                 </div>
 
-                <div className="relative group">
-                  <select
-                    value={filterType}
-                    onChange={(e) => setFilterType(e.target.value)}
-                    className="bg-transparent text-foreground font-semibold text-sm appearance-none cursor-pointer focus:outline-none pr-4"
-                  >
-                    <option value="all" className="bg-card text-foreground">Alla Rapporter</option>
-                    <option value="pending_attest" className="bg-card text-foreground">Väntar ({filteredShifts.filter(s => s.status === 'pending_attest').length})</option>
-                    <option value="approved" className="bg-card text-foreground">Godkända ({filteredShifts.filter(s => s.status === 'approved').length})</option>
-                  </select>
+                <div className="flex items-center gap-3">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="w-[160px] h-9 bg-muted/30 border-none font-semibold text-xs focus:ring-1 focus:ring-primary/20">
+                      <SelectValue placeholder="Filtrera status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Alla Rapporter</SelectItem>
+                      <SelectItem value="pending_attest">Väntar ({filteredShifts.filter(s => s.status === 'pending_attest').length})</SelectItem>
+                      <SelectItem value="approved">Godkända ({filteredShifts.filter(s => s.status === 'approved').length})</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {selectedShifts.length > 0 && (
-                  <div className="flex items-center gap-2 border-l border-border ml-2 pl-4">
+                  <div className="flex items-center gap-2 border-l border-border/50 ml-2 pl-5 animate-in fade-in slide-in-from-left-2 duration-300">
                     {hasApprovePermission && (
-                      <Button onClick={handleApprove} size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-foreground h-7 text-xs px-3">
-                        <FileCheck className="w-3.5 h-3.5 mr-1" /> Godkänn ({selectedShifts.length})
+                      <Button onClick={handleApprove} size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-8 text-xs px-4 shadow-lg shadow-emerald-500/20">
+                        <FileCheck className="w-3.5 h-3.5 mr-2" /> Godkänn ({selectedShifts.length})
                       </Button>
                     )}
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
-                      className="w-7 h-7 text-muted-foreground hover:text-rose-400"
-                      onClick={handleDelete}
+                      className="w-8 h-8 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      onClick={() => setIsDeleteAlertOpen(true)}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-4">
-                <div className="relative w-48 hidden sm:block">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <div className="flex items-center gap-5">
+                <div className="relative w-56 hidden sm:block">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                   <Input
-                    placeholder="Sök tidsrapporter..."
+                    placeholder="Sök rapporter..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
+                    className="pl-9 bg-muted/40 border-none text-foreground h-9 rounded-lg text-xs font-medium focus-visible:ring-1 focus-visible:ring-primary/30"
                   />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <ChevronLeft className="w-4 h-4 cursor-pointer hover:text-foreground transition-colors" onClick={() => currentPage > 1 && setCurrentPage(prev => prev - 1)} />
-                  <span className="text-xs font-medium">{currentPage}/{totalPages}</span>
-                  <ChevronRight className="w-4 h-4 cursor-pointer hover:text-foreground transition-colors" onClick={() => currentPage < totalPages && setCurrentPage(prev => prev + 1)} />
+                <div className="flex items-center gap-3 text-muted-foreground/60">
+                  <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg" disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <span className="text-[11px] font-bold tracking-widest">{currentPage} / {totalPages}</span>
+                  <Button variant="ghost" size="icon" className="w-8 h-8 rounded-lg" disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)}>
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
+            <div className="flex-1 overflow-y-auto w-full scrollbar-none">
               {filteredShifts.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-                  <Calendar className="w-12 h-12 mb-4 opacity-20" />
-                  <p className="text-sm">Inga tidsrapporter hittades</p>
-                </div>
+                <EmptyState
+                  icon={Calendar}
+                  title="Inga tidsrapporter"
+                  description="Vi hittade inga tidsrapporter som matchar dina kriterier."
+                />
               ) : (
                 currentShifts.map((shift) => {
                   const isSelected = selectedShifts.includes(shift.id);
                   return (
                     <div
                       key={shift.id}
-                      className={`group flex items-center px-6 py-3 border-b border-border hover:bg-muted transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
+                      className={`group flex items-center px-8 py-3.5 border-b border-border/40 hover:bg-muted/50 transition-all duration-200 ${isSelected ? 'bg-primary/5' : ''}`}
                     >
                       <div className="w-8 shrink-0 flex justify-center p-1 cursor-pointer" onClick={(e) => toggleSelect(shift.id, e)}>
-                        <div className={`w-[18px] h-[18px] rounded-[4px] border ${isSelected ? 'border-primary bg-primary' : 'border-border group-hover:border-border'} flex items-center justify-center transition-colors`}>
-                          {isSelected && <Check className="w-3.5 h-3.5 text-foreground" />}
+                        <div className={`w-[18px] h-[18px] rounded-[5px] border-2 transition-all ${isSelected ? 'border-primary bg-primary' : 'border-border group-hover:border-primary/40'} flex items-center justify-center`}>
+                          {isSelected && <Check className="w-3.5 h-3.5 text-primary-foreground stroke-[3]" />}
                         </div>
                       </div>
 
-                      <div className="w-40 md:w-56 shrink-0 truncate pr-4 text-foreground font-medium ml-2 text-[15px]">
-                        {selectedContext.type === 'team' ? shift.employee : shift.team}
-                        <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">
+                      <div className="w-48 md:w-64 shrink-0 truncate pr-4 text-foreground font-semibold ml-3 text-[15px]">
+                        <div className="group-hover:text-primary transition-colors">
+                          {selectedContext.type === 'team' ? shift.employee : shift.team}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground/70 font-medium uppercase tracking-widest mt-0.5">
                           {selectedContext.type === 'team' ? shift.role : 'Brukare'}
                         </div>
                       </div>
 
                       <div className="flex-1 flex items-center min-w-0 pr-4">
-                        <div className="text-foreground font-mono text-[13px] bg-secondary px-2 py-1 rounded">
+                        <div className="text-foreground font-mono font-bold text-[13px] bg-secondary/60 px-2.5 py-1.5 rounded-md border border-border/40">
                           {shift.start} - {shift.end}
                         </div>
-                        <div className="ml-4 flex items-baseline gap-1.5">
-                          <span className="text-[15px] font-bold text-foreground">{shift.duration}</span>
-                          <span className="text-[11px] text-muted-foreground">h</span>
+                        <div className="ml-5 flex items-baseline gap-1.5">
+                          <span className="text-[16px] font-black text-foreground">{shift.duration}</span>
+                          <span className="text-[11px] text-muted-foreground/60 font-bold uppercase tracking-tighter">h</span>
                         </div>
                       </div>
 
-                      <div className="w-32 shrink-0 pr-4 flex items-center justify-end">
-                        {shift.status === 'pending_attest' && <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Väntar</span>}
-                        {shift.status === 'approved' && <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-[10px] font-medium">Godkänd</span>}
+                      <div className="w-40 shrink-0 pr-4 flex items-center justify-end">
+                        <StatusBadge status={shift.status} />
                       </div>
 
                       <div className="w-[120px] shrink-0 text-right flex items-center justify-end gap-3 text-[14px]">
-                        <span className="text-foreground font-medium">{shift.date}</span>
+                        <span className="text-foreground font-bold font-mono text-[13px]">{shift.date}</span>
                       </div>
                     </div>
                   );
@@ -652,12 +742,26 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
             </div>
           </div>
         )}
+
+        <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Är du helt säker?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Du håller på att radera {selectedShifts.length} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Avbryt</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete} className="bg-rose-500 hover:bg-rose-600 text-white font-bold">
+                Ja, radera rapporter
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   };
-
-  const [hasApprovePermission, setHasApprovePermission] = useState(false);
-
   useEffect(() => {
     async function checkPerms() {
       if (activeRole === 'admin' || activeRole === 'platform_admin') {
