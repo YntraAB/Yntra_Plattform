@@ -1,47 +1,94 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import i18n from 'i18next';
 
-// Defines the structure of our modules
 export interface WorkspaceModules {
   school: boolean;
   assistance: boolean;
-  [key: string]: boolean | undefined;
+}
+
+export interface WorkspaceModules {
+  school: boolean;
+  assistance: boolean;
+}
+
+export interface WorkspaceSettings {
+  timezone: string;
+  week_start: number; // 0 for Sunday, 1 for Monday
+  language: string;
+  business_hours: {
+    start: number;
+    end: number;
+  };
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  calendar_density: 'compact' | 'relaxed';
+  font_scale: number;
 }
 
 interface WorkspaceState {
   workspaceId: string | null;
   workspaceName: string;
   modules: WorkspaceModules;
+  settings: WorkspaceSettings;
+  preferences: UserPreferences;
   isLoading: boolean;
   updateModules: (newModules: Partial<WorkspaceModules>) => Promise<boolean>;
+  updateSettings: (newSettings: Partial<WorkspaceSettings>) => Promise<boolean>;
+  updatePreferences: (newPreferences: Partial<UserPreferences>) => Promise<boolean>;
   setAdminWorkspace: (id: string) => void;
 }
 
-// Default values before data has loaded
 const defaultModules: WorkspaceModules = {
   school: false,
   assistance: false,
+};
+
+const defaultSettings: WorkspaceSettings = {
+  timezone: 'Europe/Stockholm',
+  week_start: 1,
+  language: 'sv',
+  business_hours: { start: 7, end: 17 }
+};
+
+const defaultPreferences: UserPreferences = {
+  theme: 'system',
+  calendar_density: 'relaxed',
+  font_scale: 1.0
 };
 
 const WorkspaceContext = createContext<WorkspaceState>({
   workspaceId: null,
   workspaceName: '',
   modules: defaultModules,
+  settings: defaultSettings,
+  preferences: defaultPreferences,
   isLoading: true,
   updateModules: async () => false,
-  setAdminWorkspace: () => {},
+  updateSettings: async () => false,
+  updatePreferences: async () => false,
+  setAdminWorkspace: () => { },
 });
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  
+
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [workspaceName, setWorkspaceName] = useState<string>('');
   const [modules, setModules] = useState<WorkspaceModules>(defaultModules);
+  const [settings, setSettings] = useState<WorkspaceSettings>(defaultSettings);
+  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Fetch the user's workspace when they log in
+  useEffect(() => {
+    if (settings.language && i18n.language !== settings.language) {
+      i18n.changeLanguage(settings.language);
+    }
+  }, [settings.language]);
+
   useEffect(() => {
     async function fetchWorkspace() {
       if (!user) {
@@ -52,36 +99,37 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       setIsLoading(true);
 
-      // 1. Get the user's workspace ID from the users table
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('workspace_id')
+        .select('workspace_id, preferences')
         .eq('id', user.id)
         .single();
+
+      if (userData?.preferences) {
+        setPreferences(prev => ({ ...prev, ...(userData.preferences as any) }));
+      }
 
       if (userError || !userData?.workspace_id) {
         if (user.role === 'platform_admin') {
           const stored = localStorage.getItem('dev_override_modules');
           if (stored) {
-             try { setModules(JSON.parse(stored)); } catch(e){}
+            try { setModules(JSON.parse(stored)); } catch (e) { }
           }
-          // Om dev redan har switchat arbetsyta i UI:t, behåll den
           let targetWsId = workspaceId;
 
-          // Annars ladda första bästa workspace
           if (!targetWsId) {
             const { data: firstWs } = await supabase.from('workspaces').select('id, name, modules_active').limit(1).single();
             if (firstWs) targetWsId = firstWs.id;
           }
 
           if (targetWsId) {
-             const { data: explicitWs } = await supabase.from('workspaces').select('id, name, modules_active').eq('id', targetWsId).single();
-             if (explicitWs) {
-               setWorkspaceId(explicitWs.id);
-               setWorkspaceName(explicitWs.name);
-               const dbM = explicitWs.modules_active as any;
-               if (!stored) setModules({ school: !!dbM?.school, assistance: !!dbM?.assistance });
-             }
+            const { data: explicitWs } = await supabase.from('workspaces').select('id, name, modules_active').eq('id', targetWsId).single();
+            if (explicitWs) {
+              setWorkspaceId(explicitWs.id);
+              setWorkspaceName(explicitWs.name);
+              const dbM = explicitWs.modules_active as any;
+              if (!stored) setModules({ school: !!dbM?.school, assistance: !!dbM?.assistance });
+            }
           }
         }
         setIsLoading(false);
@@ -91,31 +139,35 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const activeWorkspaceId = userData.workspace_id;
       setWorkspaceId(activeWorkspaceId);
 
-      // 2. Fetch the actual workspace data (name, modules)
       const { data: workspaceData, error: workspaceError } = await supabase
         .from('workspaces')
-        .select('name, modules_active')
+        .select('name, modules_active, settings')
         .eq('id', activeWorkspaceId)
         .single();
 
       if (!workspaceError && workspaceData) {
         setWorkspaceName(workspaceData.name);
-        
-        // Ensure the JSON matches our WorkspaceModules type
+
         const dbModules = workspaceData.modules_active as any;
         setModules({
           school: dbModules?.school || false,
           assistance: dbModules?.assistance || false,
         });
+
+        if (workspaceData.settings) {
+          const wsSettings = workspaceData.settings as any;
+          setSettings(prev => ({ ...prev, ...wsSettings }));
+          if (wsSettings.language) {
+            i18n.changeLanguage(wsSettings.language);
+          }
+        }
       }
 
       setIsLoading(false);
     }
 
     fetchWorkspace();
-    
-    // Subscribe to realtime changes on this specific workspace
-    // (So if Admin changes settings, it updates for everyone instantly)
+
     let workspaceChannel: any = null;
     if (workspaceId) {
       workspaceChannel = supabase
@@ -131,13 +183,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
               school: !!dbModules?.school,
               assistance: !!dbModules?.assistance,
             });
+            if (updatedData.settings) {
+              setSettings(prev => ({ ...prev, ...(updatedData.settings as any) }));
+            }
           }
         )
         .subscribe();
     }
 
-    // Subscribe to realtime changes on the user
-    // (If user gets assigned a workspace, app updates instantly)
     let userChannel: any = null;
     if (user) {
       userChannel = supabase
@@ -150,11 +203,14 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             if (newWorkspaceId !== workspaceId) {
               setWorkspaceId(newWorkspaceId || null);
             }
+            if (payload.new.preferences) {
+              setPreferences(prev => ({ ...prev, ...(payload.new.preferences as any) }));
+            }
           }
         )
         .subscribe();
     }
-        
+
     return () => {
       if (workspaceChannel) supabase.removeChannel(workspaceChannel);
       if (userChannel) supabase.removeChannel(userChannel);
@@ -166,21 +222,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
    */
   const updateModules = async (newModules: Partial<WorkspaceModules>) => {
     const updatedModules = { ...modules, ...newModules };
-    
-    // Optimerisk UI uppdatering
+
     setModules(updatedModules);
 
     if (!workspaceId) {
-      // Dev override: om Dev (platform_admin) inte tillhör en specifik organisation 
-      // i DB så appliceras modulen bara lokalt för UI utveckling
       if (user?.role === 'platform_admin') {
-         localStorage.setItem('dev_override_modules', JSON.stringify(updatedModules));
-         return true;
+        localStorage.setItem('dev_override_modules', JSON.stringify(updatedModules));
+        return true;
       }
       return false;
     }
 
-    // Save to Supabase
     const { error } = await supabase
       .from('workspaces')
       .update({ modules_active: updatedModules })
@@ -190,7 +242,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.error("Misslyckades spara moduler:", error);
       return false;
     }
-    
+
     return true;
   };
 
@@ -200,8 +252,35 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  const updateSettings = async (newSettings: Partial<WorkspaceSettings>) => {
+    if (!workspaceId) return false;
+    const updated = { ...settings, ...newSettings };
+    setSettings(updated);
+    const { error } = await supabase.from('workspaces').update({ settings: updated }).eq('id', workspaceId);
+    return !error;
+  };
+
+  const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
+    if (!user) return false;
+    const updated = { ...preferences, ...newPrefs };
+    setPreferences(updated);
+    const { error } = await supabase.from('users').update({ preferences: updated }).eq('id', user.id);
+    return !error;
+  };
+
   return (
-    <WorkspaceContext.Provider value={{ workspaceId, workspaceName, modules, isLoading, updateModules, setAdminWorkspace }}>
+    <WorkspaceContext.Provider value={{
+      workspaceId,
+      workspaceName,
+      modules,
+      settings,
+      preferences,
+      isLoading,
+      updateModules,
+      updateSettings,
+      updatePreferences,
+      setAdminWorkspace
+    }}>
       {children}
     </WorkspaceContext.Provider>
   );

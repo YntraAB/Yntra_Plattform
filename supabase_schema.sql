@@ -6,6 +6,7 @@ CREATE TABLE workspaces (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT NOT NULL,
   modules_active JSONB NOT NULL DEFAULT '{"school": false, "assistance": false}',
+  settings JSONB NOT NULL DEFAULT '{"timezone": "Europe/Stockholm", "week_start": 1, "language": "sv", "business_hours": {"start": 7, "end": 17}}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -20,6 +21,7 @@ CREATE TABLE users (
   role TEXT DEFAULT 'user', -- 'superadmin', 'admin', 'user'
   notifications_on BOOLEAN DEFAULT TRUE,
   notification_type TEXT DEFAULT 'full_content', -- 'full_content' or 'alert_only'
+  preferences JSONB NOT NULL DEFAULT '{"theme": "system", "calendar_density": "relaxed", "font_scale": 100}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

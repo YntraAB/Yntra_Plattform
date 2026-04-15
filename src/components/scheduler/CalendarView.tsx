@@ -11,16 +11,18 @@
  */
 
 import React, { useMemo, useRef, useEffect } from 'react';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
+import { useTranslation } from 'react-i18next';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
+import {
+  ChevronLeft,
+  ChevronRight,
   Calendar as CalendarIcon,
   MapPin
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
+import {
   formatTimeRange,
-  generateTimeSlots, 
+  generateTimeSlots,
   generateWeekDays,
   getStartOfWeek,
   isToday,
@@ -50,15 +52,16 @@ interface EventCardProps {
   event: CalendarEvent;
   onClick: () => void;
   hourHeight?: number;
+  locale?: string;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60 }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60, locale = 'en-US' }) => {
   const categoryConfig = getCategoryConfig(event.category);
-  
+
   // Calculate position and height based on event time
   const top = calculateEventTop(event.startTime, hourHeight);
   const height = calculateEventHeight(event.startTime, event.endTime, hourHeight);
-  
+
   return (
     <div
       onClick={onClick}
@@ -73,20 +76,20 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60 }
       }}
     >
       {/* Event title */}
-      <div 
+      <div
         className="font-medium truncate"
         style={{ color: categoryConfig.color }}
       >
         {event.title}
       </div>
-      
+
       {/* Event time (only show if height allows) */}
       {height > 35 && (
         <div className="text-muted-foreground text-[10px] mt-0.5">
-          {formatTimeRange(event.startTime, event.endTime)}
+          {formatTimeRange(event.startTime, event.endTime, locale)}
         </div>
       )}
-      
+
       {/* Event location (only show if height allows) */}
       {height > 50 && event.location && (
         <div className="flex items-center gap-1 text-muted-foreground text-[10px] mt-0.5">
@@ -105,11 +108,12 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60 }
 interface MonthEventCardProps {
   event: CalendarEvent;
   onClick: (e: React.MouseEvent) => void;
+  locale?: string;
 }
 
-const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick }) => {
+const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick, locale = 'en-US' }) => {
   const categoryConfig = getCategoryConfig(event.category);
-  
+
   return (
     <div
       onClick={onClick}
@@ -120,7 +124,7 @@ const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick }) => {
         color: categoryConfig.color,
       }}
     >
-      {event.startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} {event.title}
+      {event.startTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })} {event.title}
     </div>
   );
 };
@@ -136,47 +140,54 @@ interface DayViewProps {
 }
 
 const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick }) => {
+  const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const timeSlots = useMemo(() => generateTimeSlots(), []);
-  const HOUR_HEIGHT = 60;
-  
+
+  const { start: startHour, end: endHour } = settings.business_hours;
+  const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
+  const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
+
   // Auto-scroll to current time
   useEffect(() => {
     if (scrollContainerRef.current && isToday(selectedDate)) {
       const now = new Date();
-      const scrollPosition = (now.getHours() - 2) * HOUR_HEIGHT;
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      if (now.getHours() >= startHour && now.getHours() <= endHour) {
+        const scrollPosition = (now.getHours() - startHour - 1) * HOUR_HEIGHT;
+        scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      }
     }
-  }, [selectedDate]);
-  
+  }, [selectedDate, startHour, endHour, HOUR_HEIGHT]);
+
   // Get events for the selected day
   const dayEvents = events.filter(event => isSameDay(event.startTime, selectedDate));
-  
+
   return (
     <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-dark">
       <div className="flex min-h-full">
         {/* Time column */}
         <div className="w-16 flex-shrink-0 border-r border-border bg-sidebar">
           <div className="h-4 border-b border-border" />
+          <div className="h-4 border-b border-border" />
           {timeSlots.map((slot, index) => (
-            <div key={index} className="h-[60px] border-b border-border relative">
+            <div key={index} style={{ height: `${HOUR_HEIGHT}px` }} className="border-b border-border relative">
               <span className="absolute -top-2 right-2 text-[10px] text-muted-foreground">
                 {slot.label}
               </span>
             </div>
           ))}
         </div>
-        
+
         {/* Day column with events */}
         <div className="flex-1 relative">
           <div className="h-4 border-b border-border" />
-          
+
           {/* Current time indicator */}
           {isToday(selectedDate) && (
             <div
               className="absolute left-0 right-0 z-20 pointer-events-none"
               style={{
-                top: `calc(1rem + ${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
+                top: `calc(1rem + ${(new Date().getHours() - startHour + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
               }}
             >
               <div className="flex items-center">
@@ -185,12 +196,12 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
               </div>
             </div>
           )}
-          
+
           {/* Hour grid lines */}
           {timeSlots.map((_, index) => (
-            <div key={index} className="h-[60px] border-b border-border" />
+            <div key={index} style={{ height: `${HOUR_HEIGHT}px` }} className="border-b border-border" />
           ))}
-          
+
           {/* Events */}
           <div className="absolute inset-x-0 bottom-0 top-4">
             {dayEvents.map((event) => (
@@ -199,6 +210,7 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
                 event={event}
                 onClick={() => onEventClick(event)}
                 hourHeight={HOUR_HEIGHT}
+                locale={locale}
               />
             ))}
           </div>
@@ -220,9 +232,14 @@ interface WeekViewProps {
 }
 
 const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, events, onEventClick }) => {
+  const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const timeSlots = useMemo(() => generateTimeSlots(), []);
-  
+
+  const { start: startHour, end: endHour } = settings.business_hours;
+  const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
+  const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
+
   const weekDays = useMemo(() => {
     if (selectedEndDate) {
       const days = [];
@@ -230,7 +247,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
       while (current <= selectedEndDate) {
         days.push({
           date: new Date(current),
-          name: current.toLocaleDateString('en-US', { weekday: 'short' }),
+          name: current.toLocaleDateString(locale, { weekday: 'short' }),
           dayOfMonth: current.getDate(),
           isToday: isToday(current),
           isWeekend: current.getDay() === 0 || current.getDay() === 6
@@ -239,24 +256,25 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
       }
       return days;
     }
-    const weekStart = getStartOfWeek(selectedDate);
-    return generateWeekDays(weekStart);
-  }, [selectedDate, selectedEndDate]);
-  const HOUR_HEIGHT = 60;
-  
+    const weekStart = getStartOfWeek(selectedDate, settings.week_start);
+    return generateWeekDays(weekStart, locale, settings.week_start);
+  }, [selectedDate, selectedEndDate, settings.week_start, locale]);
+
   // Auto-scroll to current time
   useEffect(() => {
     if (scrollContainerRef.current) {
       const now = new Date();
-      const scrollPosition = (now.getHours() - 2) * HOUR_HEIGHT;
-      scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      if (now.getHours() >= startHour && now.getHours() <= endHour) {
+        const scrollPosition = (now.getHours() - startHour - 1) * HOUR_HEIGHT;
+        scrollContainerRef.current.scrollTop = Math.max(0, scrollPosition);
+      }
     }
-  }, []);
-  
+  }, [startHour, endHour, HOUR_HEIGHT]);
+
   const getEventsForDay = (date: Date) => {
     return events.filter(event => isSameDay(event.startTime, date));
   };
-  
+
   return (
     <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-dark">
       <div className="flex min-h-full">
@@ -264,14 +282,14 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
         <div className="w-16 flex-shrink-0 border-r border-border bg-sidebar">
           <div className="h-4 border-b border-border" />
           {timeSlots.map((slot, index) => (
-            <div key={index} className="h-[60px] border-b border-border relative">
+            <div key={index} style={{ height: `${HOUR_HEIGHT}px` }} className="border-b border-border relative">
               <span className="absolute -top-2 right-2 text-[10px] text-muted-foreground">
                 {slot.label}
               </span>
             </div>
           ))}
         </div>
-        
+
         {/* Day columns with events */}
         <div className="flex-1 grid relative divide-x divide-border" style={{ gridTemplateColumns: `repeat(${weekDays.length}, minmax(0, 1fr))` }}>
           {/* Current time indicator */}
@@ -279,7 +297,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
             <div
               className="absolute left-0 right-0 z-20 pointer-events-none"
               style={{
-                top: `calc(1rem + ${(new Date().getHours() + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
+                top: `calc(1rem + ${(new Date().getHours() - startHour + new Date().getMinutes() / 60) * HOUR_HEIGHT}px)`,
               }}
             >
               <div className="flex items-center">
@@ -288,7 +306,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
               </div>
             </div>
           )}
-          
+
           {/* Grid lines and events for each day */}
           {weekDays.map((day, dayIndex) => (
             <div
@@ -299,12 +317,12 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
               )}
             >
               <div className="h-4 border-b border-border" />
-              
+
               {/* Hour grid lines */}
               {timeSlots.map((_, hourIndex) => (
-                <div key={hourIndex} className="h-[60px] border-b border-border" />
+                <div key={hourIndex} style={{ height: `${HOUR_HEIGHT}px` }} className="border-b border-border" />
               ))}
-              
+
               {/* Events for this day */}
               <div className="absolute inset-x-0 bottom-0 top-4">
                 {getEventsForDay(day.date).map((event) => (
@@ -313,6 +331,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
                     event={event}
                     onClick={() => onEventClick(event)}
                     hourHeight={HOUR_HEIGHT}
+                    locale={locale}
                   />
                 ))}
               </div>
@@ -336,18 +355,24 @@ interface MonthViewProps {
 }
 
 const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClick, onDateChange }) => {
+  const { settings } = useWorkspace();
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
+
   // Generate calendar grid data
   const calendarDays = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
-    
+
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
+
+    // Week start adjustment
     const startDayOfWeek = firstDayOfMonth.getDay();
-    const diffToMonday = (startDayOfWeek + 6) % 7;
+    const diffToStart = (startDayOfWeek < settings.week_start ? 7 : 0) + startDayOfWeek - settings.week_start;
+
     const daysInMonth = lastDayOfMonth.getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-    
+
     const days: Array<{
       date: Date;
       dayOfMonth: number;
@@ -355,9 +380,9 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
       isToday: boolean;
       events: CalendarEvent[];
     }> = [];
-    
+
     // Previous month padding days
-    for (let i = diffToMonday - 1; i >= 0; i--) {
+    for (let i = diffToStart - 1; i >= 0; i--) {
       const date = new Date(year, month - 1, daysInPrevMonth - i);
       days.push({
         date,
@@ -367,7 +392,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
         events: events.filter(e => isSameDay(e.startTime, date)),
       });
     }
-    
+
     // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
@@ -379,7 +404,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
         events: events.filter(e => isSameDay(e.startTime, date)),
       });
     }
-    
+
     // Next month padding days (fill to 6 rows = 42 cells)
     const remainingCells = 42 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
@@ -392,12 +417,14 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
         events: events.filter(e => isSameDay(e.startTime, date)),
       });
     }
-    
+
     return days;
-  }, [selectedDate, events]);
-  
-  const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  
+  }, [selectedDate, events, settings.week_start]);
+
+  const dayLabels = settings.week_start === 1
+    ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
   return (
     <div className="flex-1 overflow-y-auto scrollbar-dark p-4">
       {/* Day labels */}
@@ -408,7 +435,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
           </div>
         ))}
       </div>
-      
+
       {/* Calendar grid */}
       <div className="grid grid-cols-7 gap-1">
         {calendarDays.map((day, index) => (
@@ -418,8 +445,8 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
             className={cn(
               'min-h-[100px] p-2 rounded-lg border cursor-pointer transition-all duration-150',
               'hover:border-primary/50',
-              day.isCurrentMonth 
-                ? 'bg-muted border-border' 
+              day.isCurrentMonth
+                ? 'bg-muted border-border'
                 : 'bg-background border-border',
               isSameDay(day.date, selectedDate) && 'ring-2 ring-primary'
             )}
@@ -427,13 +454,13 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
             {/* Day number */}
             <div className={cn(
               'text-sm font-medium mb-1',
-              day.isToday 
+              day.isToday
                 ? 'w-7 h-7 flex items-center justify-center bg-primary text-white rounded-full'
                 : day.isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
             )}>
               {day.dayOfMonth}
             </div>
-            
+
             {/* Events for this day */}
             <div className="space-y-1">
               {day.events.slice(0, 3).map((event) => (
@@ -444,6 +471,7 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
                     e.stopPropagation();
                     onEventClick(event);
                   }}
+                  locale={locale}
                 />
               ))}
               {day.events.length > 3 && (
@@ -469,21 +497,23 @@ interface AgendaViewProps {
 }
 
 const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
+  const { settings } = useWorkspace();
+  const { t } = useTranslation();
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
+
   // Group events by date
   const groupedEvents = useMemo(() => {
-    // Sort events by start time
-    const sortedEvents = [...events].sort((a, b) => 
+    const sortedEvents = [...events].sort((a, b) =>
       a.startTime.getTime() - b.startTime.getTime()
     );
-    
-    // Group by date
+
     const groups: Array<{
       date: Date;
       dateLabel: string;
       isToday: boolean;
       events: CalendarEvent[];
     }> = [];
-    
+
     sortedEvents.forEach((event) => {
       const existingGroup = groups.find(g => isSameDay(g.date, event.startTime));
       if (existingGroup) {
@@ -492,22 +522,22 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
         const isEventToday = isToday(event.startTime);
         groups.push({
           date: event.startTime,
-          dateLabel: isEventToday 
-            ? 'Today' 
-            : event.startTime.toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
-                day: 'numeric' 
-              }),
+          dateLabel: isEventToday
+            ? t('common.today')
+            : event.startTime.toLocaleDateString(locale, {
+              weekday: 'long',
+              month: 'long',
+              day: 'numeric'
+            }),
           isToday: isEventToday,
           events: [event],
         });
       }
     });
-    
+
     return groups;
   }, [events]);
-  
+
   return (
     <div className="flex-1 overflow-y-auto scrollbar-dark p-4">
       {groupedEvents.length === 0 ? (
@@ -524,7 +554,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
               <div className="flex items-center gap-3 mb-3">
                 <div className={cn(
                   'w-10 h-10 rounded-lg flex flex-col items-center justify-center text-xs',
-                  group.isToday 
+                  group.isToday
                     ? 'bg-primary text-white'
                     : 'bg-muted text-muted-foreground'
                 )}>
@@ -540,7 +570,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
                   {group.dateLabel}
                 </h3>
               </div>
-              
+
               {/* Events for this date */}
               <div className="space-y-2 ml-12">
                 {group.events.map((event) => {
@@ -556,27 +586,27 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
                       {/* Time */}
                       <div className="flex-shrink-0 w-20 text-right">
                         <div className="text-foreground text-sm font-medium">
-                          {event.startTime.toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
+                          {event.startTime.toLocaleTimeString(locale, {
+                            hour: '2-digit',
                             minute: '2-digit',
-                            hour12: false 
+                            hour12: false
                           })}
                         </div>
                         <div className="text-muted-foreground text-xs">
-                          {event.endTime.toLocaleTimeString('en-US', { 
-                            hour: '2-digit', 
+                          {event.endTime.toLocaleTimeString(locale, {
+                            hour: '2-digit',
                             minute: '2-digit',
-                            hour12: false 
+                            hour12: false
                           })}
                         </div>
                       </div>
-                      
+
                       {/* Category indicator */}
-                      <div 
+                      <div
                         className="w-1 h-10 rounded-full flex-shrink-0"
                         style={{ backgroundColor: categoryConfig.color }}
                       />
-                      
+
                       {/* Event details */}
                       <div className="flex-1 min-w-0">
                         <div className="text-foreground font-medium truncate">
@@ -588,7 +618,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Location */}
                       {event.location && (
                         <div className="flex items-center gap-1 text-muted-foreground text-sm flex-shrink-0">
@@ -596,13 +626,13 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
                           <span>{event.location}</span>
                         </div>
                       )}
-                      
+
                       {/* Category badge */}
-                      <span 
+                      <span
                         className="px-2 py-1 rounded text-xs flex-shrink-0"
-                        style={{ 
+                        style={{
                           backgroundColor: categoryConfig.bgColor,
-                          color: categoryConfig.color 
+                          color: categoryConfig.color
                         }}
                       >
                         {categoryConfig.label}
@@ -648,7 +678,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onPrevious,
   onToday,
 }) => {
-  // Generate week days for header display
+  const { settings } = useWorkspace();
+  const { t } = useTranslation();
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
+
   const weekDays = useMemo(() => {
     if (selectedEndDate && view === 'week') {
       const days = [];
@@ -656,7 +689,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       while (current <= selectedEndDate) {
         days.push({
           date: new Date(current),
-          name: current.toLocaleDateString('en-US', { weekday: 'short' }),
+          name: current.toLocaleDateString(locale, { weekday: 'short' }),
           dayOfMonth: current.getDate(),
           isToday: isToday(current),
           isWeekend: current.getDay() === 0 || current.getDay() === 6
@@ -665,45 +698,45 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       }
       return days;
     }
-    const weekStart = getStartOfWeek(selectedDate);
-    return generateWeekDays(weekStart);
-  }, [selectedDate, selectedEndDate, view]);
-  
+    const weekStart = getStartOfWeek(selectedDate, settings.week_start);
+    return generateWeekDays(weekStart, locale, settings.week_start);
+  }, [selectedDate, selectedEndDate, view, settings.week_start, locale]);
+
   /**
    * Format the date range for the header based on current view
    */
   const formatDateRange = () => {
     switch (view) {
       case 'day':
-        return selectedDate.toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          month: 'long', 
+        return selectedDate.toLocaleDateString(locale, {
+          weekday: 'long',
+          month: 'long',
           day: 'numeric',
           year: 'numeric'
         });
-      
+
       case 'week':
         const start = weekDays[0].date;
         const end = weekDays[weekDays.length - 1].date;
         if (start.getMonth() === end.getMonth()) {
-          return `${start.toLocaleDateString('en-US', { month: 'long' })} ${start.getDate()} - ${end.getDate()}, ${start.getFullYear()}`;
+          return `${start.toLocaleDateString(locale, { month: 'long' })} ${start.getDate()} - ${end.getDate()}, ${start.getFullYear()}`;
         } else if (start.getFullYear() === end.getFullYear()) {
-          return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${start.getFullYear()}`;
+          return `${start.toLocaleDateString(locale, { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}, ${start.getFullYear()}`;
         } else {
-          return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          return `${start.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}`;
         }
-      
+
       case 'month':
-        return formatMonthYear(selectedDate);
-      
+        return formatMonthYear(selectedDate, locale);
+
       case 'agenda':
-        return 'Upcoming Events';
-      
+        return t('scheduler.upcoming_events');
+
       default:
         return '';
     }
   };
-  
+
   /**
    * Render the appropriate view based on current view mode
    */
@@ -717,7 +750,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onEventClick={onEventClick}
           />
         );
-      
+
       case 'week':
         return (
           <WeekView
@@ -727,7 +760,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onEventClick={onEventClick}
           />
         );
-      
+
       case 'month':
         return (
           <MonthView
@@ -737,7 +770,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onDateChange={onDateChange}
           />
         );
-      
+
       case 'agenda':
         return (
           <AgendaView
@@ -745,26 +778,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             onEventClick={onEventClick}
           />
         );
-      
+
       default:
         return null;
     }
   };
-  
+
   /**
    * Render the appropriate header based on view mode
    */
   const renderHeader = () => {
     if (view === 'month') {
-      // Month view doesn't need the day column headers
       return null;
     }
-    
+
     if (view === 'agenda') {
-      // Agenda view doesn't need column headers
       return null;
     }
-    
+
     if (view === 'day') {
       // Day view shows single day header
       return (
@@ -775,11 +806,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               'text-xs uppercase tracking-wider',
               isToday(selectedDate) ? 'text-primary' : 'text-muted-foreground'
             )}>
-              {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}
+              {selectedDate.toLocaleDateString(locale, { weekday: 'long' })}
             </div>
             <div className={cn(
               'text-lg font-semibold mt-1',
-              isToday(selectedDate) 
+              isToday(selectedDate)
                 ? 'w-8 h-8 mx-auto flex items-center justify-center bg-primary text-white rounded-full'
                 : 'text-foreground'
             )}>
@@ -789,7 +820,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
       );
     }
-    
+
     // Week view - show dynamic days
     return (
       <div className="flex border-b border-border overflow-y-scroll scrollbar-dark" style={{ scrollbarColor: 'transparent transparent' }}>
@@ -813,7 +844,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
               <div className={cn(
                 'text-lg font-semibold mt-1',
-                day.isToday 
+                day.isToday
                   ? 'w-8 h-8 mx-auto flex items-center justify-center bg-primary text-white rounded-full'
                   : 'text-foreground'
               )}>
@@ -825,7 +856,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
     );
   };
-  
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header Toolbar */}
@@ -853,7 +884,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </button>
           </div>
-          
+
           {/* Date display */}
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-5 h-5 text-muted-foreground" />
@@ -862,7 +893,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </span>
           </div>
         </div>
-        
+
         {/* Right side - View mode selector */}
         <div className="flex items-center bg-secondary rounded-lg p-1">
           {VIEW_MODES.map((mode) => (
@@ -881,10 +912,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           ))}
         </div>
       </div>
-      
+
       {/* View-specific header (day/week column headers) */}
       {renderHeader()}
-      
+
       {/* Main content - renders the active view */}
       {renderView()}
     </div>

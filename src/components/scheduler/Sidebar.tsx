@@ -139,6 +139,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
 };
 
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Main Sidebar Component
@@ -149,13 +150,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSectionChange,
 }) => {
   const { modules, workspaceId, setAdminWorkspace } = useWorkspace();
+  const { t } = useTranslation();
   const { user } = useAuth();
   const unreadNotes = useUnreadNotes();
 
-  const [adminWorkspaces, setAdminWorkspaces] = useState<{id: string, name: string}[]>([]);
+  const [adminWorkspaces, setAdminWorkspaces] = useState<{ id: string, name: string }[]>([]);
   useEffect(() => {
     if (user?.role === 'platform_admin') {
-      supabase.from('workspaces').select('id, name').then(({data}) => {
+      supabase.from('workspaces').select('id, name').then(({ data }) => {
         if (data) setAdminWorkspaces(data);
       });
     }
@@ -179,7 +181,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     fetchUnreadCounts();
   }, [workspaceId, user]);
 
-  // Track expanded sections
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['time'])
   );
@@ -188,33 +189,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const NAVIGATION_ITEMS: NavItem[] = modules.assistance ? [
     {
       id: 'time',
-      label: 'Tidshantering',
+      label: t('sidebar.time_management'),
       icon: Clock,
       children: [
-        { id: 'timereports', label: 'Tidsrapporter', icon: FileCheck },
-        { id: 'schedule', label: 'Schema', icon: CalendarDays },
+        { id: 'timereports', label: t('sidebar.time_reports'), icon: FileCheck },
+        { id: 'schedule', label: t('sidebar.schedule'), icon: CalendarDays },
       ],
     },
     {
       id: 'work-notes',
-      label: 'Anteckningar',
+      label: t('sidebar.work_notes'),
       icon: FileText,
       badge: unreadNotes.total > 0 ? unreadNotes.total : undefined,
     },
     {
       id: 'inbox',
-      label: 'Inkorg',
+      label: t('sidebar.inbox'),
       icon: Mail,
       badge: unreadMessages > 0 ? unreadMessages : undefined,
     },
     {
       id: 'directory',
-      label: 'Teams',
+      label: t('sidebar.teams'),
       icon: Users,
     },
     {
       id: 'medication',
-      label: 'Medicinering',
+      label: t('sidebar.medication'),
       icon: Bell,
     }
   ] : [];
@@ -259,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div>
             <h2 className="text-foreground font-semibold text-sm">Volt Scheduler</h2>
             {user?.role === 'platform_admin' ? (
-              <select 
+              <select
                 className="mt-0.5 bg-transparent border-none text-xs text-muted-foreground outline-none cursor-pointer p-0 appearance-none underline decoration-dashed underline-offset-4 pointer-events-auto w-full max-w-[120px] truncate"
                 value={workspaceId || ''}
                 onChange={(e) => setAdminWorkspace(e.target.value)}
@@ -279,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t('common.search')}
             className="
               w-full h-9 pl-9 pr-4 rounded-md
               bg-secondary border border-border
@@ -313,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {modules.assistance && (
           <>
             <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3 px-3">
-              Show
+              {t('sidebar.show')}
             </h3>
             <div className="space-y-2">
               {[

@@ -20,7 +20,7 @@ import type { CalendarEvent } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
-// Nya Moduler
+import { useTranslation } from 'react-i18next';
 import { WorkNotesPage } from '../notes/WorkNotesPage';
 import { MedicationPage } from '../assistance/MedicationPage';
 import { DirectoryPage } from '../directory/DirectoryPage';
@@ -51,6 +51,9 @@ interface EventModalProps {
 // Mock components are replaced with Supabase async components
 
 const EventModal: React.FC<EventModalProps> = ({ event, onClose, onEdit, onDelete }) => {
+  const { settings } = useWorkspace();
+  const { t } = useTranslation();
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
   if (!event) return null;
 
   const [eventTeam, setEventTeam] = useState<any | null>(null);
@@ -106,11 +109,11 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onEdit, onDelet
             </svg>
             <div>
               <p className="text-foreground">
-                {event.startTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                {event.startTime.toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
               <p className="text-muted-foreground text-sm">
-                {event.startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} - 
-                {event.endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                {event.startTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} -
+                {event.endTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
           </div>
@@ -177,13 +180,13 @@ const EventModal: React.FC<EventModalProps> = ({ event, onClose, onEdit, onDelet
             onClick={() => onDelete?.(event.id)}
             className="px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-md transition-colors text-sm"
           >
-            Delete
+            {t('common.delete')}
           </button>
           <button
             onClick={() => onEdit?.(event)}
             className="px-4 py-2 bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white rounded-md transition-colors text-sm"
           >
-            Edit
+            {t('common.edit')}
           </button>
         </div>
       </div>
@@ -202,7 +205,9 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
   const [breadcrumbNode, setBreadcrumbNode] = useState<ReactNode>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const { modules, isLoading } = useWorkspace();
+  const { modules, isLoading, settings } = useWorkspace();
+  const { t } = useTranslation();
+  const isSv = settings.language === 'sv';
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -213,11 +218,10 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-  
+
   // Hardcoded for security until real role logic is integrated
   const activeRole = 'admin' as any as DevRole;
-  
-  // Nollställ breadcrumb när vi byter huvudsektion
+
   React.useEffect(() => {
     setBreadcrumbNode(null);
   }, [activeSection]);
@@ -247,7 +251,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
       supabase.removeChannel(channel);
     };
   }, [workspaceId]);
-  
+
   // Calendar state from custom hook
   const {
     selectedDate,
@@ -271,15 +275,14 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
   // Handle Role Change effect
   React.useEffect(() => {
     if (activeRole === 'assistant') {
-      // Set to first available team if unselected
       if (selectedTeamId === 'all') {
-         // In a real app we'd filter by checking team_members, but we just pick first team for demo
+        // TODO: In a real app we'd filter by checking team_members, but we just pick first team for demo
         const firstAvailableTeam = dbTeams[0];
         if (firstAvailableTeam) {
           setSelectedTeamId(firstAvailableTeam.id);
         }
       }
-      
+
       // Default to their own shifts mostly, or leave all, but make sure they don't see unauthorized 'all'
       // If we want to default an assistant to "Only my shifts", we can do it here:
       if (selectedAssigneeId !== 'all' && selectedAssigneeId !== user?.id) {
@@ -309,7 +312,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background animate-in fade-in duration-500">
           <div className="flex items-center gap-3 text-muted-foreground">
             <div className="w-5 h-5 border-2 border-current border-t-primary rounded-full animate-spin" />
-            <span className="text-sm font-medium tracking-wide">Laddar arbetsyta...</span>
+            <span className="text-sm font-medium tracking-wide">{t('common.loading')}</span>
           </div>
         </div>
       );
@@ -321,20 +324,20 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
           <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-6 border border-border shadow-2xl rotate-12 transition-transform hover:rotate-0 duration-300">
             <Lock className="w-10 h-10 text-primary -rotate-12 transition-transform hover:rotate-0 duration-300" />
           </div>
-          <h2 className="text-2xl font-bold text-foreground mb-3">Assistansmodul krävs</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-3">{t('scheduler.location_locked')}</h2>
           <p className="text-muted-foreground max-w-md mb-8 leading-relaxed">
-            Hela plattformen är nu strikt kopplad till Assistansmodulen. Din organisation har inte denna modul aktiverad, vilket innebär att arbetsytan är låst.
+            {t('scheduler.location_locked_desc')}
           </p>
           {(user?.role === 'admin' || user?.role === 'platform_admin') ? (
-            <button 
+            <button
               onClick={() => setActiveSection('settings')}
               className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white px-6 py-2.5 rounded-lg font-medium transition-colors shadow-lg shadow-violet-500/20"
             >
-              Gå till Inställningar
+              {t('scheduler.go_to_settings')}
             </button>
           ) : (
             <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Kontakta administratör för aktivering
+              {t('scheduler.contact_admin')}
             </div>
           )}
         </div>
@@ -373,16 +376,16 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
               {/* Team Filter */}
               <div className="mt-6 border-b border-border pb-6">
                 <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
-                  Aktivt Schema
+                  {t('scheduler.active_schedule')}
                 </h3>
                 <div className="space-y-2">
-                  <select 
+                  <select
                     value={selectedTeamId}
                     onChange={(e) => setSelectedTeamId(e.target.value)}
                     className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
                   >
                     {activeRole === 'admin' && (
-                      <option value="all">Alla Team (Översikt)</option>
+                      <option value="all">{t('scheduler.all_teams')}</option>
                     )}
                     {dbTeams.map(team => (
                       <option key={team.id} value={team.id}>{team.name}</option>
@@ -394,22 +397,22 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
               {/* Personal / Assignee Filter */}
               <div className="mt-6 border-b border-border pb-6">
                 <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
-                  Personal / Assistenter
+                  {t('scheduler.staff_assistants')}
                 </h3>
                 <div className="space-y-2">
-                  <select 
+                  <select
                     value={selectedAssigneeId}
                     onChange={(e) => setSelectedAssigneeId(e.target.value)}
                     className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
                   >
                     {activeRole === 'assistant' ? (
                       <>
-                        <option value="all">Hela Teamets pass</option>
-                        <option value={user?.id || 'all'}>Bara mina pass</option>
+                        <option value="all">{t('scheduler.full_team_shifts')}</option>
+                        <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
                       </>
                     ) : (
                       <>
-                        <option value="all">Alla assistenter</option>
+                        <option value="all">{t('scheduler.all_assistants')}</option>
                         {dbUsers.map(u => (
                           <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
                         ))}
@@ -424,7 +427,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
               {/* Upcoming Events List */}
               <div className="mt-6">
                 <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
-                  Upcoming
+                  {t('common.upcoming')}
                 </h3>
                 <div className="space-y-2">
                   {filteredEvents.slice(0, 3).map((event) => (
@@ -435,9 +438,9 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
                     >
                       <div className="text-foreground text-sm font-medium truncate">{event.title}</div>
                       <div className="text-muted-foreground text-xs mt-1">
-                        {event.startTime.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {event.startTime.toLocaleDateString(isSv ? 'sv-SE' : 'en-US', { month: 'short', day: 'numeric' })}
                         {' · '}
-                        {event.startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                        {event.startTime.toLocaleTimeString(isSv ? 'sv-SE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   ))}
@@ -488,7 +491,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
 
           {/* Right side actions */}
           <div className="flex items-center gap-3 relative" ref={profileRef}>
-            <div 
+            <div
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               className="flex items-center gap-3 pl-3 py-1 cursor-pointer hover:bg-secondary rounded-md transition-colors"
             >
@@ -509,26 +512,26 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
               <div className="absolute top-12 right-0 w-48 bg-sidebar border border-border rounded-xl shadow-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                 {(user?.role === 'admin' || user?.role === 'platform_admin') && (
                   <>
-                    <button 
+                    <button
                       onClick={() => {
                         setIsProfileOpen(false);
                         setActiveSection('settings');
                       }}
                       className="w-full flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
                     >
-                      <Settings className="w-4 h-4" /> Inställningar
+                      <Settings className="w-4 h-4" /> {t('common.settings')}
                     </button>
                     <div className="my-1 border-t border-border"></div>
                   </>
                 )}
-                <button 
+                <button
                   onClick={() => {
                     setIsProfileOpen(false);
                     onLogout();
                   }}
                   className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors"
                 >
-                  <LogOut className="w-4 h-4" /> Logga ut
+                  <LogOut className="w-4 h-4" /> {t('common.logout')}
                 </button>
               </div>
             )}

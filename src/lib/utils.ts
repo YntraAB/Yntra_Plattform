@@ -48,9 +48,10 @@ export function formatDate(
     weekday: 'short', 
     month: 'short', 
     day: 'numeric' 
-  }
+  },
+  locale: string = 'en-US'
 ): string {
-  return new Intl.DateTimeFormat('en-US', options).format(date);
+  return new Intl.DateTimeFormat(locale, options).format(date);
 }
 
 /**
@@ -59,8 +60,8 @@ export function formatDate(
  * @param date - Date to format
  * @returns Formatted month and year string
  */
-export function formatMonthYear(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', { 
+export function formatMonthYear(date: Date, locale: string = 'en-US'): string {
+  return new Intl.DateTimeFormat(locale, { 
     month: 'long', 
     year: 'numeric' 
   }).format(date);
@@ -72,8 +73,8 @@ export function formatMonthYear(date: Date): string {
  * @param date - Date to extract time from
  * @returns Formatted time string (24-hour format)
  */
-export function formatTime(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', { 
+export function formatTime(date: Date, locale: string = 'en-US'): string {
+  return new Intl.DateTimeFormat(locale, { 
     hour: '2-digit', 
     minute: '2-digit',
     hour12: false 
@@ -87,8 +88,8 @@ export function formatTime(date: Date): string {
  * @param endTime - End date/time
  * @returns Formatted time range string
  */
-export function formatTimeRange(startTime: Date, endTime: Date): string {
-  return `${formatTime(startTime)} - ${formatTime(endTime)}`;
+export function formatTimeRange(startTime: Date, endTime: Date, locale: string = 'en-US'): string {
+  return `${formatTime(startTime, locale)} - ${formatTime(endTime, locale)}`;
 }
 
 /**
@@ -97,8 +98,8 @@ export function formatTimeRange(startTime: Date, endTime: Date): string {
  * @param date - Date to get day name from
  * @returns Short day name
  */
-export function getShortDayName(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(date);
+export function getShortDayName(date: Date, locale: string = 'en-US'): string {
+  return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date);
 }
 
 /**
@@ -107,8 +108,8 @@ export function getShortDayName(date: Date): string {
  * @param date - Date to get day name from
  * @returns Full day name
  */
-export function getFullDayName(date: Date): string {
-  return new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(date);
+export function getFullDayName(date: Date, locale: string = 'en-US'): string {
+  return new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(date);
 }
 
 /**
@@ -148,9 +149,9 @@ export function isToday(date: Date): boolean {
  * 
  * @returns Array of time slot objects
  */
-export function generateTimeSlots(): TimeSlot[] {
+export function generateTimeSlots(startHour: number = 0, endHour: number = 23): TimeSlot[] {
   const slots: TimeSlot[] = [];
-  for (let hour = 0; hour < 24; hour++) {
+  for (let hour = startHour; hour <= endHour; hour++) {
     slots.push({
       hour,
       label: `${hour.toString().padStart(2, '0')}:00`,
@@ -165,25 +166,25 @@ export function generateTimeSlots(): TimeSlot[] {
  * @param startDate - Start date of the week (typically Sunday or Monday)
  * @returns Array of day info objects
  */
-export function generateWeekDays(startDate: Date): DayInfo[] {
+export function generateWeekDays(startDate: Date, locale: string = 'en-US', weekStart: number = 1): DayInfo[] {
   const days: DayInfo[] = [];
   const currentDate = new Date(startDate);
   
-  // Adjust to start of week (Monday)
-  const dayOfWeek = currentDate.getDay();
-  const diffToMonday = (dayOfWeek + 6) % 7;
-  currentDate.setDate(currentDate.getDate() - diffToMonday);
+  // StartDate is already presumed to be the "start of week" from getStartOfWeek
   
   for (let i = 0; i < 7; i++) {
     const date = new Date(currentDate);
     date.setDate(date.getDate() + i);
     
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
     days.push({
       date,
-      name: getShortDayName(date),
+      name: getShortDayName(date, locale),
       dayOfMonth: date.getDate(),
       isToday: isToday(date),
-      isWeekend: i === 5 || i === 6, // Saturday (5) or Sunday (6) relative to Monday start
+      isWeekend: isWeekend,
     });
   }
   
@@ -196,11 +197,16 @@ export function generateWeekDays(startDate: Date): DayInfo[] {
  * @param date - Date to find week start for
  * @returns Date representing start of week (Monday)
  */
-export function getStartOfWeek(date: Date): Date {
+export function getStartOfWeek(date: Date, weekStart: number = 1): Date {
   const result = new Date(date);
   const dayOfWeek = result.getDay();
-  const diffToMonday = (dayOfWeek + 6) % 7;
-  result.setDate(result.getDate() - diffToMonday);
+  
+  // Calculate difference to target week start
+  // if weekStart = 1 (Mon) and dayOfWeek = 0 (Sun), diff = 6
+  // if weekStart = 0 (Sun) and dayOfWeek = 1 (Mon), diff = 1
+  const diff = (dayOfWeek < weekStart ? 7 : 0) + dayOfWeek - weekStart;
+  
+  result.setDate(result.getDate() - diff);
   result.setHours(0, 0, 0, 0);
   return result;
 }

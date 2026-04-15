@@ -9,7 +9,9 @@
 
 import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn, formatMonthYear, isSameDay, isToday } from '@/lib/utils';
+import { useWorkspace } from '@/contexts/WorkspaceContext';
 
 /**
  * Props for the MiniCalendar component
@@ -35,6 +37,9 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   onSelectDate,
   datesWithEvents = [],
 }) => {
+  const { settings } = useWorkspace();
+  const { t } = useTranslation();
+  const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
   /**
    * Generate the calendar grid data
    * Returns days for the current month view including padding days
@@ -48,9 +53,9 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     // Last day of the month
     const lastDayOfMonth = new Date(year, month + 1, 0);
     
-    // Day of week for the first day, adjusted to Monday start
+    // Day of week for the first day, adjusted to dynamic start
     const startDayOfWeek = firstDayOfMonth.getDay();
-    const diffToMonday = (startDayOfWeek + 6) % 7;
+    const diffToStart = (startDayOfWeek < settings.week_start ? 7 : 0) + startDayOfWeek - settings.week_start;
     
     // Total days in the month
     const daysInMonth = lastDayOfMonth.getDate();
@@ -66,7 +71,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     
     // Add padding days from previous month
     const daysInPrevMonth = new Date(year, month, 0).getDate();
-    for (let i = diffToMonday - 1; i >= 0; i--) {
+    for (let i = diffToStart - 1; i >= 0; i--) {
       const date = new Date(year, month - 1, daysInPrevMonth - i);
       days.push({
         date,
@@ -103,7 +108,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     }
     
     return days;
-  }, [selectedDate, datesWithEvents]);
+  }, [selectedDate, datesWithEvents, settings.week_start]);
 
   /**
    * Navigate to the previous month
@@ -132,7 +137,10 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   };
 
   // Day labels
-  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const isSv = settings.language === 'sv';
+  const dayLabels = settings.week_start === 1 
+    ? (isSv ? ['M', 'T', 'O', 'T', 'F', 'L', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
+    : (isSv ? ['S', 'M', 'T', 'O', 'T', 'F', 'L'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']);
 
   return (
     <div className="bg-sidebar rounded-lg p-4">
@@ -146,7 +154,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         </button>
         
         <span className="text-foreground text-sm font-medium">
-          {formatMonthYear(selectedDate)}
+          {formatMonthYear(selectedDate, locale)}
         </span>
         
         <button
@@ -209,7 +217,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         flex items-center justify-center gap-2
       ">
         <span className="text-primary">+</span>
-        New Event
+        {t('scheduler.new_event')}
       </button>
     </div>
   );
