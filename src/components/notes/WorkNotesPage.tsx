@@ -8,8 +8,7 @@ import {
   History,
   Trash2,
   Check,
-  PenSquare,
-  Building2
+  PenSquare
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -42,33 +41,18 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [dbTeams, setDbTeams] = useState<any[]>([]);
-  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([]);
-
-  const [exploreLevel, setExploreLevel] = useState<'workspaces' | 'teams'>('workspaces');
-
-  React.useEffect(() => {
-    if (userRole === 'platform_admin') {
-      supabase.from('workspaces').select('*').then(({ data }) => {
-        if (data) setDbWorkspaces(data);
-      });
-    }
-  }, [userRole]);
-
-  React.useEffect(() => {
-    if (user && userRole !== 'platform_admin' && exploreLevel === 'workspaces') {
-      setExploreLevel('teams');
-    }
-    if (user && userRole === 'platform_admin' && exploreLevel === 'teams' && !workspaceId && !selectedTeam) {
-      setExploreLevel('workspaces');
-    }
-  }, [user, userRole, exploreLevel, workspaceId, selectedTeam]);
 
   // Fetch teams map
   React.useEffect(() => {
     async function loadTeams() {
-      if (!workspaceId) return;
+      if (userRole !== 'platform_admin' && !workspaceId) return;
 
-      const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', workspaceId);
+      let query = supabase.from('teams').select('*, workspaces(name)');
+      if (userRole !== 'platform_admin') {
+        query = query.eq('workspace_id', workspaceId);
+      }
+
+      const { data: teamData } = await query;
 
       const teamIds = teamData?.map(t => t.id) || [];
       let allNotes: any[] = [];
@@ -80,16 +64,19 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       if (teamData) {
         setDbTeams(teamData.map(t => {
           const notesCount = allNotes.filter(n => n.team_id === t.id).length;
+          const orgName = Array.isArray(t.workspaces) ? t.workspaces[0]?.name : t.workspaces?.name;
+          const displayName = orgName ? `${t.name} - ${orgName}` : t.name;
 
           return {
             ...t,
-            notesCount: notesCount
-          }
-        }));
+            notesCount: notesCount,
+            displayName
+          };
+        }).sort((a, b) => a.displayName.localeCompare(b.displayName)));
       }
     }
     loadTeams();
-  }, [workspaceId]);
+  }, [workspaceId, userRole]);
 
   React.useEffect(() => {
     async function fetchNotes() {
@@ -147,7 +134,8 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
   // --- ACTIONS ---
   const handleSaveNote = async () => {
-    if (!selectedTeam || !composeSubject || !composeText || !workspaceId || !user) return;
+    const targetWorkspaceId = userRole === 'platform_admin' ? selectedTeam.workspace_id : workspaceId;
+    if (!selectedTeam || !composeSubject || !composeText || !targetWorkspaceId || !user) return;
 
     if (editingNoteId) {
       const oldNote = notes.find(n => n.id === editingNoteId);
@@ -171,7 +159,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       }));
     } else {
       const { data } = await supabase.from('work_notes').insert({
-        workspace_id: workspaceId,
+        workspace_id: targetWorkspaceId,
         team_id: selectedTeam.id,
         author_id: user.id,
         subject: composeSubject,
@@ -224,39 +212,16 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     if (!setBreadcrumbNode) return;
 
     const baseBreadcrumb = (
-      <>
-        {userRole === 'platform_admin' && (
-          <>
-            <span
-              className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-              onClick={() => {
-                setExploreLevel('workspaces');
-                setSelectedTeam(null);
-                setActiveNoteId(null);
-                setIsComposing(false);
-              }}
-            >
-              {t('notes.levels.workspaces')}
-            </span>
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-          </>
-        )}
-        <span
-          className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-          onClick={() => {
-            setSelectedTeam(null);
-            setActiveNoteId(null);
-            setIsComposing(false);
-            if (userRole === 'platform_admin' && !workspaceId) {
-              setExploreLevel('workspaces');
-            } else {
-              setExploreLevel('teams');
-            }
-          }}
-        >
-          {t('notes.levels.notes')}
-        </span>
-      </>
+      <span
+        className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+        onClick={() => {
+          setSelectedTeam(null);
+          setActiveNoteId(null);
+          setIsComposing(false);
+        }}
+      >
+        {t('notes.levels.notes')}
+      </span>
     );
 
     if (isComposing && selectedTeam) {
@@ -268,7 +233,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
             onClick={() => setIsComposing(false)}
           >
-            {selectedTeam.name}
+            {selectedTeam.displayName || selectedTeam.name}
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-foreground font-medium">{t('notes.breadcrumbs.new_note')}</span>
@@ -283,7 +248,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
             onClick={() => setActiveNoteId(null)}
           >
-            {selectedTeam.name}
+            {selectedTeam.displayName || selectedTeam.name}
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
           <span className="text-foreground font-medium truncate max-w-[200px]">{activeNote.subject}</span>
@@ -294,7 +259,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
           {baseBreadcrumb}
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-foreground font-medium">{selectedTeam.name}</span>
+          <span className="text-foreground font-medium">{selectedTeam.displayName || selectedTeam.name}</span>
         </div>
       );
     } else {
@@ -305,78 +270,12 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
   }, [selectedTeam, activeNote, isComposing, setBreadcrumbNode]);
 
 
-  // ==========================================
-  // PANE 0: WORKSPACE OVERVIEW (Admin Only)
-  // ==========================================
-  const renderWorkspaceOverview = () => {
-    let wss = dbWorkspaces;
-    if (searchQuery) wss = wss.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    return (
-      <div className="flex-1 flex flex-col h-full bg-background relative">
-        <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium text-base flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-primary" /> {t('notes.workspaces.title')}
-          </h2>
-          <div className="flex items-center gap-4">
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input
-                placeholder={t('notes.workspaces.search_placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {wss.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
-              <Building2 className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">{t('notes.workspaces.empty_state')}</p>
-            </div>
-          ) : (
-            wss.map((ws) => (
-              <div
-                key={ws.id}
-                onClick={() => {
-                  if (setAdminWorkspace) setAdminWorkspace(ws.id);
-                  setExploreLevel('teams');
-                  setSearchQuery('');
-                }}
-                className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
-              >
-                <div className="w-10 h-10 rounded-[8px] bg-secondary flex items-center justify-center text-primary mr-4 shrink-0 transition-colors">
-                  <Building2 className="w-5 h-5" />
-                </div>
-
-                <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                  {ws.name}
-                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{ws.type || t('notes.workspaces.default_type')}</div>
-                </div>
-
-                <div className="flex-1 min-w-0 pr-4"></div>
-
-                <div className="w-12 shrink-0 flex items-center justify-end text-muted-foreground gap-2 group-hover:text-foreground transition-colors">
-                  <ChevronRight className="w-5 h-5" />
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  // ==========================================
-  // PANE 1: TEAM OVERVIEW
-  // ==========================================
   const renderTeamOverview = () => {
     let teams = dbTeams;
 
-    teams = teams.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (searchQuery) {
+      teams = teams.filter(t => (t.displayName || t.name).toLowerCase().includes(searchQuery.toLowerCase()));
+    }
 
     return (
       <div className="flex-1 flex flex-col h-full bg-background relative">
@@ -425,7 +324,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                   </div>
 
                   <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
-                    {team.name}
+                    {team.displayName || team.name}
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider">{team.notesCount || 0} {t('notes.teams.notes_count')}</div>
                       {unreadInTeam > 0 && (
@@ -482,7 +381,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-foreground font-medium">{selectedTeam.name} {t('notes.list.title_suffix')}</h2>
+            <h2 className="text-foreground font-medium">{selectedTeam.displayName || selectedTeam.name} {t('notes.list.title_suffix')}</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
@@ -675,7 +574,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-foreground font-medium">{t('notes.compose.title')} {selectedTeam?.name}</h2>
+            <h2 className="text-foreground font-medium">{t('notes.compose.title')} {selectedTeam?.displayName || selectedTeam?.name}</h2>
           </div>
 
           <div className="flex items-center gap-3">
@@ -730,9 +629,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           ? renderReadPane()
           : selectedTeam
             ? renderNoteList()
-            : (exploreLevel === 'workspaces' && userRole === 'platform_admin')
-              ? renderWorkspaceOverview()
-              : renderTeamOverview()
+            : renderTeamOverview()
       }
     </div>
   );
