@@ -90,5 +90,170 @@
       "alert_only_desc": "Vi skickar bara ett kort mejl om att \"Du har ett nytt meddelande\". Bättre för din personliga integritet.",
       "no_spam": "Vi skickar aldrig skräppost. Du kan när som helst ändra dessa inställningar."
     }
+  },
+  "directory": {
+    "levels": {
+      "teams": "Teams",
+      "workspaces": "Organisationer",
+      "all_members": "Alla Konton i Organisationen"
+    },
+    "workspaces": {
+      "create_button": "Skapa Assistansbolag",
+      "teams_count": "Teams",
+      "users_count": "Anv.",
+      "delete_confirm": "Är du säker på att du vill ta bort detta bolag och alla dess användare?"
+    },
+    "teams": {
+      "title": "Organisationens Teams",
+      "manage_roles": "Hantera Roller",
+      "create_button": "Skapa Team",
+      "all_members_subtitle": "Inkluderar personal utan team-tillhörighet",
+      "led_by": "Leds av:",
+      "assistants_count": "Ass.",
+      "patients_count": "Brukare",
+      "delete_confirm": "Är du säker på att du vill ta bort teamet \"{{name}}\"?",
+      "delete_tooltip": "Ta bort team"
+    },
+    "members": {
+      "org_title": "Personal i Organisationen",
+      "team_title": "Personal i Teamet",
+      "invite_button": "Bjud in",
+      "name_unspecified": "Namn ej angivet",
+      "default_assistant_role": "Standard Assistent",
+      "update_role_error": "Kunde inte uppdatera roll:",
+      "delete_team_confirm": "Är du säker på att du vill ta bort {{name}} från teamet?",
+      "delete_org_confirm": "Är du säker på att du vill ta bort {{name}} från organisationen?",
+      "delete_error": "Fel vid borttagning:",
+      "delete_team_tooltip": "Ta bort från team",
+      "delete_org_tooltip": "Ta bort från organisationen"
+    },
+    "roles": {
+      "platform_admin": "Utvecklare",
+      "admin": "Administratörer",
+      "assistant": "Assistenter",
+      "user": "Användare",
+      "unknown": "Okänd roll"
+    },
+    "detail": {
+      "info_title": "Information",
+      "phone_unspecified": "Gömmer nummer / Ej angivet",
+      "warnings_title": "Varningar",
+      "care_plan_title": "Genomförandeplan",
+      "journal_button": "Journal",
+      "edit_button": "Redigera {{type}}",
+      "patient": "Brukare",
+      "staff": "Personal"
+    },
+    "hub": {
+      "title": "Skapa Nytt Assistansbolag",
+      "ws_name_label": "Bolagsnamn",
+      "ws_name_placeholder": "T.ex. Yntra Assistans AB",
+      "admin_email_label": "Administratörens E-post",
+      "admin_email_placeholder": "admin@bolag.se",
+      "cancel": "Avbryt",
+      "creating": "Skapar...",
+      "create_invite": "Skapa & Bjud in",
+      "success": "Skapat bolag & Inbjudan Skickad!"
+    },
+    "role_manager": {
+      "title": "Team-roller",
+      "locked_role_desc": "Låst inbyggd roll",
+      "custom_role_desc": "Anpassad roll",
+      "create_new_button": "Skapa Ny Roll",
+      "create_title": "Skapa anpassad roll",
+      "edit_title": "Redigera roll",
+      "config_desc": "Konfigurera behörigheter för denna specifik roll. Rollen kan sedan tilldelas valfri assistent inuti ett specifikt team.",
+      "role_name_label": "Rollnamn",
+      "role_name_placeholder": "T.ex. Schemaläggare, Arbetsledare...",
+      "permissions_label": "Behörigheter / Makt",
+      "perm_schedule_title": "Hantera Schema & Arbetspass",
+      "perm_schedule_desc": "Låter användaren redigera kalendern, lägga till pass och schemalägga andra i teamet.",
+      "perm_notes_title": "Hantera Anteckningar (Admin)",
+      "perm_notes_desc": "Kan radera andras loggböcker och anteckningar, inte bara sina egna.",
+      "perm_time_title": "Godkänn Tidrapporter",
+      "perm_time_desc": "Ger makten att fastställa och låsa arbetspass till löneunderlaget.",
+      "close": "Stäng",
+      "delete_confirm": "Är du säker på att du vill radera rollen? Personer som har rollen kommer återgå till standard.",
+      "delete_button": "Radera Roll",
+      "save_new": "Spara Ny Roll",
+      "save_changes": "Spara Ändringar",
+      "create_success": "Roll skapad!",
+      "update_success": "Roll uppdaterad!",
+      "empty_state": "Välj en roll i listan eller skapa en ny.",
+      "close_manager": "Stäng Hanteraren"
+    },
+    "create_team": {
+      "name_label": "Teamnamn",
+      "name_placeholder": "T.ex. Nattpatrullen",
+      "success": "Team skapat!",
+      "submit": "Skapa"
+    },
+    "invite": {
+      "title": "Lägg till i Team",
+      "tab_existing": "Från Organisation",
+      "tab_new": "Bjud in via E-post",
+      "existing_desc": "Välj personal i organisationen att lägga till i teamet.",
+      "no_users": "Hittade ingen mer personal i organisationen.",
+      "anonymous": "Anonym",
+      "new_desc": "Skicka en inbjudan till en ny assistent som ännu inte finns i organisationen.",
+      "email_label": "Assistentens E-post",
+      "email_placeholder": "assistent@exempel.se",
+      "existing_success": "Personal tillagd i teamet!",
+      "new_success": "Inbjudan Skickad!",
+      "sending": "Skickar...",
+      "send_button": "Skicka inbjudan"
+    }
+  },
+  "notes": {
+    "levels": {
+      "workspaces": "Organisationer",
+      "notes": "Anteckningar"
+    },
+    "general": {
+      "unknown_agent": "Okänd Agent",
+      "me": "Mig"
+    },
+    "breadcrumbs": {
+      "new_note": "Ny Anteckning"
+    },
+    "workspaces": {
+      "title": "Välj Organisation",
+      "search_placeholder": "Sök efter organisation...",
+      "empty_state": "Inga organisationer hittades",
+      "default_type": "Assistans"
+    },
+    "teams": {
+      "title": "Välj Anteckningsbok",
+      "search_placeholder": "Sök efter team...",
+      "empty_state": "Inga team hittades",
+      "notes_count": "anteckningar skapade",
+      "unread_badge": "Nya",
+      "last_updated": "Senast uppdaterad"
+    },
+    "list": {
+      "title_suffix": "Anteckningar",
+      "search_placeholder": "Sök i anteckningar...",
+      "empty_state": "Finns inga anteckningar än",
+      "today": "Idag",
+      "new_note_button": "Ny Anteckning",
+      "delete_confirm": "Är du säker på att du vill radera denna anteckning?"
+    },
+    "read": {
+      "title": "Läs Anteckning",
+      "written_by": "Skrivet av",
+      "published": "Publicerat",
+      "at_time": "kl",
+      "history_button": "Historik",
+      "audit_log_title": "Redigeringslogg",
+      "edited_by": "Redigerad av"
+    },
+    "compose": {
+      "title": "Skriv för",
+      "cancel": "Avbryt",
+      "save_button": "Spara Anteckning",
+      "subject_label": "Rubrik",
+      "subject_placeholder": "Ex. Eftermiddagspasset eller Incident",
+      "content_placeholder": "Vad hände under passet? Skriv dina detaljerade anteckningar här..."
+    }
   }
 }

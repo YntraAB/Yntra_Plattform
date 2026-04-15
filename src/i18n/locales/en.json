@@ -90,5 +90,170 @@
       "alert_only_desc": "We only send a short email stating \"You have a new message\". Better for your personal privacy.",
       "no_spam": "We never send spam. You can change these settings at any time."
     }
+  },
+  "directory": {
+    "levels": {
+      "teams": "Teams",
+      "workspaces": "Organizations",
+      "all_members": "All Accounts in Organization"
+    },
+    "workspaces": {
+      "create_button": "Create Assistance Company",
+      "teams_count": "Teams",
+      "users_count": "Users",
+      "delete_confirm": "Are you sure you want to delete this company and all its users?"
+    },
+    "teams": {
+      "title": "Organization Teams",
+      "manage_roles": "Manage Roles",
+      "create_button": "Create Team",
+      "all_members_subtitle": "Includes staff without team affiliation",
+      "led_by": "Led by:",
+      "assistants_count": "Asst.",
+      "patients_count": "Clients",
+      "delete_confirm": "Are you sure you want to delete the team \"{{name}}\"?",
+      "delete_tooltip": "Delete team"
+    },
+    "members": {
+      "org_title": "Staff in Organization",
+      "team_title": "Staff in Team",
+      "invite_button": "Invite",
+      "name_unspecified": "Name not specified",
+      "default_assistant_role": "Standard Assistant",
+      "update_role_error": "Could not update role:",
+      "delete_team_confirm": "Are you sure you want to remove {{name}} from the team?",
+      "delete_org_confirm": "Are you sure you want to remove {{name}} from the organization?",
+      "delete_error": "Delete error:",
+      "delete_team_tooltip": "Remove from team",
+      "delete_org_tooltip": "Remove from organization"
+    },
+    "roles": {
+      "platform_admin": "Developer",
+      "admin": "Administrators",
+      "assistant": "Assistants",
+      "user": "Users",
+      "unknown": "Unknown role"
+    },
+    "detail": {
+      "info_title": "Information",
+      "phone_unspecified": "Hidden number / Not specified",
+      "warnings_title": "Warnings",
+      "care_plan_title": "Implementation Plan",
+      "journal_button": "Journal",
+      "edit_button": "Edit {{type}}",
+      "patient": "Client",
+      "staff": "Staff"
+    },
+    "hub": {
+      "title": "Create New Assistance Company",
+      "ws_name_label": "Company Name",
+      "ws_name_placeholder": "e.g. Yntra Assistance Ltd",
+      "admin_email_label": "Administrator Email",
+      "admin_email_placeholder": "admin@company.com",
+      "cancel": "Cancel",
+      "creating": "Creating...",
+      "create_invite": "Create & Invite",
+      "success": "Company created & Invitation Sent!"
+    },
+    "role_manager": {
+      "title": "Team Roles",
+      "locked_role_desc": "Locked built-in role",
+      "custom_role_desc": "Custom role",
+      "create_new_button": "Create New Role",
+      "create_title": "Create custom role",
+      "edit_title": "Edit role",
+      "config_desc": "Configure permissions for this specific role. The role can then be assigned to any assistant within a specific team.",
+      "role_name_label": "Role Name",
+      "role_name_placeholder": "e.g. Scheduler, Supervisor...",
+      "permissions_label": "Permissions / Power",
+      "perm_schedule_title": "Manage Schedule & Shifts",
+      "perm_schedule_desc": "Allows user to edit calendar, add shifts and schedule others in the team.",
+      "perm_notes_title": "Manage Notes (Admin)",
+      "perm_notes_desc": "Can delete others' logs and notes, not just their own.",
+      "perm_time_title": "Approve Time Reports",
+      "perm_time_desc": "Gives the power to finalize and lock shifts for payroll.",
+      "close": "Close",
+      "delete_confirm": "Are you sure you want to delete the role? People with the role will revert to standard.",
+      "delete_button": "Delete Role",
+      "save_new": "Save New Role",
+      "save_changes": "Save Changes",
+      "create_success": "Role created!",
+      "update_success": "Role updated!",
+      "empty_state": "Select a role from the list or create a new one.",
+      "close_manager": "Close Manager"
+    },
+    "create_team": {
+      "name_label": "Team Name",
+      "name_placeholder": "e.g. Night Shift",
+      "success": "Team created!",
+      "submit": "Create"
+    },
+    "invite": {
+      "title": "Add to Team",
+      "tab_existing": "From Organization",
+      "tab_new": "Invite via Email",
+      "existing_desc": "Select staff in the organization to add to the team.",
+      "no_users": "No more staff found in the organization.",
+      "anonymous": "Anonymous",
+      "new_desc": "Send an invitation to a new assistant who is not yet in the organization.",
+      "email_label": "Assistant Email",
+      "email_placeholder": "assistant@example.com",
+      "existing_success": "Staff added to the team!",
+      "new_success": "Invitation Sent!",
+      "sending": "Sending...",
+      "send_button": "Send invitation"
+    }
+  },
+  "notes": {
+    "levels": {
+      "workspaces": "Organizations",
+      "notes": "Work Notes"
+    },
+    "general": {
+      "unknown_agent": "Unknown Agent",
+      "me": "Me"
+    },
+    "breadcrumbs": {
+      "new_note": "New Note"
+    },
+    "workspaces": {
+      "title": "Select Organization",
+      "search_placeholder": "Search for organization...",
+      "empty_state": "No organizations found",
+      "default_type": "Assistance"
+    },
+    "teams": {
+      "title": "Select Notebook",
+      "search_placeholder": "Search for team...",
+      "empty_state": "No teams found",
+      "notes_count": "notes created",
+      "unread_badge": "New",
+      "last_updated": "Last updated"
+    },
+    "list": {
+      "title_suffix": "Notes",
+      "search_placeholder": "Search notes...",
+      "empty_state": "No notes found yet",
+      "today": "Today",
+      "new_note_button": "New Note",
+      "delete_confirm": "Are you sure you want to delete this note?"
+    },
+    "read": {
+      "title": "Read Note",
+      "written_by": "Written by",
+      "published": "Published",
+      "at_time": "at",
+      "history_button": "History",
+      "audit_log_title": "Redaction Log",
+      "edited_by": "Edited by"
+    },
+    "compose": {
+      "title": "Write for",
+      "cancel": "Cancel",
+      "save_button": "Save Note",
+      "subject_label": "Subject",
+      "subject_placeholder": "e.g. Afternoon shift or Incident",
+      "content_placeholder": "What happened during the shift? Write your detailed notes here..."
+    }
   }
 }

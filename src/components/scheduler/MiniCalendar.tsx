@@ -47,20 +47,12 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   const calendarDays = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
-    
-    // First day of the month
     const firstDayOfMonth = new Date(year, month, 1);
-    // Last day of the month
     const lastDayOfMonth = new Date(year, month + 1, 0);
-    
-    // Day of week for the first day, adjusted to dynamic start
     const startDayOfWeek = firstDayOfMonth.getDay();
     const diffToStart = (startDayOfWeek < settings.week_start ? 7 : 0) + startDayOfWeek - settings.week_start;
-    
-    // Total days in the month
     const daysInMonth = lastDayOfMonth.getDate();
-    
-    // Generate days array
+
     const days: Array<{
       date: Date;
       dayOfMonth: number;
@@ -68,8 +60,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
       isToday: boolean;
       hasEvents: boolean;
     }> = [];
-    
-    // Add padding days from previous month
+
     const daysInPrevMonth = new Date(year, month, 0).getDate();
     for (let i = diffToStart - 1; i >= 0; i--) {
       const date = new Date(year, month - 1, daysInPrevMonth - i);
@@ -81,8 +72,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         hasEvents: datesWithEvents.some(d => isSameDay(d, date)),
       });
     }
-    
-    // Add days of current month
+
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       days.push({
@@ -93,8 +83,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         hasEvents: datesWithEvents.some(d => isSameDay(d, date)),
       });
     }
-    
-    // Add padding days from next month to complete the grid (6 rows x 7 columns = 42 cells)
+
     const remainingCells = 42 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       const date = new Date(year, month + 1, day);
@@ -106,7 +95,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         hasEvents: datesWithEvents.some(d => isSameDay(d, date)),
       });
     }
-    
+
     return days;
   }, [selectedDate, datesWithEvents, settings.week_start]);
 
@@ -138,7 +127,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
 
   // Day labels
   const isSv = settings.language === 'sv';
-  const dayLabels = settings.week_start === 1 
+  const dayLabels = settings.week_start === 1
     ? (isSv ? ['M', 'T', 'O', 'T', 'F', 'L', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
     : (isSv ? ['S', 'M', 'T', 'O', 'T', 'F', 'L'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']);
 
@@ -152,11 +141,11 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         >
           <ChevronLeft className="w-4 h-4 text-muted-foreground" />
         </button>
-        
+
         <span className="text-foreground text-sm font-medium">
           {formatMonthYear(selectedDate, locale)}
         </span>
-        
+
         <button
           onClick={goToNextMonth}
           className="p-1 hover:bg-muted rounded transition-colors"
@@ -199,7 +188,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
             )}
           >
             {day.dayOfMonth}
-            
+
             {/* Event indicator dot */}
             {day.hasEvents && !isSameDay(day.date, selectedDate) && (
               <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />

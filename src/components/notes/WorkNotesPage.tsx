@@ -11,6 +11,7 @@ import {
   PenSquare,
   Building2
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
@@ -32,6 +33,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
 
 export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNode) => void }> = ({ setBreadcrumbNode }) => {
+  const { t } = useTranslation();
   const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
   const unreadNotes = useUnreadNotes();
@@ -44,7 +46,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
   const [exploreLevel, setExploreLevel] = useState<'workspaces' | 'teams'>('workspaces');
 
-  // Ladda bolag för platform_admin
   React.useEffect(() => {
     if (userRole === 'platform_admin') {
       supabase.from('workspaces').select('*').then(({ data }) => {
@@ -72,7 +73,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       const teamIds = teamData?.map(t => t.id) || [];
       let allNotes: any[] = [];
       if (teamIds.length > 0) {
-        // Hämta enbart team_id för att räkna antalet loggböcker blixtsnabbt
         const { data: notes } = await supabase.from('work_notes').select('team_id').in('team_id', teamIds);
         allNotes = notes || [];
       }
@@ -91,7 +91,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     loadTeams();
   }, [workspaceId]);
 
-  // Fetch real notes
   React.useEffect(() => {
     async function fetchNotes() {
       if (!selectedTeam) return;
@@ -105,11 +104,11 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         const mappedNotes: Note[] = data.map(dbNote => {
           const dateObj = new Date(dbNote.created_at);
 
-          let authorName = 'Okänd Agent';
+          let authorName = t('notes.general.unknown_agent');
           if (dbNote.author) {
             const authorData = Array.isArray(dbNote.author) ? dbNote.author[0] : dbNote.author;
             if (authorData) {
-              authorName = authorData.full_name || authorData.email || 'Okänd Agent';
+              authorName = authorData.full_name || authorData.email || t('notes.general.unknown_agent');
             }
           }
 
@@ -144,7 +143,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
   const [composeSubject, setComposeSubject] = useState('');
   const [expandedAudit, setExpandedAudit] = useState(false);
 
-  // Active note lookup
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   // --- ACTIONS ---
@@ -152,7 +150,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     if (!selectedTeam || !composeSubject || !composeText || !workspaceId || !user) return;
 
     if (editingNoteId) {
-      // Find old one
       const oldNote = notes.find(n => n.id === editingNoteId);
       if (!oldNote) return;
 
@@ -166,7 +163,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         edit_history: newHistory
       }).eq('id', editingNoteId);
 
-      // Optimistic update
       setNotes(notes.map(n => {
         if (n.id === editingNoteId) {
           return { ...n, subject: composeSubject, content: composeText, editHistory: newHistory };
@@ -174,7 +170,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
         return n;
       }));
     } else {
-      // Create new
       const { data } = await supabase.from('work_notes').insert({
         workspace_id: workspaceId,
         team_id: selectedTeam.id,
@@ -185,7 +180,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       }).select().single();
 
       if (data) {
-        // Fetch new state to rebuild UI
         const dateObj = new Date(data.created_at);
         const newNote: Note = {
           id: data.id,
@@ -193,7 +187,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           authorId: data.author_id,
           date: dateObj.toLocaleDateString(),
           timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          author: (user as any)?.email || 'Me',
+          author: (user as any)?.email || t('notes.general.me'),
           subject: data.subject,
           content: data.content,
           editHistory: []
@@ -208,7 +202,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
   const handleDeleteNote = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    if (confirm('Är du säker på att du vill radera denna anteckning?')) {
+    if (confirm(t('notes.list.delete_confirm'))) {
       await supabase.from('work_notes').delete().eq('id', id);
       setNotes(notes.filter(n => n.id !== id));
       if (activeNoteId === id) setActiveNoteId(null);
@@ -226,7 +220,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     setIsComposing(true);
   };
 
-  // Breadcrumb updates
   React.useEffect(() => {
     if (!setBreadcrumbNode) return;
 
@@ -243,7 +236,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                 setIsComposing(false);
               }}
             >
-              Organisationer
+              {t('notes.levels.workspaces')}
             </span>
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
           </>
@@ -261,7 +254,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             }
           }}
         >
-          Anteckningar
+          {t('notes.levels.notes')}
         </span>
       </>
     );
@@ -278,7 +271,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             {selectedTeam.name}
           </span>
           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-foreground font-medium">Ny Anteckning</span>
+          <span className="text-foreground font-medium">{t('notes.breadcrumbs.new_note')}</span>
         </div>
       );
     } else if (activeNote && selectedTeam) {
@@ -306,7 +299,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       );
     } else {
       setBreadcrumbNode(
-        <span className="text-foreground font-medium animate-in fade-in duration-200">Anteckningar</span>
+        <span className="text-foreground font-medium animate-in fade-in duration-200">{t('notes.levels.notes')}</span>
       );
     }
   }, [selectedTeam, activeNote, isComposing, setBreadcrumbNode]);
@@ -323,13 +316,13 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
       <div className="flex-1 flex flex-col h-full bg-background relative">
         <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
           <h2 className="text-foreground font-medium text-base flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-primary" /> Välj Organisation
+            <Building2 className="w-4 h-4 text-primary" /> {t('notes.workspaces.title')}
           </h2>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
-                placeholder="Sök efter organisation..."
+                placeholder={t('notes.workspaces.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
@@ -342,7 +335,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           {wss.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
               <Building2 className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Inga organisationer hittades</p>
+              <p className="text-sm">{t('notes.workspaces.empty_state')}</p>
             </div>
           ) : (
             wss.map((ws) => (
@@ -361,7 +354,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
                 <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
                   {ws.name}
-                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{ws.type || 'Assistance'}</div>
+                  <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider mt-0.5">{ws.type || t('notes.workspaces.default_type')}</div>
                 </div>
 
                 <div className="flex-1 min-w-0 pr-4"></div>
@@ -388,12 +381,12 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     return (
       <div className="flex-1 flex flex-col h-full bg-background relative">
         <div className="h-16 px-8 flex items-center justify-between border-b border-border shrink-0">
-          <h2 className="text-foreground font-medium">Välj Anteckningsbok</h2>
+          <h2 className="text-foreground font-medium">{t('notes.teams.title')}</h2>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
-                placeholder="Sök efter team..."
+                placeholder={t('notes.teams.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
@@ -406,7 +399,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           {teams.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
               <Users className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Inga team hittades</p>
+              <p className="text-sm">{t('notes.teams.empty_state')}</p>
             </div>
           ) : (
             teams.map((team) => {
@@ -434,9 +427,9 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                   <div className="w-64 md:w-80 shrink-0 pr-4 text-foreground font-medium text-[15px]">
                     {team.name}
                     <div className="flex items-center gap-2 mt-0.5">
-                      <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider">{team.notesCount || 0} anteckningar skapade</div>
+                      <div className="text-[11px] text-muted-foreground font-normal uppercase tracking-wider">{team.notesCount || 0} {t('notes.teams.notes_count')}</div>
                       {unreadInTeam > 0 && (
-                        <span className="text-red-500 font-bold bg-red-500/10 px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">{unreadInTeam} Nya</span>
+                        <span className="text-red-500 font-bold bg-red-500/10 px-1.5 py-0 rounded text-[9px] uppercase tracking-wider">{unreadInTeam} {t('notes.teams.unread_badge')}</span>
                       )}
                     </div>
                   </div>
@@ -444,7 +437,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                   <div className="flex-1 min-w-0 pr-4 flex items-center justify-end">
                     {team.recentNote && (
                       <div className="text-right mr-4">
-                        <div className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">Senast uppdaterad</div>
+                        <div className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">{t('notes.teams.last_updated')}</div>
                         <div className="text-[13px] text-muted-foreground mt-0.5">{team.recentNote}</div>
                       </div>
                     )}
@@ -489,13 +482,13 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-foreground font-medium">{selectedTeam.name} Anteckningar</h2>
+            <h2 className="text-foreground font-medium">{selectedTeam.name} {t('notes.list.title_suffix')}</h2>
           </div>
           <div className="flex items-center gap-4">
             <div className="relative w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
               <Input
-                placeholder="Sök i anteckningar..."
+                placeholder={t('notes.list.search_placeholder')}
                 value={noteSearchQuery}
                 onChange={(e) => setNoteSearchQuery(e.target.value)}
                 className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
@@ -509,7 +502,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           {teamNotes.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <FileText className="w-12 h-12 mb-4 opacity-20" />
-              <p className="text-sm">Finns inga anteckningar än</p>
+              <p className="text-sm">{t('notes.list.empty_state')}</p>
             </div>
           ) : (
             <div className="flex flex-col w-full text-sm">
@@ -542,7 +535,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                         {canDelete && <Trash2 className="w-[18px] h-[18px] hover:text-rose-400 transition-colors" onClick={(e) => handleDeleteNote(e, note.id)} />}
                       </div>
                       <span className="text-muted-foreground text-sm tracking-wide group-hover:text-foreground transition-colors">
-                        {note.date === 'Idag' ? note.timestamp : note.date}
+                        {note.date === t('notes.list.today') ? note.timestamp : note.date}
                       </span>
                     </div>
                   </div>
@@ -563,7 +556,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             }}
             className="rounded-full pl-5 pr-6 h-12 bg-white text-black hover:bg-neutral-200 shadow-xl shadow-black/50 font-medium flex items-center gap-2 transition-transform hover:scale-105"
           >
-            <PlusIcon /> Ny Anteckning
+            <PlusIcon /> {t('notes.list.new_note_button')}
           </Button>
         </div>
       </div>
@@ -588,7 +581,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-foreground font-medium">Läs Anteckning</h2>
+            <h2 className="text-foreground font-medium">{t('notes.read.title')}</h2>
           </div>
 
           <div className="flex items-center gap-2">
@@ -613,10 +606,10 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               </div>
               <div>
                 <div className="text-sm font-medium text-foreground mb-1">
-                  Skrivet av {activeNote.author}
+                  {t('notes.read.written_by')} {activeNote.author}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Publicerat {activeNote.date} kl {activeNote.timestamp}
+                  {t('notes.read.published')} {activeNote.date} {t('notes.read.at_time')} {activeNote.timestamp}
                 </div>
               </div>
             </div>
@@ -628,7 +621,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-md transition-colors text-xs font-semibold uppercase tracking-wider ${activeNote.editHistory.length > 0 ? 'text-amber-500 hover:bg-amber-500/10' : 'text-muted-foreground hover:text-muted-foreground bg-muted'}`}
               >
                 <History className="w-3.5 h-3.5" />
-                Historik
+                {t('notes.read.history_button')}
               </button>
             </div>
           </div>
@@ -637,16 +630,16 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
           {expandedAudit && activeNote.editHistory.length > 0 && (
             <div className="mb-10 bg-background border border-border rounded-md p-4 animate-in fade-in slide-in-from-top-2">
               <div className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-3 flex items-center gap-2">
-                <History className="w-4 h-4" /> Redigeringslogg
+                <History className="w-4 h-4" /> {t('notes.read.audit_log_title')}
               </div>
               {activeNote.editHistory.map((h, i) => (
                 <div key={i} className="text-sm text-muted-foreground py-1.5 flex items-center justify-between border-b border-border last:border-0">
                   <span className="flex items-center gap-2">
                     <PenSquare className="w-3 h-3 text-muted-foreground" />
-                    Redigerad av <b>{h.editedBy}</b>
+                    {t('notes.read.edited_by')} <b>{h.editedBy}</b>
                   </span>
                   <span className="text-[11px] font-mono bg-muted text-muted-foreground px-2 py-0.5 rounded">
-                    {activeNote.date} kl {h.editedAt}
+                    {activeNote.date} {t('notes.read.at_time')} {h.editedAt}
                   </span>
                 </div>
               ))}
@@ -682,12 +675,12 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
             >
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h2 className="text-foreground font-medium">Skriv för {selectedTeam?.name}</h2>
+            <h2 className="text-foreground font-medium">{t('notes.compose.title')} {selectedTeam?.name}</h2>
           </div>
 
           <div className="flex items-center gap-3">
             <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={() => setIsComposing(false)}>
-              Avbryt
+              {t('notes.compose.cancel')}
             </Button>
             <Button
               className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white pl-4 pr-5 rounded-full"
@@ -695,7 +688,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               onClick={handleSaveNote}
             >
               <Check className="w-4 h-4 mr-2" />
-              Spara Anteckning
+              {t('notes.compose.save_button')}
             </Button>
           </div>
         </div>
@@ -704,9 +697,9 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
 
           {/* Subject Field */}
           <div className="flex flex-col border-b border-border pb-2 transition-colors">
-            <label className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">Rubrik</label>
+            <label className="text-[11px] uppercase tracking-widest font-semibold text-muted-foreground mb-1">{t('notes.compose.subject_label')}</label>
             <input
-              placeholder="Ex. Eftermiddagspasset eller Incident"
+              placeholder={t('notes.compose.subject_placeholder')}
               value={composeSubject}
               onChange={(e) => setComposeSubject(e.target.value)}
               className="px-0 bg-transparent border-none text-foreground text-lg font-medium focus:outline-none focus:ring-0 h-10 w-full placeholder:text-[15px] placeholder:font-medium placeholder:text-muted-foreground/50"
@@ -720,7 +713,7 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
               value={composeText}
               onChange={(e) => setComposeText(e.target.value)}
               className="w-full bg-transparent border-none text-foreground text-[15px] leading-relaxed resize-none focus:outline-none placeholder:text-muted-foreground/50 flex-1 min-h-[300px]"
-              placeholder="Vad hände under passet? Skriv dina detaljerade anteckningar här..."
+              placeholder={t('notes.compose.content_placeholder')}
             />
           </div>
         </div>
