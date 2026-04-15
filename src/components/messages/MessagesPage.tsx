@@ -502,7 +502,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             size="lg"
             className="rounded-full h-14 pl-5 pr-7 bg-foreground text-background hover:bg-foreground/90 shadow-[0_20px_50px_rgba(0,0,0,0.3)] font-bold flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95 group overflow-hidden"
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
             <PlusIcon />
             <span className="relative z-10">{t('messages.new_message')}</span>
           </Button>
