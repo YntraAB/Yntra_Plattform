@@ -55,7 +55,9 @@ export const useDirectoryData = () => {
   const { user } = useAuth();
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
-  const [currentLevel, setCurrentLevel] = useState<DirectoryLevel>('teams');
+  const [currentLevel, setCurrentLevel] = useState<DirectoryLevel>(
+    userRole === 'platform_admin' ? 'workspaces' : 'teams'
+  );
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
@@ -74,7 +76,6 @@ export const useDirectoryData = () => {
   const loadDirectory = useCallback(async () => {
     const filterWs = selectedWorkspace || workspaceId;
 
-    // Load Workspaces for Platform Admin
     if (userRole === 'platform_admin') {
       const { data: wsData } = await supabase.from('workspaces').select('*, teams(count), users(count)');
       if (wsData) {
@@ -88,7 +89,6 @@ export const useDirectoryData = () => {
       }
     }
 
-    // Load Teams and Roles
     if (filterWs) {
       const { data: rolesData } = await supabase.from('workspace_roles').select('*').eq('workspace_id', filterWs);
       if (rolesData) setDbWorkspaceRoles(rolesData);
@@ -122,7 +122,6 @@ export const useDirectoryData = () => {
       }
     }
 
-    // Load Members if in a team
     if (selectedTeam) {
       let memberIds: string[] = [];
       let teamMembersLinkData: any[] = [];

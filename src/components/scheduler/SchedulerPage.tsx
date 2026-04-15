@@ -307,18 +307,7 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
   };
 
   const renderContent = () => {
-    if (isLoading) {
-      return (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background animate-in fade-in duration-500">
-          <div className="flex items-center gap-3 text-muted-foreground">
-            <div className="w-5 h-5 border-2 border-current border-t-primary rounded-full animate-spin" />
-            <span className="text-sm font-medium tracking-wide">{t('common.loading')}</span>
-          </div>
-        </div>
-      );
-    }
-
-    if (!modules.assistance && activeSection !== 'settings') {
+    if (!isLoading && !modules.assistance && activeSection !== 'settings') {
       return (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in slide-in-from-bottom-4 duration-500 bg-background">
           <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mb-6 border border-border shadow-2xl rotate-12 transition-transform hover:rotate-0 duration-300">
@@ -379,18 +368,22 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
                   {t('scheduler.active_schedule')}
                 </h3>
                 <div className="space-y-2">
-                  <select
-                    value={selectedTeamId}
-                    onChange={(e) => setSelectedTeamId(e.target.value)}
-                    className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
-                  >
-                    {activeRole === 'admin' && (
-                      <option value="all">{t('scheduler.all_teams')}</option>
-                    )}
-                    {dbTeams.map(team => (
-                      <option key={team.id} value={team.id}>{team.name}</option>
-                    ))}
-                  </select>
+                  {isLoading ? (
+                    <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
+                  ) : (
+                    <select
+                      value={selectedTeamId}
+                      onChange={(e) => setSelectedTeamId(e.target.value)}
+                      className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
+                    >
+                      {activeRole === 'admin' && (
+                        <option value="all">{t('scheduler.all_teams')}</option>
+                      )}
+                      {dbTeams.map(team => (
+                        <option key={team.id} value={team.id}>{team.name}</option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -400,29 +393,31 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
                   {t('scheduler.staff_assistants')}
                 </h3>
                 <div className="space-y-2">
-                  <select
-                    value={selectedAssigneeId}
-                    onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                    className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
-                  >
-                    {activeRole === 'assistant' ? (
-                      <>
-                        <option value="all">{t('scheduler.full_team_shifts')}</option>
-                        <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="all">{t('scheduler.all_assistants')}</option>
-                        {dbUsers.map(u => (
-                          <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
-                        ))}
-                      </>
-                    )}
-                  </select>
+                  {isLoading ? (
+                    <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
+                  ) : (
+                    <select
+                      value={selectedAssigneeId}
+                      onChange={(e) => setSelectedAssigneeId(e.target.value)}
+                      className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
+                    >
+                      {activeRole === 'assistant' ? (
+                        <>
+                          <option value="all">{t('scheduler.full_team_shifts')}</option>
+                          <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="all">{t('scheduler.all_assistants')}</option>
+                          {dbUsers.map(u => (
+                            <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
+                          ))}
+                        </>
+                      )}
+                    </select>
+                  )}
                 </div>
               </div>
-
-
 
               {/* Upcoming Events List */}
               <div className="mt-6">
@@ -430,20 +425,30 @@ export const SchedulerPage: React.FC<SchedulerPageProps> = ({ userName, onLogout
                   {t('common.upcoming')}
                 </h3>
                 <div className="space-y-2">
-                  {filteredEvents.slice(0, 3).map((event) => (
-                    <div
-                      key={event.id}
-                      onClick={() => handleEventClick(event)}
-                      className="p-3 bg-secondary hover:bg-muted rounded-lg cursor-pointer transition-colors"
-                    >
-                      <div className="text-foreground text-sm font-medium truncate">{event.title}</div>
-                      <div className="text-muted-foreground text-xs mt-1">
-                        {event.startTime.toLocaleDateString(isSv ? 'sv-SE' : 'en-US', { month: 'short', day: 'numeric' })}
-                        {' · '}
-                        {event.startTime.toLocaleTimeString(isSv ? 'sv-SE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
-                      </div>
+                  {isLoading ? (
+                    [1, 2, 3].map(i => (
+                      <div key={i} className="h-[68px] w-full bg-muted rounded-lg animate-pulse" />
+                    ))
+                  ) : filteredEvents.length === 0 ? (
+                    <div className="text-sm text-muted-foreground italic p-2 border border-dashed border-border rounded-lg text-center">
+                      Inga kommande händelser
                     </div>
-                  ))}
+                  ) : (
+                    filteredEvents.slice(0, 3).map((event) => (
+                      <div
+                        key={event.id}
+                        onClick={() => handleEventClick(event)}
+                        className="p-3 bg-secondary hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                      >
+                        <div className="text-foreground text-sm font-medium truncate">{event.title}</div>
+                        <div className="text-muted-foreground text-xs mt-1">
+                          {event.startTime.toLocaleDateString(isSv ? 'sv-SE' : 'en-US', { month: 'short', day: 'numeric' })}
+                          {' · '}
+                          {event.startTime.toLocaleTimeString(isSv ? 'sv-SE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

@@ -13,32 +13,34 @@ export const SettingsPage: React.FC = () => {
   const { t } = useTranslation();
   const [isSaving, setIsSaving] = useState(false);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-          <p className="text-muted-foreground animate-pulse font-medium">{t('common.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-border/50">
         <div className="flex items-center gap-4">
-          <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 shadow-inner">
-            <Building2 className="w-8 h-8 text-primary" />
-          </div>
+          {isLoading ? (
+            <div className="w-16 h-16 rounded-2xl bg-muted animate-pulse" />
+          ) : (
+            <div className="bg-primary/10 p-4 rounded-2xl border border-primary/20 shadow-inner">
+              <Building2 className="w-8 h-8 text-primary" />
+            </div>
+          )}
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">
-              {workspaceName || t('settings.title')}
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {t('settings.desc')}
-            </p>
+            {isLoading ? (
+              <div className="space-y-2 py-1 w-48">
+                <div className="h-8 w-full bg-muted rounded-md animate-pulse" />
+                <div className="h-4 w-3/4 bg-muted rounded-md animate-pulse" />
+              </div>
+            ) : (
+              <>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                  {workspaceName || t('settings.title')}
+                </h1>
+                <p className="text-muted-foreground text-sm mt-1">
+                  {t('settings.desc')}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
@@ -73,17 +75,36 @@ export const SettingsPage: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          <GeneralSettings setIsSaving={setIsSaving} />
-        </TabsContent>
+        {isLoading ? (
+          <div className="space-y-6">
+            <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+              <div className="space-y-2 mb-6">
+                <div className="h-5 w-1/4 bg-muted rounded-md animate-pulse" />
+                <div className="h-4 w-2/3 bg-muted rounded-md animate-pulse" />
+              </div>
+              <div className="h-10 w-full bg-muted rounded-md animate-pulse mb-6" />
+              <div className="pt-6 border-t border-border space-y-2 mb-6">
+                <div className="h-5 w-1/3 bg-muted rounded-md animate-pulse" />
+                <div className="h-4 w-1/2 bg-muted rounded-md animate-pulse" />
+              </div>
+              <div className="h-10 w-full bg-muted rounded-md animate-pulse" />
+            </div>
+          </div>
+        ) : (
+          <>
+            <TabsContent value="general" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+              <GeneralSettings setIsSaving={setIsSaving} />
+            </TabsContent>
 
-        <TabsContent value="modules" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          <ModulesSettings setIsSaving={setIsSaving} />
-        </TabsContent>
+            <TabsContent value="modules" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+              <ModulesSettings setIsSaving={setIsSaving} />
+            </TabsContent>
 
-        <TabsContent value="notifications" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
-          <NotificationsSettings setIsSaving={setIsSaving} />
-        </TabsContent>
+            <TabsContent value="notifications" className="space-y-6 focus-visible:outline-none focus-visible:ring-0">
+              <NotificationsSettings setIsSaving={setIsSaving} />
+            </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );

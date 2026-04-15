@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Loader2, ChevronRight } from 'lucide-react';
+import { User, ChevronRight } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { EmptyState } from './EmptyState';
 import type { TimeReportUI } from '../types';
@@ -24,8 +24,27 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({ dbUsers, shifts, loa
       </div>
       <div className="flex-1 overflow-y-auto w-full scrollbar-none">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-8 h-8 animate-spin text-primary/40" />
+          <div className="flex flex-col w-full">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center px-8 py-4 border-b border-border/40 w-full animate-pulse">
+                <div className="w-11 h-11 rounded-lg bg-muted mr-5 shrink-0" />
+                <div className="w-64 md:w-80 shrink-0 pr-4">
+                  <div className="h-4 w-32 bg-muted rounded mb-2" />
+                  <div className="h-3 w-20 bg-muted/60 rounded" />
+                </div>
+                <div className="flex-1 min-w-0 pr-4" />
+                <div className="w-32 shrink-0 pr-4 flex flex-col items-end justify-center">
+                  <div className="h-5 w-12 bg-muted rounded mb-1" />
+                  <div className="h-2 w-16 bg-muted/60 rounded" />
+                </div>
+                <div className="w-40 shrink-0 pr-4 flex items-center justify-end">
+                  <div className="h-6 w-24 bg-muted rounded-full" />
+                </div>
+                <div className="w-8 shrink-0 flex items-center justify-end">
+                  <div className="w-5 h-5 bg-muted rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : dbUsers.length === 0 ? (
           <EmptyState
