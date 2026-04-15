@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { WorkNotesPage } from '../notes/WorkNotesPage';
 import { MedicationPage } from '../assistance/MedicationPage';
 import { DirectoryPage } from '../directory/DirectoryPage';
-import { MessagesPage } from '../ui/MessagesPage';
+import { MessagesPage } from '../messages/MessagesPage';
 import { TimeManagerPage } from '../time/TimeManagerPage';
 
 /**
