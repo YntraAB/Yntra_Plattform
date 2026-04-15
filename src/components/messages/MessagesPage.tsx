@@ -26,7 +26,7 @@ interface MessagesPageProps {
 }
 
 export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode }) => {
-  const { workspaceId, settings } = useWorkspace();
+  const { workspaceId } = useWorkspace();
   const { user } = useAuth();
   const { t } = useTranslation();
 
@@ -103,7 +103,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
             receiver_id: m.receiver_id,
             target_team_id: m.target_team_id,
             folderId: m.sender_id === user.id ? 'sent' : 'inbox',
-            sender: { name: (sndrData as any)?.full_name || t('messages.system'), avatar: '' },
+            sender: { name: senderName, avatar: '' },
             to: toName,
             isTeamMessage: !!m.target_team_id,
             subject: m.subject || t('messages.no_header'),
