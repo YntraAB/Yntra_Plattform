@@ -1,11 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { eventService } from '@/services/eventService';
 import type { CalendarEvent } from '@/types';
 import { useEffect } from 'react';
 
 export function useEvents(workspaceId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
-
   const queryKey = ['events', workspaceId];
 
   // Configure realtime subscription
@@ -28,23 +28,7 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
     queryKey,
     queryFn: async () => {
       if (!workspaceId) return [];
-      const { data, error } = await supabase.from('events').select('*').eq('workspace_id', workspaceId);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      return (data || []).map((event: any) => ({
-        id: event.id,
-        title: event.title,
-        startTime: new Date(event.start_time),
-        endTime: new Date(event.end_time),
-        category: (event.metadata as any)?.category || 'other',
-        description: (event.metadata as any)?.description || '',
-        location: (event.metadata as any)?.location || '',
-        teamId: event.team_id,
-        assigneeId: event.assignee_id
-      })) as CalendarEvent[];
+      return eventService.getWorkspaceEvents(workspaceId);
     },
     enabled: !!workspaceId,
   });
@@ -52,25 +36,7 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
   const addEvent = useMutation({
     mutationFn: async (event: Omit<CalendarEvent, 'id'>) => {
       if (!workspaceId || !userId) throw new Error('Missing context');
-
-      const dbPayload = {
-        workspace_id: workspaceId,
-        user_id: userId,
-        title: event.title,
-        start_time: event.startTime.toISOString(),
-        end_time: event.endTime.toISOString(),
-        team_id: event.teamId || null,
-        assignee_id: event.assigneeId || null,
-        metadata: {
-          description: event.description || '',
-          category: event.category,
-          location: event.location || ''
-        }
-      };
-
-      const { data, error } = await supabase.from('events').insert(dbPayload).select().single();
-      if (error) throw new Error(error.message);
-      return data;
+      return eventService.createEvent(workspaceId, userId, event);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -79,15 +45,7 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
 
   const updateEvent = useMutation({
     mutationFn: async ({ eventId, updates }: { eventId: string, updates: Partial<CalendarEvent> }) => {
-      const dbPayload: any = {};
-      if (updates.title) dbPayload.title = updates.title;
-      if (updates.startTime) dbPayload.start_time = updates.startTime.toISOString();
-      if (updates.endTime) dbPayload.end_time = updates.endTime.toISOString();
-      if (updates.teamId !== undefined) dbPayload.team_id = updates.teamId || null;
-      if (updates.assigneeId !== undefined) dbPayload.assignee_id = updates.assigneeId || null;
-
-      const { error } = await supabase.from('events').update(dbPayload).eq('id', eventId);
-      if (error) throw new Error(error.message);
+      return eventService.updateEvent(eventId, updates);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });
@@ -96,8 +54,7 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
 
   const deleteEvent = useMutation({
     mutationFn: async (eventId: string) => {
-      const { error } = await supabase.from('events').delete().eq('id', eventId);
-      if (error) throw new Error(error.message);
+      return eventService.deleteEvent(eventId);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey });

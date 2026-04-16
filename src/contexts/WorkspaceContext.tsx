@@ -1,33 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import i18n from 'i18next';
-
-export interface WorkspaceModules {
-  school: boolean;
-  assistance: boolean;
-}
-
-export interface WorkspaceModules {
-  school: boolean;
-  assistance: boolean;
-}
-
-export interface WorkspaceSettings {
-  timezone: string;
-  week_start: number; // 0 for Sunday, 1 for Monday
-  language: string;
-  business_hours: {
-    start: number;
-    end: number;
-  };
-}
-
-export interface UserPreferences {
-  theme: 'light' | 'dark' | 'system';
-  calendar_density: 'compact' | 'relaxed';
-  font_scale: number;
-}
+import { useWorkspaceInfo, useUserPreferences } from '@/hooks/queries/useWorkspaceData';
+import { userService } from '@/services/userService';
+import { workspaceService } from '@/services/workspaceService';
+import type { WorkspaceModules, WorkspaceSettings, UserPreferences } from '@/types';
 
 interface WorkspaceState {
   workspaceId: string | null;
@@ -75,203 +52,108 @@ const WorkspaceContext = createContext<WorkspaceState>({
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [internalLoading, setInternalLoading] = useState(true);
 
-  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [workspaceName, setWorkspaceName] = useState<string>('');
-  const [modules, setModules] = useState<WorkspaceModules>(defaultModules);
-  const [settings, setSettings] = useState<WorkspaceSettings>(defaultSettings);
-  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  // 1. Resolve workspaceId based on user or dev override
+  useEffect(() => {
+    async function resolveWorkspace() {
+      if (!user) {
+        setActiveWorkspaceId(null);
+        setInternalLoading(false);
+        return;
+      }
 
+      try {
+        const workspaceId = await userService.getUserWorkspaceId(user.id);
+        
+        if (workspaceId) {
+          setActiveWorkspaceId(workspaceId);
+        } else if (user.role === 'platform_admin') {
+          const firstWs = await workspaceService.getFirstWorkspace();
+          if (firstWs) setActiveWorkspaceId(firstWs);
+        }
+      } catch (error) {
+        console.error('Failed to resolve workspace:', error);
+      } finally {
+        setInternalLoading(false);
+      }
+    }
+    resolveWorkspace();
+  }, [user]);
+
+  // 2. Use Hooks for data fetching
+  const { 
+    data: workspaceInfo, 
+    isLoading: wsLoading, 
+    updateSettings: mutateSettings, 
+    updateModules: mutateModules 
+  } = useWorkspaceInfo(activeWorkspaceId);
+
+  const { 
+    data: userPrefs, 
+    isLoading: prefsLoading, 
+    updatePreferences: mutatePreferences 
+  } = useUserPreferences(user?.id || null);
+
+  // 3. Derived values
+  const modules = workspaceInfo?.modules_active ? {
+    school: !!workspaceInfo.modules_active.school,
+    assistance: !!workspaceInfo.modules_active.assistance
+  } : defaultModules;
+
+  const settings = (workspaceInfo?.settings as unknown as WorkspaceSettings) || defaultSettings;
+  const preferences = (userPrefs as unknown as UserPreferences) || defaultPreferences;
+
+  // Sync language with settings
   useEffect(() => {
     if (settings.language && i18n.language !== settings.language) {
       i18n.changeLanguage(settings.language);
     }
   }, [settings.language]);
 
-  useEffect(() => {
-    async function fetchWorkspace() {
-      if (!user) {
-        setIsLoading(false);
-        setWorkspaceId(null);
-        return;
-      }
+  const isLoading = internalLoading || wsLoading || prefsLoading;
 
-      setIsLoading(true);
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('workspace_id, preferences')
-        .eq('id', user.id)
-        .single();
-
-      if (userData?.preferences) {
-        setPreferences(prev => ({ ...prev, ...(userData.preferences as any) }));
-      }
-
-      if (userError || !userData?.workspace_id) {
-        if (user.role === 'platform_admin') {
-          const stored = localStorage.getItem('dev_override_modules');
-          if (stored) {
-            try { setModules(JSON.parse(stored)); } catch (e) { }
-          }
-          let targetWsId = workspaceId;
-
-          if (!targetWsId) {
-            const { data: firstWs } = await supabase.from('workspaces').select('id, name, modules_active').limit(1).single();
-            if (firstWs) targetWsId = firstWs.id;
-          }
-
-          if (targetWsId) {
-            const { data: explicitWs } = await supabase.from('workspaces').select('id, name, modules_active').eq('id', targetWsId).single();
-            if (explicitWs) {
-              setWorkspaceId(explicitWs.id);
-              setWorkspaceName(explicitWs.name);
-              const dbM = explicitWs.modules_active as any;
-              if (!stored) setModules({ school: !!dbM?.school, assistance: !!dbM?.assistance });
-            }
-          }
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      const activeWorkspaceId = userData.workspace_id;
-      setWorkspaceId(activeWorkspaceId);
-
-      const { data: workspaceData, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('name, modules_active, settings')
-        .eq('id', activeWorkspaceId)
-        .single();
-
-      if (!workspaceError && workspaceData) {
-        setWorkspaceName(workspaceData.name);
-
-        const dbModules = workspaceData.modules_active as any;
-        setModules({
-          school: dbModules?.school || false,
-          assistance: dbModules?.assistance || false,
-        });
-
-        if (workspaceData.settings) {
-          const wsSettings = workspaceData.settings as any;
-          setSettings(prev => ({ ...prev, ...wsSettings }));
-          if (wsSettings.language) {
-            i18n.changeLanguage(wsSettings.language);
-          }
-        }
-      }
-
-      setIsLoading(false);
-    }
-
-    fetchWorkspace();
-
-    let workspaceChannel: any = null;
-    if (workspaceId) {
-      workspaceChannel = supabase
-        .channel('workspace-updates')
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'workspaces', filter: `id=eq.${workspaceId}` },
-          (payload) => {
-            const updatedData = payload.new;
-            setWorkspaceName(updatedData.name);
-            const dbModules = updatedData.modules_active as any;
-            setModules({
-              school: !!dbModules?.school,
-              assistance: !!dbModules?.assistance,
-            });
-            if (updatedData.settings) {
-              setSettings(prev => ({ ...prev, ...(updatedData.settings as any) }));
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    let userChannel: any = null;
-    if (user) {
-      userChannel = supabase
-        .channel('user-workspace-updates')
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` },
-          (payload) => {
-            const newWorkspaceId = payload.new.workspace_id;
-            if (newWorkspaceId !== workspaceId) {
-              setWorkspaceId(newWorkspaceId || null);
-            }
-            if (payload.new.preferences) {
-              setPreferences(prev => ({ ...prev, ...(payload.new.preferences as any) }));
-            }
-          }
-        )
-        .subscribe();
-    }
-
-    return () => {
-      if (workspaceChannel) supabase.removeChannel(workspaceChannel);
-      if (userChannel) supabase.removeChannel(userChannel);
-    };
-  }, [user, workspaceId]);
-
-  /**
-   * Method for admins to update the active modules
-   */
   const updateModules = async (newModules: Partial<WorkspaceModules>) => {
-    const updatedModules = { ...modules, ...newModules };
-
-    setModules(updatedModules);
-
-    if (!workspaceId) {
-      if (user?.role === 'platform_admin') {
-        localStorage.setItem('dev_override_modules', JSON.stringify(updatedModules));
-        return true;
-      }
+    try {
+      await mutateModules({ ...modules, ...newModules });
+      return true;
+    } catch (e) {
+      console.error(e);
       return false;
-    }
-
-    const { error } = await supabase
-      .from('workspaces')
-      .update({ modules_active: updatedModules })
-      .eq('id', workspaceId);
-
-    if (error) {
-      console.error("Misslyckades spara moduler:", error);
-      return false;
-    }
-
-    return true;
-  };
-
-  const setAdminWorkspace = (id: string) => {
-    if (user?.role === 'platform_admin') {
-      setWorkspaceId(id);
     }
   };
 
   const updateSettings = async (newSettings: Partial<WorkspaceSettings>) => {
-    if (!workspaceId) return false;
-    const updated = { ...settings, ...newSettings };
-    setSettings(updated);
-    const { error } = await supabase.from('workspaces').update({ settings: updated }).eq('id', workspaceId);
-    return !error;
+    try {
+      await mutateSettings({ ...settings, ...newSettings });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
   };
 
   const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
-    if (!user) return false;
-    const updated = { ...preferences, ...newPrefs };
-    setPreferences(updated);
-    const { error } = await supabase.from('users').update({ preferences: updated }).eq('id', user.id);
-    return !error;
+    try {
+      await mutatePreferences({ ...preferences, ...newPrefs });
+      return true;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
+  };
+
+  const setAdminWorkspace = (id: string) => {
+    if (user?.role === 'platform_admin') {
+      setActiveWorkspaceId(id);
+    }
   };
 
   return (
     <WorkspaceContext.Provider value={{
-      workspaceId,
-      workspaceName,
+      workspaceId: activeWorkspaceId,
+      workspaceName: workspaceInfo?.name || '',
       modules,
       settings,
       preferences,
