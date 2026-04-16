@@ -1,10 +1,6 @@
 /**
- * =============================================================================
- * MINI CALENDAR COMPONENT
- * =============================================================================
  * A compact monthly calendar widget for quick date navigation.
  * Displays the current month with day selection and event indicators.
- * =============================================================================
  */
 
 import React, { useMemo } from 'react';
@@ -13,17 +9,11 @@ import { useTranslation } from 'react-i18next';
 import { cn, formatMonthYear, isSameDay, isToday } from '@/lib/utils';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 
-/**
- * Props for the MiniCalendar component
- */
 interface MiniCalendarProps {
-  /** Currently selected date */
   selectedDate: Date;
-  /** End date for range selection */
   selectedEndDate?: Date | null;
-  /** Callback when a date is selected */
   onSelectDate: (date: Date, isShiftClick?: boolean) => void;
-  /** Dates that have events (for indicators) */
+  onNewEvent?: () => void;
   datesWithEvents?: Date[];
 }
 
@@ -35,6 +25,7 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
   selectedDate,
   selectedEndDate = null,
   onSelectDate,
+  onNewEvent,
   datesWithEvents = [],
 }) => {
   const { settings } = useWorkspace();
@@ -125,7 +116,6 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
     onSelectDate(newDate);
   };
 
-  // Day labels
   const isSv = settings.language === 'sv';
   const dayLabels = settings.week_start === 1
     ? (isSv ? ['M', 'T', 'O', 'T', 'F', 'L', 'S'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'])
@@ -175,15 +165,10 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
             className={cn(
               'relative h-8 w-8 mx-auto rounded-full flex items-center justify-center',
               'text-sm transition-all duration-150',
-              // Current month days
               day.isCurrentMonth && 'text-foreground hover:bg-muted',
-              // Other month days (dimmed)
               !day.isCurrentMonth && 'text-muted-foreground/50',
-              // Range selection highlight
               selectedEndDate && day.date > selectedDate && day.date < selectedEndDate && 'bg-primary/20 text-foreground',
-              // Selected date points
               (isSameDay(day.date, selectedDate) || (selectedEndDate && isSameDay(day.date, selectedEndDate))) && 'bg-primary text-white hover:bg-primary/80',
-              // Today (if not selected)
               day.isToday && !isSameDay(day.date, selectedDate) && (!selectedEndDate || !isSameDay(day.date, selectedEndDate)) && 'ring-1 ring-primary text-primary',
             )}
           >
@@ -197,8 +182,9 @@ export const MiniCalendar: React.FC<MiniCalendarProps> = ({
         ))}
       </div>
 
-      {/* Quick action button */}
-      <button className="
+        <button 
+          onClick={onNewEvent}
+          className="
         w-full mt-4 py-2 px-4
         bg-muted hover:bg-muted
         text-foreground text-sm font-medium

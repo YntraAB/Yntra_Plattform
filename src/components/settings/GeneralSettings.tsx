@@ -165,42 +165,6 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
           </div>
         </CardContent>
       </Card>
-
-      {/* Business Hours Card */}
-      <Card className="bg-card/40 backdrop-blur-sm border-2 border-border/50 shadow-sm md:col-span-2 overflow-hidden">
-        <CardHeader className="pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
-              <Clock className="w-5 h-5" />
-            </div>
-            <div>
-              <CardTitle className="text-lg">{t('settings.business_hours')}</CardTitle>
-              <CardDescription>{t('settings.business_hours_desc')}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-2">
-          <div className="bg-background/30 p-6 rounded-2xl border border-border/30">
-            <div className="flex justify-between text-sm mb-6">
-              <div className="flex flex-col">
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-widest mb-1">{t('settings.from_hour')}</span>
-                <span className="text-2xl font-bold font-mono">{settings.business_hours.start}:00</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-muted-foreground text-xs uppercase font-bold tracking-widest mb-1">{t('settings.to_hour')}</span>
-                <span className="text-2xl font-bold font-mono">{settings.business_hours.end}:00</span>
-              </div>
-            </div>
-            <Slider
-              defaultValue={[settings.business_hours.start, settings.business_hours.end]}
-              max={24}
-              step={1}
-              onValueCommit={([start, end]) => handleUpdateSettings({ business_hours: { start, end } })}
-              className="py-4"
-            />
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

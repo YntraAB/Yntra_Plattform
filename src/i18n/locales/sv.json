@@ -10,7 +10,18 @@
     "upcoming": "Kommande",
     "save": "Spara ändringar",
     "saving": "Sparar...",
-    "loading_view": "Laddar vy"
+    "loading_view": "Laddar vy",
+    "title": "Titel",
+    "team": "Team",
+    "start_time": "Starttid",
+    "end_time": "Sluttid",
+    "category": "Kategori",
+    "location": "Plats",
+    "description": "Beskrivning",
+    "date": "Datum",
+    "start_date": "Startdatum",
+    "end_date": "Slutdatum",
+    "cancel": "Avbryt"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -48,7 +59,31 @@
     "location_locked": "Assistansmodul krävs",
     "location_locked_desc": "Hela plattformen är nu strikt kopplad till Assistansmodulen. Din organisation har inte denna modul aktiverad, vilket innebär att arbetsytan är låst.",
     "go_to_settings": "Gå till Inställningar",
-    "contact_admin": "Kontakta administratör för aktivering"
+    "contact_admin": "Kontakta administratör för aktivering",
+    "event_title_placeholder": "Vad ska hända?",
+    "select_team": "Välj team...",
+    "select_staff": "Välj personal...",
+    "staff": "Personal",
+    "assigned_to": "Tilldelad",
+    "location_placeholder": "Plats (valfritt)...",
+    "description_placeholder": "Detaljer om händelsen...",
+    "categories": {
+      "assistance_time": "Assistanstid",
+      "on_call": "Beredskap",
+      "travel_time": "Restid",
+      "introduction": "Introduktion",
+      "meeting": "Möte",
+      "administrative_hours": "Administrativa timmar",
+      "training": "Utbildning",
+      "escort_service": "Ledsagning",
+      "respite_care": "Avlösarservice",
+      "unauthorized_absence": "Ogiltig frånvaro",
+      "involuntary_leave": "Ofrivillig ledighet",
+      "other_time": "Övrig tid (OB grundande)",
+      "customer_staff_note": "Kund-/personalnotering",
+      "severance_pay": "Uppsägningslön",
+      "other": "Övrigt"
+    }
   },
   "settings": {
     "title": "Inställningar",

@@ -1,13 +1,9 @@
 /**
- * =============================================================================
- * CALENDAR VIEW COMPONENT
- * =============================================================================
  * This is the main calendar/scheduler view component with support for
  * multiple view modes: Day, Week, Month, and Agenda.
  * 
  * Each view mode provides a different perspective on the scheduled events,
  * allowing users to choose the most appropriate view for their needs.
- * =============================================================================
  */
 
 import React, { useMemo, useRef, useEffect } from 'react';
@@ -32,11 +28,8 @@ import {
   calculateEventHeight,
   formatMonthYear
 } from '@/lib/utils';
-import type { CalendarEvent, CalendarView as ViewType } from '@/types';
+import type { CalendarEvent, CalendarView as ViewType, User } from '@/types';
 
-/**
- * View mode selector buttons
- */
 const VIEW_MODES: { id: ViewType; label: string }[] = [
   { id: 'day', label: 'Day' },
   { id: 'week', label: 'Week' },
@@ -53,21 +46,63 @@ interface EventCardProps {
   onClick: () => void;
   hourHeight?: number;
   locale?: string;
+  tooltipPosition?: 'side' | 'top';
+  currentDate: Date;
+  users?: User[];
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60, locale = 'en-US' }) => {
+const EventCard: React.FC<EventCardProps> = ({ 
+  event, 
+  onClick, 
+  hourHeight = 60, 
+  locale = 'en-US',
+  tooltipPosition = 'side',
+  currentDate,
+  users = []
+}) => {
   const categoryConfig = getCategoryConfig(event.category);
+  const { t } = useTranslation();
 
-  // Calculate position and height based on event time
-  const top = calculateEventTop(event.startTime, hourHeight);
-  const height = calculateEventHeight(event.startTime, event.endTime, hourHeight);
+  // Helper to format assignee name
+  const getDisplayName = () => {
+    if (!event.assigneeId) return event.title;
+    const user = users.find(u => u.id === event.assigneeId);
+    if (!user) return event.title;
+    
+    const fullName = user.name || (user as any).full_name || '';
+    if (!fullName) return event.title;
+    
+    const parts = fullName.trim().split(/\s+/);
+    const firstName = parts[0];
+    if (parts.length === 1) return firstName;
+    
+    const lastName = parts[parts.length - 1];
+    // If "First Last" is longer than 12 chars, use "First L."
+    if (`${firstName} ${lastName}`.length > 12) {
+      return `${firstName} ${lastName.charAt(0)}.`;
+    }
+    return `${firstName} ${lastName}`;
+  };
+
+  const displayName = getDisplayName();
+
+  const dayStart = new Date(currentDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(currentDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  const effectiveStart = event.startTime < dayStart ? dayStart : event.startTime;
+  const effectiveEnd = event.endTime > dayEnd ? dayEnd : event.endTime;
+
+  const top = calculateEventTop(effectiveStart, hourHeight);
+  const height = calculateEventHeight(effectiveStart, effectiveEnd, hourHeight);
 
   return (
     <div
       onClick={onClick}
-      className="absolute left-1 right-1 rounded-md px-2 py-1.5 cursor-pointer
-                 transition-all duration-150 hover:brightness-110 hover:shadow-lg
-                 overflow-hidden text-xs"
+      className="group absolute left-1 right-1 rounded-md px-2 py-1.5 cursor-pointer
+                 transition-all duration-200 hover:brightness-105 hover:shadow-xl
+                 text-xs z-10 hover:z-50"
       style={{
         top: `${top}px`,
         height: `${Math.max(height - 2, 24)}px`,
@@ -77,10 +112,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60, 
     >
       {/* Event title */}
       <div
-        className="font-medium truncate"
         style={{ color: categoryConfig.color }}
       >
-        {event.title}
+        {displayName}
       </div>
 
       {/* Event time (only show if height allows) */}
@@ -97,6 +131,52 @@ const EventCard: React.FC<EventCardProps> = ({ event, onClick, hourHeight = 60, 
           <span className="truncate">{event.location}</span>
         </div>
       )}
+
+      {/* Hover Information Popup */}
+      <div className={cn(
+        "hidden group-hover:block absolute w-64 p-4",
+        "bg-background/95 backdrop-blur-md border border-border rounded-xl shadow-2xl z-[100]",
+        "pointer-events-none animate-in fade-in duration-200",
+        tooltipPosition === 'top'
+          ? "bottom-full left-1/2 -translate-x-1/2 mb-2 slide-in-from-bottom-2"
+          : "left-full top-0 ml-2 zoom-in-95"
+      )}>
+        <div className="flex items-center justify-between mb-2">
+          <span
+            className="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider"
+            style={{ backgroundColor: categoryConfig.bgColor, color: categoryConfig.color }}
+          >
+            {categoryConfig.label}
+          </span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <CalendarIcon className="w-3 h-3" />
+            {event.startTime.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+
+        <h4 className="text-sm font-bold text-foreground mb-1 leading-tight">{event.title}</h4>
+
+        <div className="text-xs text-muted-foreground mb-3 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categoryConfig.color }} />
+            {formatTimeRange(event.startTime, event.endTime, locale)}
+          </div>
+          {event.location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3 h-3 text-primary" />
+              <span>{event.location}</span>
+            </div>
+          )}
+        </div>
+
+        {event.description && (
+          <div className="pt-2 border-t border-border mt-2">
+            <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+              {event.description}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -115,16 +195,59 @@ const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick, locale 
   const categoryConfig = getCategoryConfig(event.category);
 
   return (
-    <div
-      onClick={onClick}
-      className="px-1.5 py-0.5 rounded text-[10px] cursor-pointer
-                 transition-all duration-150 hover:brightness-110 truncate"
-      style={{
-        backgroundColor: categoryConfig.bgColor,
-        color: categoryConfig.color,
-      }}
-    >
-      {event.startTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })} {event.title}
+    <div className="relative group">
+      <div
+        onClick={onClick}
+        className="px-1.5 py-0.5 rounded text-[10px] cursor-pointer
+                   transition-all duration-150 hover:brightness-110 truncate"
+        style={{
+          backgroundColor: categoryConfig.bgColor,
+          color: categoryConfig.color,
+        }}
+      >
+        {event.startTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false })} {event.title}
+      </div>
+
+      {/* Hover Information Popup */}
+      <div className="hidden group-hover:block absolute bottom-full mb-1 left-0 w-64 p-4 
+                      bg-background/95 backdrop-blur-md border border-border rounded-xl 
+                      shadow-2xl z-[100] pointer-events-none animate-in fade-in slide-in-from-bottom-1 duration-200">
+        <div className="flex items-center justify-between mb-2">
+          <span
+            className="px-2 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider"
+            style={{ backgroundColor: categoryConfig.bgColor, color: categoryConfig.color }}
+          >
+            {categoryConfig.label}
+          </span>
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <CalendarIcon className="w-3 h-3" />
+            {event.startTime.toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+          </span>
+        </div>
+
+        <h4 className="text-sm font-bold text-foreground mb-1 leading-tight">{event.title}</h4>
+
+        <div className="text-xs text-muted-foreground mb-3 flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: categoryConfig.color }} />
+            {formatTimeRange(event.startTime, event.endTime, locale)}
+          </div>
+          {event.location && (
+            <div className="flex items-center gap-1.5">
+              <MapPin className="w-3 h-3 text-primary" />
+              <span>{event.location}</span>
+            </div>
+          )}
+        </div>
+
+        {event.description && (
+          <div className="pt-2 border-t border-border mt-2">
+            <p className="text-[11px] text-muted-foreground leading-relaxed italic">
+              {event.description}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -136,19 +259,20 @@ const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick, locale 
 interface DayViewProps {
   selectedDate: Date;
   events: CalendarEvent[];
+  users: User[];
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick }) => {
+const DayView: React.FC<DayViewProps> = ({ selectedDate, events, users, onEventClick }) => {
   const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { start: startHour, end: endHour } = settings.business_hours;
+  const startHour = 0;
+  const endHour = 23;
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
   const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
 
-  // Auto-scroll to current time
   useEffect(() => {
     if (scrollContainerRef.current && isToday(selectedDate)) {
       const now = new Date();
@@ -159,8 +283,18 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
     }
   }, [selectedDate, startHour, endHour, HOUR_HEIGHT]);
 
-  // Get events for the selected day
-  const dayEvents = events.filter(event => isSameDay(event.startTime, selectedDate));
+  const dayEvents = useMemo(() => {
+    const dayStart = new Date(selectedDate);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(selectedDate);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return events.filter(event => {
+      const eventStart = new Date(event.startTime);
+      const eventEnd = new Date(event.endTime);
+      return eventStart <= dayEnd && eventEnd >= dayStart;
+    });
+  }, [events, selectedDate]);
 
   return (
     <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scrollbar-dark">
@@ -211,6 +345,9 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, onEventClick })
                 onClick={() => onEventClick(event)}
                 hourHeight={HOUR_HEIGHT}
                 locale={locale}
+                tooltipPosition="top"
+                currentDate={selectedDate}
+                users={users}
               />
             ))}
           </div>
@@ -228,14 +365,16 @@ interface WeekViewProps {
   selectedDate: Date;
   selectedEndDate?: Date | null;
   events: CalendarEvent[];
+  users: User[];
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, events, onEventClick }) => {
+const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, events, users, onEventClick }) => {
   const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const { start: startHour, end: endHour } = settings.business_hours;
+  const startHour = 0;
+  const endHour = 23;
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
   const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
@@ -260,7 +399,6 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
     return generateWeekDays(weekStart, locale, settings.week_start);
   }, [selectedDate, selectedEndDate, settings.week_start, locale]);
 
-  // Auto-scroll to current time
   useEffect(() => {
     if (scrollContainerRef.current) {
       const now = new Date();
@@ -272,7 +410,16 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
   }, [startHour, endHour, HOUR_HEIGHT]);
 
   const getEventsForDay = (date: Date) => {
-    return events.filter(event => isSameDay(event.startTime, date));
+    const dayStart = new Date(date);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(date);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    return events.filter(event => {
+      const eventStart = new Date(event.startTime);
+      const eventEnd = new Date(event.endTime);
+      return eventStart <= dayEnd && eventEnd >= dayStart;
+    });
   };
 
   return (
@@ -332,6 +479,9 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
                     onClick={() => onEventClick(event)}
                     hourHeight={HOUR_HEIGHT}
                     locale={locale}
+                    tooltipPosition="side"
+                    currentDate={day.date}
+                    users={users}
                   />
                 ))}
               </div>
@@ -350,15 +500,15 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
 interface MonthViewProps {
   selectedDate: Date;
   events: CalendarEvent[];
+  users: User[];
   onEventClick: (event: CalendarEvent) => void;
   onDateChange: (date: Date) => void;
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClick, onDateChange }) => {
+const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, users, onEventClick, onDateChange }) => {
   const { settings } = useWorkspace();
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
 
-  // Generate calendar grid data
   const calendarDays = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth();
@@ -366,7 +516,6 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
 
-    // Week start adjustment
     const startDayOfWeek = firstDayOfMonth.getDay();
     const diffToStart = (startDayOfWeek < settings.week_start ? 7 : 0) + startDayOfWeek - settings.week_start;
 
@@ -381,7 +530,6 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
       events: CalendarEvent[];
     }> = [];
 
-    // Previous month padding days
     for (let i = diffToStart - 1; i >= 0; i--) {
       const date = new Date(year, month - 1, daysInPrevMonth - i);
       days.push({
@@ -393,7 +541,6 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
       });
     }
 
-    // Current month days
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       days.push({
@@ -405,7 +552,6 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
       });
     }
 
-    // Next month padding days (fill to 6 rows = 42 cells)
     const remainingCells = 42 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       const date = new Date(year, month + 1, day);
@@ -493,15 +639,15 @@ const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClic
  */
 interface AgendaViewProps {
   events: CalendarEvent[];
+  users: User[];
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
+const AgendaView: React.FC<AgendaViewProps> = ({ events, users, onEventClick }) => {
   const { settings } = useWorkspace();
   const { t } = useTranslation();
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
 
-  // Group events by date
   const groupedEvents = useMemo(() => {
     const sortedEvents = [...events].sort((a, b) =>
       a.startTime.getTime() - b.startTime.getTime()
@@ -658,6 +804,7 @@ interface CalendarViewProps {
   selectedEndDate?: Date | null;
   view: ViewType;
   events: CalendarEvent[];
+  users: User[];
   onDateChange: (date: Date) => void;
   onViewChange: (view: ViewType) => void;
   onEventClick: (event: CalendarEvent) => void;
@@ -671,6 +818,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   selectedEndDate,
   view,
   events,
+  users,
   onDateChange,
   onViewChange,
   onEventClick,
@@ -747,6 +895,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <DayView
             selectedDate={selectedDate}
             events={events}
+            users={users}
             onEventClick={onEventClick}
           />
         );
@@ -757,6 +906,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             selectedDate={selectedDate}
             selectedEndDate={selectedEndDate}
             events={events}
+            users={users}
             onEventClick={onEventClick}
           />
         );
@@ -766,6 +916,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <MonthView
             selectedDate={selectedDate}
             events={events}
+            users={users}
             onEventClick={onEventClick}
             onDateChange={onDateChange}
           />
@@ -775,6 +926,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         return (
           <AgendaView
             events={events}
+            users={users}
             onEventClick={onEventClick}
           />
         );

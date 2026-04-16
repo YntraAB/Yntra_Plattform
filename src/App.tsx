@@ -1,8 +1,5 @@
 /**
- * =============================================================================
- * VOLT SCHEDULER - MAIN APPLICATION
- * =============================================================================
- * This is the root component of the Volt Scheduler application.
+ * This is the root component.
  * It manages the application state, routing between login and scheduler views,
  * and provides the overall application structure.
  * 
@@ -10,7 +7,6 @@
  * - Authentication (login/logout)
  * - Scheduling system (calendar, events, navigation)
  * - UI components (reusable, well-documented)
- * =============================================================================
  */
 
 import { LoginPage } from '@/components/login/LoginPage';
@@ -25,13 +21,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './App.css';
 
 /**
- * Main App Component
- * 
- * This component serves as the entry point for the Volt Scheduler application.
+ * This component serves as the entry point.
  * It conditionally renders either the LoginPage or the Router with authenticated routes.
  */
 function App() {
-  // Use the authentication hook to manage user state
   const {
     isAuthenticated,
     user,
@@ -44,7 +37,6 @@ function App() {
   const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  // Initialize router with useMemo to keep instance stable
   const router = useMemo(() => createBrowserRouter(routes), []);
 
   useEffect(() => {
@@ -76,17 +68,11 @@ function App() {
     }
   }, [isAuthenticated, needsPasswordReset]);
 
-  /**
-   * Handle login form submission
-   */
   const handleLogin = async (credentials: { email: string; password: string }) => {
     await login(credentials);
     localStorage.removeItem('pending_invite_path');
   };
 
-  /**
-   * Handle logout action
-   */
   const handleLogout = () => {
     logout();
   };

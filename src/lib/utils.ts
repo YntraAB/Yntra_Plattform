@@ -221,53 +221,109 @@ export function getStartOfWeek(date: Date, weekStart: number = 1): Date {
  * Configuration for event categories including colors and labels
  */
 export const EVENT_CATEGORIES: Record<EventCategory, CategoryConfig> = {
-  meeting: {
-    id: 'meeting',
-    label: 'Meeting',
-    color: '#8B5CF6', // Violet
-    bgColor: 'rgba(139, 92, 246, 0.2)',
-    icon: 'Users',
-  },
-  task: {
-    id: 'task',
-    label: 'Task',
+  assistance_time: {
+    id: 'assistance_time',
+    label: 'Assistanstid',
     color: '#3B82F6', // Blue
     bgColor: 'rgba(59, 130, 246, 0.2)',
-    icon: 'CheckSquare',
+    icon: 'User',
   },
-  reminder: {
-    id: 'reminder',
-    label: 'Reminder',
+  on_call: {
+    id: 'on_call',
+    label: 'Beredskap',
     color: '#F59E0B', // Amber
     bgColor: 'rgba(245, 158, 11, 0.2)',
-    icon: 'Bell',
+    icon: 'Radio',
   },
-  planning: {
-    id: 'planning',
-    label: 'Planning',
+  travel_time: {
+    id: 'travel_time',
+    label: 'Restid',
     color: '#10B981', // Emerald
     bgColor: 'rgba(16, 185, 129, 0.2)',
-    icon: 'Calendar',
+    icon: 'Clock',
   },
-  exam: {
-    id: 'exam',
-    label: 'Exam',
-    color: '#EF4444', // Red
-    bgColor: 'rgba(239, 68, 68, 0.2)',
-    icon: 'FileText',
+  introduction: {
+    id: 'introduction',
+    label: 'Introduktion',
+    color: '#8B5CF6', // Violet
+    bgColor: 'rgba(139, 92, 246, 0.2)',
+    icon: 'BookOpen',
   },
-  personal: {
-    id: 'personal',
-    label: 'Personal',
+  meeting: {
+    id: 'meeting',
+    label: 'Möte',
     color: '#EC4899', // Pink
     bgColor: 'rgba(236, 72, 153, 0.2)',
-    icon: 'User',
+    icon: 'Users',
+  },
+  administrative_hours: {
+    id: 'administrative_hours',
+    label: 'Administrativa timmar',
+    color: '#6366F1', // Indigo
+    bgColor: 'rgba(99, 102, 241, 0.2)',
+    icon: 'FileText',
+  },
+  training: {
+    id: 'training',
+    label: 'Utbildning',
+    color: '#F97316', // Orange
+    bgColor: 'rgba(249, 115, 22, 0.2)',
+    icon: 'GraduationCap',
+  },
+  escort_service: {
+    id: 'escort_service',
+    label: 'Ledsagning',
+    color: '#06B6D4', // Cyan
+    bgColor: 'rgba(6, 182, 212, 0.2)',
+    icon: 'Accessibility',
+  },
+  respite_care: {
+    id: 'respite_care',
+    label: 'Avlösarservice',
+    color: '#14B8A6', // Teal
+    bgColor: 'rgba(20, 184, 166, 0.2)',
+    icon: 'Home',
+  },
+  unauthorized_absence: {
+    id: 'unauthorized_absence',
+    label: 'Ogiltig frånvaro',
+    color: '#EF4444', // Red
+    bgColor: 'rgba(239, 68, 68, 0.2)',
+    icon: 'XCircle',
+  },
+  involuntary_leave: {
+    id: 'involuntary_leave',
+    label: 'Ofrivillig ledighet',
+    color: '#F43F5E', // Rose
+    bgColor: 'rgba(244, 63, 94, 0.2)',
+    icon: 'AlertCircle',
+  },
+  other_time: {
+    id: 'other_time',
+    label: 'Övrig tid (OB grundande)',
+    color: '#84CC16', // Lime
+    bgColor: 'rgba(132, 204, 22, 0.2)',
+    icon: 'Plus',
+  },
+  customer_staff_note: {
+    id: 'customer_staff_note',
+    label: 'Kund-/personalnotering',
+    color: '#D946EF', // Fuchsia
+    bgColor: 'rgba(217, 70, 239, 0.2)',
+    icon: 'MessageSquare',
+  },
+  severance_pay: {
+    id: 'severance_pay',
+    label: 'Uppsägningslön',
+    color: '#6B7280', // Gray
+    bgColor: 'rgba(107, 114, 128, 0.2)',
+    icon: 'Banknote',
   },
   other: {
     id: 'other',
-    label: 'Other',
-    color: '#6B7280', // Gray
-    bgColor: 'rgba(107, 114, 128, 0.2)',
+    label: 'Annat',
+    color: '#9CA3AF', // Gray-400
+    bgColor: 'rgba(156, 163, 175, 0.2)',
     icon: 'MoreHorizontal',
   },
 };
@@ -279,7 +335,7 @@ export const EVENT_CATEGORIES: Record<EventCategory, CategoryConfig> = {
  * @returns Category configuration object
  */
 export function getCategoryConfig(category: EventCategory): CategoryConfig {
-  return EVENT_CATEGORIES[category];
+  return EVENT_CATEGORIES[category] || EVENT_CATEGORIES['other'];
 }
 
 /**

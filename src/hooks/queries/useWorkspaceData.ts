@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { teamService } from '@/services/teamService';
 import { userService } from '@/services/userService';
 import { workspaceService } from '@/services/workspaceService';
@@ -13,8 +13,14 @@ export function useWorkspaceTeams(workspaceId: string | null) {
   useEffect(() => {
     if (!workspaceId) return;
 
-    const channel = supabase.channel('scheduler-teams')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'teams' }, () => {
+    const channelId = `teams-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'teams',
+        filter: `workspace_id=eq.${workspaceId}`
+      }, () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
@@ -22,7 +28,7 @@ export function useWorkspaceTeams(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient]);
+  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
 
   return useQuery({
     queryKey,
@@ -41,8 +47,14 @@ export function useWorkspaceUsers(workspaceId: string | null) {
   useEffect(() => {
     if (!workspaceId) return;
 
-    const channel = supabase.channel('scheduler-users')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+    const channelId = `users-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'users',
+        filter: `workspace_id=eq.${workspaceId}`
+      }, () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
@@ -50,7 +62,7 @@ export function useWorkspaceUsers(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient]);
+  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
 
   return useQuery({
     queryKey,
@@ -69,7 +81,8 @@ export function useWorkspaceInfo(workspaceId: string | null) {
   useEffect(() => {
     if (!workspaceId) return;
 
-    const channel = supabase.channel(`workspace-${workspaceId}`)
+    const channelId = `workspace-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -83,7 +96,7 @@ export function useWorkspaceInfo(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient]);
+  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
 
   const query = useQuery({
     queryKey,
@@ -106,7 +119,11 @@ export function useWorkspaceInfo(workspaceId: string | null) {
     queryClient.invalidateQueries({ queryKey });
   };
 
-  return { ...query, updateSettings, updateModules };
+  return useMemo(() => ({
+    ...query,
+    updateSettings,
+    updateModules
+  }), [query, updateSettings, updateModules]);
 }
 
 export function useUserPreferences(userId: string | null) {
@@ -116,7 +133,8 @@ export function useUserPreferences(userId: string | null) {
   useEffect(() => {
     if (!userId) return;
 
-    const channel = supabase.channel(`user-${userId}`)
+    const channelId = `user-prefs-${userId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
@@ -130,7 +148,7 @@ export function useUserPreferences(userId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, queryClient]);
+  }, [userId, queryClient, JSON.stringify(queryKey)]);
 
   const query = useQuery({
     queryKey,
@@ -147,5 +165,8 @@ export function useUserPreferences(userId: string | null) {
     queryClient.invalidateQueries({ queryKey });
   };
 
-  return { ...query, updatePreferences };
+  return useMemo(() => ({
+    ...query,
+    updatePreferences
+  }), [query, updatePreferences]);
 }

@@ -42,13 +42,21 @@ export interface CalendarEvent {
 }
 
 export type EventCategory =
-  | 'meeting'      // Team meetings, standups
-  | 'task'         // Individual tasks
-  | 'reminder'     // Reminders and notifications
-  | 'planning'     // Planning sessions
-  | 'exam'         // Exams and assessments
-  | 'personal'     // Personal events
-  | 'other';       // Uncategorized events
+  | 'assistance_time'
+  | 'on_call'
+  | 'travel_time'
+  | 'introduction'
+  | 'meeting'
+  | 'administrative_hours'
+  | 'training'
+  | 'escort_service'
+  | 'respite_care'
+  | 'unauthorized_absence'
+  | 'involuntary_leave'
+  | 'other_time'
+  | 'customer_staff_note'
+  | 'severance_pay'
+  | 'other';
 
 export interface CategoryConfig {
   id: EventCategory;

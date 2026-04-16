@@ -1,13 +1,9 @@
 /**
- * =============================================================================
- * AUTHENTICATION HOOK
- * =============================================================================
  * This custom hook manages user authentication state and provides
- * login/logout functionality for the Volt Scheduler application.
- * =============================================================================
+ * login/logout functionality.
  */
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { LoginCredentials, AuthState } from '@/types';
 import { supabase } from '@/lib/supabase';
 
@@ -22,7 +18,7 @@ export function useAuth() {
   useEffect(() => {
     const fetchSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       if (session) {
         setAuthState({
           isAuthenticated: true,
@@ -34,12 +30,13 @@ export function useAuth() {
           },
           isLoading: false,
           error: null,
-        });
+          user_metadata: session.user.user_metadata,
+        } as any);
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, isAuthenticated: false, user: null }));
       }
     };
-    
+
     fetchSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -54,7 +51,8 @@ export function useAuth() {
           },
           isLoading: false,
           error: null,
-        });
+          user_metadata: session.user.user_metadata,
+        } as any);
       } else {
         setAuthState({
           isAuthenticated: false,
@@ -101,7 +99,7 @@ export function useAuth() {
     setAuthState(prev => ({ ...prev, error: null }));
   }, []);
 
-  return {
+  return useMemo(() => ({
     isAuthenticated: authState.isAuthenticated,
     user: authState.user,
     isLoading: authState.isLoading,
@@ -109,5 +107,5 @@ export function useAuth() {
     login,
     logout,
     clearError,
-  };
+  }), [authState.isAuthenticated, authState.user, authState.isLoading, authState.error, login, logout, clearError]);
 }

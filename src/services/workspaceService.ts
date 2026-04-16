@@ -8,7 +8,7 @@ export const workspaceService = {
   async getWorkspace(workspaceId: string) {
     const { data, error } = await supabase
       .from('workspaces')
-      .select('name, modules_active, settings')
+      .select('*')
       .eq('id', workspaceId)
       .single();
 

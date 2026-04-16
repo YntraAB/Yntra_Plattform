@@ -2,19 +2,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { eventService } from '@/services/eventService';
 import type { CalendarEvent } from '@/types';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export function useEvents(workspaceId: string | null, userId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = ['events', workspaceId];
+  const queryKey = useMemo(() => ['events', workspaceId], [workspaceId]);
 
-  // Configure realtime subscription
   useEffect(() => {
     if (!workspaceId) return;
 
-    const channel = supabase.channel('calendar-events')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => {
-        // Invalidate and refetch
+    const channelId = `events-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'events',
+        filter: `workspace_id=eq.${workspaceId}`
+      }, () => {
         queryClient.invalidateQueries({ queryKey });
       })
       .subscribe();
@@ -22,7 +26,7 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient]);
+  }, [workspaceId, queryClient, queryKey]);
 
   const query = useQuery({
     queryKey,
@@ -61,11 +65,11 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
     }
   });
 
-  return {
+  return useMemo(() => ({
     ...query,
     events: query.data || [],
     addEvent: addEvent.mutateAsync,
     updateEvent: (eventId: string, updates: Partial<CalendarEvent>) => updateEvent.mutateAsync({ eventId, updates }),
     deleteEvent: deleteEvent.mutateAsync,
-  };
+  }), [query, addEvent.mutateAsync, updateEvent.mutateAsync, deleteEvent.mutateAsync]);
 }

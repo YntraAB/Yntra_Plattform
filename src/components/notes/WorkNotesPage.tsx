@@ -42,7 +42,6 @@ export const WorkNotesPage: React.FC = () => {
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [dbTeams, setDbTeams] = useState<any[]>([]);
 
-  // Fetch teams map
   React.useEffect(() => {
     async function loadTeams() {
       if (userRole !== 'platform_admin' && !workspaceId) return;
@@ -117,7 +116,6 @@ export const WorkNotesPage: React.FC = () => {
     fetchNotes();
   }, [selectedTeam]);
 
-  // Authorization
   const currentUser = user?.id;
 
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
@@ -132,7 +130,6 @@ export const WorkNotesPage: React.FC = () => {
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
-  // --- ACTIONS ---
   const handleSaveNote = async () => {
     const targetWorkspaceId = userRole === 'platform_admin' ? selectedTeam.workspace_id : workspaceId;
     if (!selectedTeam || !composeSubject || !composeText || !targetWorkspaceId || !user) return;
@@ -247,7 +244,6 @@ export const WorkNotesPage: React.FC = () => {
                   onClick={async () => {
                     setSelectedTeam(team);
                     setSearchQuery('');
-                    // Markera teamets anteckningar som lästa i databasen om man har olästa
                     if (unreadInTeam > 0 && user) {
                       await supabase.from('team_members').update({ notes_last_read_at: new Date().toISOString() }).eq('team_id', team.id).eq('user_id', user.id);
                     }
@@ -293,9 +289,7 @@ export const WorkNotesPage: React.FC = () => {
   };
 
 
-  // ==========================================
-  // PANE 2: NOTE LIST (EDGE-TO-EDGE)
-  // ==========================================
+  // NOTE LIST (EDGE-TO-EDGE)
   const renderNoteList = () => {
     if (!selectedTeam) return null;
     let teamNotes = notes.filter(n => n.teamId === selectedTeam.id);
@@ -401,9 +395,7 @@ export const WorkNotesPage: React.FC = () => {
   };
 
 
-  // ==========================================
-  // PANE 3: READ VIEW (WITH AUDIT)
-  // ==========================================
+  // READ VIEW (WITH AUDIT)
   const renderReadPane = () => {
     if (!activeNote) return null;
     return (
@@ -496,9 +488,7 @@ export const WorkNotesPage: React.FC = () => {
   };
 
 
-  // ==========================================
-  // PANE 4: COMPOSE PANE (CLEAN FULLSCREEN)
-  // ==========================================
+  // COMPOSE PANE (CLEAN FULLSCREEN)
   const renderComposePane = () => {
     return (
       <div className="flex-1 flex flex-col h-full bg-background relative">
@@ -558,7 +548,6 @@ export const WorkNotesPage: React.FC = () => {
     );
   };
 
-  // --- MASTER RENDERER ---
   return (
     <div className="flex-1 flex flex-col h-full bg-background w-full">
       {isComposing

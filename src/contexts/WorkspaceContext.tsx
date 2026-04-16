@@ -66,7 +66,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
       try {
         const workspaceId = await userService.getUserWorkspaceId(user.id);
-        
+
         if (workspaceId) {
           setActiveWorkspaceId(workspaceId);
         } else if (user.role === 'platform_admin') {
@@ -83,17 +83,17 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   }, [user]);
 
   // 2. Use Hooks for data fetching
-  const { 
-    data: workspaceInfo, 
-    isLoading: wsLoading, 
-    updateSettings: mutateSettings, 
-    updateModules: mutateModules 
+  const {
+    data: workspaceInfo,
+    isLoading: wsLoading,
+    updateSettings: mutateSettings,
+    updateModules: mutateModules
   } = useWorkspaceInfo(activeWorkspaceId);
 
-  const { 
-    data: userPrefs, 
-    isLoading: prefsLoading, 
-    updatePreferences: mutatePreferences 
+  const {
+    data: userPrefs,
+    isLoading: prefsLoading,
+    updatePreferences: mutatePreferences
   } = useUserPreferences(user?.id || null);
 
   // 3. Derived values

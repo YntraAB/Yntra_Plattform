@@ -6,7 +6,7 @@ export interface TeamPermissions {
   can_manage_schedule: boolean;
   can_manage_notes: boolean;
   can_approve_time_reports: boolean;
-  is_admin: boolean; // Sant ifall användaren är global admin och har full makt.
+  is_admin: boolean;
 }
 
 const DEFAULT_PERMISSIONS: TeamPermissions = {
@@ -29,8 +29,6 @@ export const useTeamPermissions = (teamId: string | null) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Säkerhet: Om inget team är valt eller användaren ej finns, ingen makt.
-    // (Förutom platform_admins som har full makt överallt)
     if (!user) {
       setPermissions(DEFAULT_PERMISSIONS);
       setLoading(false);
@@ -53,7 +51,6 @@ export const useTeamPermissions = (teamId: string | null) => {
     const fetchTeamRole = async () => {
       try {
         setLoading(true);
-        // Hitta personens specifika koppling i just detta team
         const { data: tmData } = await supabase
           .from('team_members')
           .select('role_id')
@@ -62,26 +59,24 @@ export const useTeamPermissions = (teamId: string | null) => {
           .single();
 
         if (tmData && tmData.role_id) {
-           // Om de har en custom roll (t.ex. Schemaläggare), hämta maktbefogenheterna
-           const { data: roleData } = await supabase
-             .from('workspace_roles')
-             .select('permissions')
-             .eq('id', tmData.role_id)
-             .single();
-           
-           if (roleData && roleData.permissions) {
-              setPermissions({
-                 can_manage_schedule: !!roleData.permissions.can_manage_schedule,
-                 can_manage_notes: !!roleData.permissions.can_manage_notes,
-                 can_approve_time_reports: !!roleData.permissions.can_approve_time_reports,
-                 is_admin: false,
-              });
-              setLoading(false);
-              return;
-           }
+          const { data: roleData } = await supabase
+            .from('workspace_roles')
+            .select('permissions')
+            .eq('id', tmData.role_id)
+            .single();
+
+          if (roleData && roleData.permissions) {
+            setPermissions({
+              can_manage_schedule: !!roleData.permissions.can_manage_schedule,
+              can_manage_notes: !!roleData.permissions.can_manage_notes,
+              can_approve_time_reports: !!roleData.permissions.can_approve_time_reports,
+              is_admin: false,
+            });
+            setLoading(false);
+            return;
+          }
         }
-        
-        // Hittades ingen roll, återgå till 0 makt (Standard Assistent)
+
         setPermissions(DEFAULT_PERMISSIONS);
       } catch (e) {
         setPermissions(DEFAULT_PERMISSIONS);

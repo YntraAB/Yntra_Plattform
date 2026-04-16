@@ -169,7 +169,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = () => {
     if (!workspaceId || !user || !composeData.targetId || !composeData.content) return;
 
     setIsSending(true);
-    // Set is_read to true if we send to ourselves, otherwise false. But logic normally false.
     const payload = {
       workspace_id: workspaceId,
       sender_id: user.id,
@@ -261,7 +260,7 @@ export const MessagesPage: React.FC<MessagesPageProps> = () => {
   };
 
   const handleDeleteSelected = () => {
-    // I en riktig backend skulle du kalla på ett API här
+    // TODO: Backend is suppsoe to call API
     console.log("Tar bort:", selectedMsgs);
     setSelectedMsgs([]);
   };

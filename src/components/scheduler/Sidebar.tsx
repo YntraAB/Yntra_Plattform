@@ -156,16 +156,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [adminWorkspaces, setAdminWorkspaces] = useState<{ id: string, name: string }[]>([]);
   useEffect(() => {
-    if (user?.role === 'platform_admin') {
+    if (user?.role === 'platform_admin' && adminWorkspaces.length === 0) {
       supabase.from('workspaces').select('id, name').then(({ data }) => {
-        if (data) setAdminWorkspaces(data);
+        if (data && data.length > 0) setAdminWorkspaces(data);
       });
     }
-  }, [user]);
+  }, [user?.role, adminWorkspaces.length]);
 
   const [unreadMessages, setUnreadMessages] = useState<number>(0);
 
-  // Fetch unread messages
   useEffect(() => {
     async function fetchUnreadCounts() {
       if (!workspaceId || !user) return;
@@ -185,7 +184,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     new Set(['time'])
   );
 
-  // Dynamic menu construction based on modules
   const NAVIGATION_ITEMS: NavItem[] = modules.assistance ? [
     {
       id: 'time',

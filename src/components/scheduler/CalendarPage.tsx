@@ -6,6 +6,7 @@ import { useCalendar } from '@/hooks/useCalendar';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { EventModal } from './EventModal';
+import { AddEventModal } from './AddEventModal';
 import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
 import type { CalendarEvent } from '@/types';
 
@@ -13,8 +14,10 @@ export const CalendarPage: React.FC = () => {
   const { workspaceId, isLoading, settings } = useWorkspace();
   const { user } = useAuth();
   const { t } = useTranslation();
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
   const isSv = settings.language === 'sv';
-  const activeRole = 'admin' as any; // mock role
+  const activeRole = user?.role || 'assistant';
+  const isAdmin = activeRole === 'admin' || activeRole === 'platform_admin';
 
   const { data: dbTeams = [] } = useWorkspaceTeams(workspaceId || null);
   const { data: dbUsers = [] } = useWorkspaceUsers(workspaceId || null);
@@ -32,6 +35,7 @@ export const CalendarPage: React.FC = () => {
     navigatePrevious,
     navigateToToday,
     deleteEvent,
+    addEvent,
     selectedTeamId,
     setSelectedTeamId,
     selectedAssigneeId,
@@ -39,18 +43,16 @@ export const CalendarPage: React.FC = () => {
   } = useCalendar();
 
   useEffect(() => {
-    if (activeRole === 'assistant') {
-      if (selectedTeamId === 'all') {
-        const firstAvailableTeam = dbTeams[0];
-        if (firstAvailableTeam) {
-          setSelectedTeamId(firstAvailableTeam.id);
-        }
-      }
+    if (selectedTeamId === 'all' && dbTeams.length > 0) {
+      setSelectedTeamId(dbTeams[0].id);
+    }
+
+    if (!isAdmin) {
       if (selectedAssigneeId !== 'all' && selectedAssigneeId !== user?.id) {
         setSelectedAssigneeId(user?.id || 'all');
       }
     }
-  }, [activeRole, selectedTeamId, setSelectedTeamId, selectedAssigneeId, setSelectedAssigneeId, dbTeams, user]);
+  }, [isAdmin, selectedTeamId, setSelectedTeamId, selectedAssigneeId, setSelectedAssigneeId, dbTeams, user]);
 
   const handleEventClick = (event: CalendarEvent) => {
     selectEvent(event);
@@ -69,32 +71,33 @@ export const CalendarPage: React.FC = () => {
           selectedDate={selectedDate}
           selectedEndDate={selectedEndDate}
           onSelectDate={setSelectedDate}
+          onNewEvent={() => setIsAddModalOpen(true)}
           datesWithEvents={filteredEvents.map(e => e.startTime)}
         />
 
-        <div className="mt-6 border-b border-border pb-6">
-          <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
-            {t('scheduler.active_schedule')}
-          </h3>
-          <div className="space-y-2">
-            {isLoading ? (
-              <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
-            ) : (
+        {isLoading ? (
+          <div className="mt-6 border-b border-border pb-6">
+            <div className="w-24 h-4 bg-muted animate-pulse mb-3 rounded" />
+            <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
+          </div>
+        ) : dbTeams.length > 1 ? (
+          <div className="mt-6 border-b border-border pb-6">
+            <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
+              {t('scheduler.active_schedule')}
+            </h3>
+            <div className="space-y-2">
               <select
                 value={selectedTeamId}
                 onChange={(e) => setSelectedTeamId(e.target.value)}
                 className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
               >
-                {activeRole === 'admin' && (
-                  <option value="all">{t('scheduler.all_teams')}</option>
-                )}
                 {dbTeams.map(team => (
                   <option key={team.id} value={team.id}>{team.name}</option>
                 ))}
               </select>
-            )}
+            </div>
           </div>
-        </div>
+        ) : null}
 
         <div className="mt-6 border-b border-border pb-6">
           <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
@@ -109,17 +112,17 @@ export const CalendarPage: React.FC = () => {
                 onChange={(e) => setSelectedAssigneeId(e.target.value)}
                 className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
               >
-                {activeRole === 'assistant' ? (
-                  <>
-                    <option value="all">{t('scheduler.full_team_shifts')}</option>
-                    <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
-                  </>
-                ) : (
+                {isAdmin ? (
                   <>
                     <option value="all">{t('scheduler.all_assistants')}</option>
                     {dbUsers.map(u => (
                       <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
                     ))}
+                  </>
+                ) : (
+                  <>
+                    <option value="all">{t('scheduler.all_assistants')}</option>
+                    <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
                   </>
                 )}
               </select>
@@ -166,6 +169,7 @@ export const CalendarPage: React.FC = () => {
           selectedEndDate={selectedEndDate}
           view={view}
           events={filteredEvents}
+          users={dbUsers}
           onDateChange={setSelectedDate}
           onViewChange={setView}
           onEventClick={handleEventClick}
@@ -180,6 +184,14 @@ export const CalendarPage: React.FC = () => {
         onClose={() => selectEvent(null)}
         onDelete={handleDeleteEvent}
       />
+
+      {isAddModalOpen && (
+        <AddEventModal
+          selectedDate={selectedDate}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={addEvent}
+        />
+      )}
     </div>
   );
 };

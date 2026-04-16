@@ -10,7 +10,18 @@
     "upcoming": "Upcoming",
     "save": "Save Changes",
     "saving": "Saving...",
-    "loading_view": "Loading view"
+    "loading_view": "Loading view",
+    "title": "Title",
+    "team": "Team",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "category": "Category",
+    "location": "Location",
+    "description": "Description",
+    "date": "Date",
+    "start_date": "Start Date",
+    "end_date": "End Date",
+    "cancel": "Cancel"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -48,7 +59,31 @@
     "location_locked": "Assistance Module Required",
     "location_locked_desc": "The entire platform is strictly linked to the Assistance Module. Your organization does not have this module enabled, which means the workspace is locked.",
     "go_to_settings": "Go to Settings",
-    "contact_admin": "Contact administrator for activation"
+    "contact_admin": "Contact administrator for activation",
+    "event_title_placeholder": "What's happening?",
+    "select_team": "Select team...",
+    "select_staff": "Select staff...",
+    "staff": "Staff",
+    "assigned_to": "Assigned to",
+    "location_placeholder": "Location (optional)...",
+    "description_placeholder": "Event details...",
+    "categories": {
+      "assistance_time": "Assistance time",
+      "on_call": "On-call / Standby",
+      "travel_time": "Travel time",
+      "introduction": "Introduction",
+      "meeting": "Meeting",
+      "administrative_hours": "Administrative hours",
+      "training": "Training",
+      "escort_service": "Escort service",
+      "respite_care": "Respite care",
+      "unauthorized_absence": "Unauthorized absence",
+      "involuntary_leave": "Involuntary leave",
+      "other_time": "Other time (Bonus/Extra)",
+      "customer_staff_note": "Customer/Staff note",
+      "severance_pay": "Severance pay",
+      "other": "Other"
+    }
   },
   "settings": {
     "title": "Settings",
