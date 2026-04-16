@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ChevronRight } from 'lucide-react';
 import { toast } from "sonner";
 import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import type { TimeReportUI, DevRole, NavLevel } from '../types';
 
-export const useTimeManager = (setBreadcrumbNode?: (node: React.ReactNode) => void) => {
+export const useTimeManager = () => {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
 
@@ -121,46 +120,6 @@ export const useTimeManager = (setBreadcrumbNode?: (node: React.ReactNode) => vo
     }
     setSelectedContext({ type: null, id: null });
   }, [activeRole]);
-
-  useEffect(() => {
-    if (setBreadcrumbNode) {
-      const parts: React.ReactNode[] = [];
-      const renderPart = (label: string, onClick?: () => void, isLast?: boolean) => (
-        <React.Fragment key={label}>
-          {parts.length > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 mx-1.5" />}
-          <button
-            onClick={onClick}
-            className={`flex items-center text-sm transition-all duration-200 ${isLast ? 'text-foreground font-semibold cursor-default' : 'text-muted-foreground hover:text-foreground cursor-pointer'}`}
-            disabled={isLast}
-          >
-            {label}
-          </button>
-        </React.Fragment>
-      );
-
-      if (activeRole === 'platform_admin') {
-        parts.push(renderPart('Organisationer', () => { setCurrentLevel('platform_overview'); }, currentLevel === 'platform_overview'));
-      }
-
-      if (currentLevel !== 'platform_overview') {
-        parts.push(renderPart('Verksamhetsöversikt', () => { setCurrentLevel('team_overview'); }, currentLevel === 'team_overview'));
-      }
-
-      if (currentLevel === 'shift_list') {
-        const name = selectedContext.type === 'employee' ?
-          (shifts.find(e => e.employeeId === selectedContext.id)?.employee || 'Anställd') :
-          (selectedContext.id || 'Brukare');
-
-        parts.push(renderPart(name, () => { setCurrentLevel('shift_list'); }, currentLevel === 'shift_list'));
-      }
-
-      setBreadcrumbNode(
-        <div className="flex items-center animate-in fade-in slide-in-from-left-4 duration-300">
-          {parts}
-        </div>
-      );
-    }
-  }, [currentLevel, shifts, selectedContext, setBreadcrumbNode, activeRole]);
 
   useEffect(() => {
     async function checkPerms() {

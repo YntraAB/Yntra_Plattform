@@ -31,7 +31,7 @@ import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
 
-export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNode) => void }> = ({ setBreadcrumbNode }) => {
+export const WorkNotesPage: React.FC = () => {
   const { t } = useTranslation();
   const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
@@ -207,68 +207,6 @@ export const WorkNotesPage: React.FC<{ setBreadcrumbNode?: (node: React.ReactNod
     setEditingNoteId(note.id);
     setIsComposing(true);
   };
-
-  React.useEffect(() => {
-    if (!setBreadcrumbNode) return;
-
-    const baseBreadcrumb = (
-      <span
-        className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-        onClick={() => {
-          setSelectedTeam(null);
-          setActiveNoteId(null);
-          setIsComposing(false);
-        }}
-      >
-        {t('notes.levels.notes')}
-      </span>
-    );
-
-    if (isComposing && selectedTeam) {
-      setBreadcrumbNode(
-        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-          {baseBreadcrumb}
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span
-            className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-            onClick={() => setIsComposing(false)}
-          >
-            {selectedTeam.displayName || selectedTeam.name}
-          </span>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-foreground font-medium">{t('notes.breadcrumbs.new_note')}</span>
-        </div>
-      );
-    } else if (activeNote && selectedTeam) {
-      setBreadcrumbNode(
-        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-          {baseBreadcrumb}
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span
-            className="text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
-            onClick={() => setActiveNoteId(null)}
-          >
-            {selectedTeam.displayName || selectedTeam.name}
-          </span>
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-foreground font-medium truncate max-w-[200px]">{activeNote.subject}</span>
-        </div>
-      );
-    } else if (selectedTeam) {
-      setBreadcrumbNode(
-        <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-200">
-          {baseBreadcrumb}
-          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-          <span className="text-foreground font-medium">{selectedTeam.displayName || selectedTeam.name}</span>
-        </div>
-      );
-    } else {
-      setBreadcrumbNode(
-        <span className="text-foreground font-medium animate-in fade-in duration-200">{t('notes.levels.notes')}</span>
-      );
-    }
-  }, [selectedTeam, activeNote, isComposing, setBreadcrumbNode]);
-
 
   const renderTeamOverview = () => {
     let teams = dbTeams;

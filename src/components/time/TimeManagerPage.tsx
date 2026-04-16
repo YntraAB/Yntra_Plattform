@@ -1,14 +1,11 @@
 import React from 'react';
-import { useTimeManager } from './hooks/useTimeManager'; 
+import { useTimeManager } from './hooks/useTimeManager';
 import { PlatformOverview } from './components/PlatformOverview';
 import { TeamOverview } from './components/TeamOverview';
 import { AssistantTeams } from './components/AssistantTeams';
 import { ShiftSystem } from './components/ShiftSystem';
-import type { TimeManagerPageProps } from './types';
 
-export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
-  setBreadcrumbNode
-}) => {
+export const TimeManagerPage: React.FC = () => {
   const {
     workspaceId,
     activeRole,
@@ -36,7 +33,7 @@ export const TimeManagerPage: React.FC<TimeManagerPageProps> = ({
     openTeamShifts,
     handleApprove,
     handleDelete
-  } = useTimeManager(setBreadcrumbNode);
+  } = useTimeManager();
 
   return (
     <div className="h-full flex flex-col bg-background relative">

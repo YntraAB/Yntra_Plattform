@@ -22,10 +22,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
 interface MessagesPageProps {
-  setBreadcrumbNode?: (node: React.ReactNode) => void;
 }
 
-export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode }) => {
+export const MessagesPage: React.FC<MessagesPageProps> = () => {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
   const { t } = useTranslation();
@@ -159,69 +158,6 @@ export const MessagesPage: React.FC<MessagesPageProps> = ({ setBreadcrumbNode })
     if (filterType === 'trash') return t('messages.trash');
     return t('messages.inbox');
   }, [filterType, t]);
-
-  React.useEffect(() => {
-    if (setBreadcrumbNode) {
-      const inboxBtn = (
-        <button
-          onClick={() => {
-            setFilterType('inbox');
-            setIsComposing(false);
-            setActiveMessageId(null);
-          }}
-          className="hover:text-foreground transition-colors flex items-center"
-        >
-          Inkorg
-        </button>
-      );
-
-      if (isComposing) {
-        setBreadcrumbNode(
-          <div className="flex items-center animate-in fade-in slide-in-from-left-2 duration-200">
-            {inboxBtn}
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-            <span className="text-foreground font-medium flex items-center">
-              Nytt Meddelande
-            </span>
-          </div>
-        );
-      } else if (activeMessageId) {
-        const titleText = getTitle();
-        setBreadcrumbNode(
-          <div className="flex items-center animate-in fade-in slide-in-from-left-2 duration-200">
-            {inboxBtn}
-            {filterType !== 'inbox' && (
-              <>
-                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-                <button
-                  onClick={() => setActiveMessageId(null)}
-                  className="hover:text-foreground transition-colors flex items-center"
-                >
-                  {titleText}
-                </button>
-              </>
-            )}
-            <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-            <span className="text-foreground font-medium flex items-center">{activeMessage?.sender.name}</span>
-          </div>
-        );
-      } else {
-        if (filterType === 'inbox') {
-          setBreadcrumbNode(
-            <span className="text-foreground font-medium flex items-center animate-in fade-in duration-200">Inkorg</span>
-          );
-        } else {
-          setBreadcrumbNode(
-            <div className="flex items-center animate-in fade-in slide-in-from-left-2 duration-200">
-              {inboxBtn}
-              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground mx-1" />
-              <span className="text-foreground font-medium flex items-center">{getTitle()}</span>
-            </div>
-          );
-        }
-      }
-    }
-  }, [filterType, isComposing, activeMessageId, composeData, setBreadcrumbNode, getTitle]);
 
   const handleCompose = () => {
     setActiveMessageId(null);

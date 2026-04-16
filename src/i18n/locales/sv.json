@@ -9,7 +9,8 @@
     "logout": "Logga ut",
     "upcoming": "Kommande",
     "save": "Spara ändringar",
-    "saving": "Sparar..."
+    "saving": "Sparar...",
+    "loading_view": "Laddar vy"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -24,7 +25,16 @@
     "bookings": "Bokningar",
     "personal": "Personligt",
     "assistance_time": "Assistanstid",
-    "medication_deviations": "Medicineringsavvikelser"
+    "medication_deviations": "Medicineringsavvikelser",
+    "sections": {
+      "schedule": "Schema",
+      "inbox": "Inkorg",
+      "directory": "Team",
+      "notes": "Anteckningar",
+      "assistance": "Medicinering",
+      "time": "Tidshantering",
+      "timereports": "Tidsrapporter"
+    }
   },
   "scheduler": {
     "new_event": "Ny händelse",
@@ -292,5 +302,21 @@
     "date": "Datum",
     "wrote": "skrev",
     "error_sending": "Fel vid sändning"
+  },
+  "auth": {
+    "invite_error": {
+      "title": "Ett fel uppstod",
+      "back_to_login": "Återgå till inloggning"
+    },
+    "setup": {
+      "title": "Välkommen!",
+      "description": "Vänligen fyll i dina uppgifter och välj ett lösenord för ditt nya konto.",
+      "full_name": "För- och efternamn",
+      "phone_optional": "Telefonnummer (valfritt)",
+      "new_password": "Nytt lösenord",
+      "save_continue": "Spara & Fortsätt",
+      "cancel_logout": "Avbryt och Logga ut",
+      "error_prefix": "Fel vid kontoskapande: "
+    }
   }
 }

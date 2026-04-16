@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import { Routes, Route, Navigate, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, Outlet, useNavigate, useMatches } from 'react-router-dom';
 import { Sidebar } from './components/scheduler/Sidebar';
-import { LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react';
+import { LogOut, Settings, ChevronDown, Loader2, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
@@ -13,19 +13,16 @@ const MessagesPage = lazy(() => import('@/components/messages/MessagesPage').the
 const TimeManagerPage = lazy(() => import('@/components/time/TimeManagerPage').then(module => ({ default: module.TimeManagerPage })));
 const SettingsPage = lazy(() => import('@/components/settings/SettingsPage').then(module => ({ default: module.SettingsPage })));
 
-interface AppRoutesProps {
-  userName: string;
-  onLogout: () => void;
-}
-
-const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
+export const Layout: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
+  const matches = useMatches();
 
+  const userName = user?.name || '';
   const activeSection = location.pathname.substring(1) || 'schedule';
 
   useEffect(() => {
@@ -38,6 +35,15 @@ const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const breadcrumbs = matches
+    .filter((match: any) => match.handle && match.handle.breadcrumb)
+    .map((match: any) => ({
+      label: typeof match.handle.breadcrumb === 'function'
+        ? match.handle.breadcrumb(t, match.data)
+        : match.handle.breadcrumb,
+      path: match.pathname
+    }));
+
   return (
     <div className="h-screen flex bg-background overflow-hidden">
       <Sidebar
@@ -47,8 +53,19 @@ const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 bg-sidebar border-b border-border flex items-center justify-between px-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="animate-in fade-in slide-in-from-left-2 duration-200">
-              <span className="text-foreground capitalize font-medium">{activeSection.replace('-', ' ')}</span>
+            <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-200">
+              {breadcrumbs.length > 0 ? (
+                breadcrumbs.map((bc, idx) => (
+                  <React.Fragment key={bc.path}>
+                    <span className={idx === breadcrumbs.length - 1 ? "text-foreground font-medium" : "cursor-pointer hover:text-foreground transition-colors"} onClick={() => navigate(bc.path)}>
+                      {bc.label}
+                    </span>
+                    {idx < breadcrumbs.length - 1 && <ChevronRight className="w-3.5 h-3.5 opacity-50" />}
+                  </React.Fragment>
+                ))
+              ) : (
+                <span className="text-foreground capitalize font-medium">{activeSection.replace('-', ' ')}</span>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3 relative" ref={profileRef}>
@@ -75,7 +92,7 @@ const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
                     <div className="my-1 border-t border-border"></div>
                   </>
                 )}
-                <button onClick={onLogout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
                   <LogOut className="w-4 h-4" /> {t('common.logout')}
                 </button>
               </div>
@@ -86,7 +103,7 @@ const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
           <div className="flex-1 flex items-center justify-center bg-background">
             <div className="flex flex-col items-center gap-4 text-muted-foreground animate-pulse">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <span className="text-sm font-medium">Laddar vy...</span>
+              <span className="text-sm font-medium">{t('common.loading_view')}...</span>
             </div>
           </div>
         }>
@@ -97,20 +114,53 @@ const Layout: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
   );
 };
 
-export const AppRoutes: React.FC<AppRoutesProps> = ({ userName, onLogout }) => {
-  return (
-    <Routes>
-      <Route element={<Layout userName={userName} onLogout={onLogout} />}>
-        <Route path="/" element={<Navigate to="/schedule" replace />} />
-        <Route path="/schedule" element={<CalendarPage />} />
-        <Route path="/inbox" element={<MessagesPage setBreadcrumbNode={() => { }} />} />
-        <Route path="/directory" element={<DirectoryPage setBreadcrumbNode={() => { }} />} />
-        <Route path="/work-notes" element={<WorkNotesPage setBreadcrumbNode={() => { }} />} />
-        <Route path="/medication" element={<MedicationPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/time" element={<div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage setBreadcrumbNode={() => { }} /></div>} />
-        <Route path="/timereports" element={<div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage setBreadcrumbNode={() => { }} /></div>} />
-      </Route>
-    </Routes>
-  );
-};
+export const routes = [
+  {
+    path: "/",
+    element: <Layout />,
+    children: [
+      { index: true, element: <Navigate to="/schedule" replace /> },
+      {
+        path: "schedule",
+        element: <CalendarPage />,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.schedule') }
+      },
+      {
+        path: "inbox",
+        element: <MessagesPage />,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.inbox') }
+      },
+      {
+        path: "directory",
+        element: <DirectoryPage />,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.directory') }
+      },
+      {
+        path: "work-notes",
+        element: <WorkNotesPage />,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.notes') }
+      },
+      {
+        path: "medication",
+        element: <MedicationPage />,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.assistance') }
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+        handle: { breadcrumb: (t: any) => t('common.settings') }
+      },
+      {
+        path: "time",
+        element: <div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div>,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.time') }
+      },
+      {
+        path: "timereports",
+        element: <div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div>,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.timereports') }
+      },
+    ]
+  }
+];
+

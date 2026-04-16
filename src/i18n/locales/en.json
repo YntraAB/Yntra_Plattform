@@ -9,7 +9,8 @@
     "logout": "Log out",
     "upcoming": "Upcoming",
     "save": "Save Changes",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "loading_view": "Loading view"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -24,7 +25,16 @@
     "bookings": "Bookings",
     "personal": "Personal",
     "assistance_time": "Assistance Time",
-    "medication_deviations": "Medication Deviations"
+    "medication_deviations": "Medication Deviations",
+    "sections": {
+      "schedule": "Schedule",
+      "inbox": "Inbox",
+      "directory": "Teams",
+      "notes": "Work Notes",
+      "assistance": "Medication",
+      "time": "Time Manager",
+      "timereports": "Time Reports"
+    }
   },
   "scheduler": {
     "new_event": "New Event",
@@ -292,5 +302,21 @@
     "date": "Date",
     "wrote": "wrote",
     "error_sending": "Error sending"
+  },
+  "auth": {
+    "invite_error": {
+      "title": "An error occurred",
+      "back_to_login": "Back to login"
+    },
+    "setup": {
+      "title": "Welcome!",
+      "description": "Please fill in your details and choose a password for your new account.",
+      "full_name": "Full name",
+      "phone_optional": "Phone number (optional)",
+      "new_password": "New password",
+      "save_continue": "Save & Continue",
+      "cancel_logout": "Cancel and Log out",
+      "error_prefix": "Error profile creation: "
+    }
   }
 }

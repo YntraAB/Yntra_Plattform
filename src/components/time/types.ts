@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 export type DevRole = 'platform_admin' | 'admin' | 'assistant';
 export type NavLevel = 'platform_overview' | 'team_overview' | 'assistant_teams' | 'shift_list';
 
@@ -19,8 +17,4 @@ export interface TimeReportUI {
   status: string;
   location: string;
   note: string;
-}
-
-export interface TimeManagerPageProps {
-  setBreadcrumbNode?: (node: ReactNode) => void;
 }
