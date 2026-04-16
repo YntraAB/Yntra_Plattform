@@ -8,9 +8,9 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useEvents } from './queries/useEvents';
 import type {
   CalendarEvent,
   CalendarView,
@@ -29,6 +29,7 @@ export function useCalendar() {
   // Initialize calendar state with sample data
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
+  const { events: dbEvents, addEvent: dbAddEvent, updateEvent: dbUpdateEvent, deleteEvent: dbDeleteEvent } = useEvents(workspaceId, user?.id || null);
 
   const [state, setState] = useState<CalendarState & { selectedTeamId: string | 'all', selectedAssigneeId: string | 'all', selectedEndDate?: Date | null }>({
     selectedDate: new Date(),
@@ -41,44 +42,10 @@ export function useCalendar() {
     selectedAssigneeId: 'all',
   });
 
+  // Keep state.events in sync with dbEvents
   useEffect(() => {
-    async function fetchEvents() {
-      let query = supabase.from('events').select('*');
-      if (workspaceId) {
-        query = query.eq('workspace_id', workspaceId);
-      }
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Failed to load events:', error);
-        return;
-      }
-
-      const mappedEvents: CalendarEvent[] = (data || []).map(event => ({
-        id: event.id,
-        title: event.title,
-        startTime: new Date(event.start_time),
-        endTime: new Date(event.end_time),
-        category: (event.metadata as any)?.category || 'other',
-        description: (event.metadata as any)?.description || '',
-        location: (event.metadata as any)?.location || '',
-        teamId: event.team_id,
-        assigneeId: event.assignee_id
-      }));
-
-      setState(prev => ({ ...prev, events: mappedEvents }));
-    }
-    fetchEvents();
-
-    // Auto-uppdaterande händelser!
-    const channel = supabase.channel('calendar-events')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'events' }, () => { fetchEvents(); })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [workspaceId]);
+    setState(prev => ({ ...prev, events: dbEvents }));
+  }, [dbEvents]);
 
   /**
    * Set the currently selected date (or range if shiftClick is true)
@@ -139,64 +106,38 @@ export function useCalendar() {
    * Add a new event to the calendar
    */
   const addEvent = useCallback(async (event: Omit<CalendarEvent, 'id'>) => {
-    if (!workspaceId || !user) return;
-
-    const dbPayload = {
-      workspace_id: workspaceId,
-      user_id: user.id,
-      title: event.title,
-      start_time: event.startTime.toISOString(),
-      end_time: event.endTime.toISOString(),
-      team_id: event.teamId || null,
-      assignee_id: event.assigneeId || null,
-      metadata: {
-        description: event.description || '',
-        category: event.category,
-        location: event.location || ''
-      }
-    };
-
-    const { data, error } = await supabase.from('events').insert(dbPayload).select().single();
-    if (error || !data) {
+    try {
+      await dbAddEvent(event);
+    } catch (error) {
       console.error('Failed to add event:', error);
-      return;
     }
-
-    // We don't need to manually push to state anymore because the realtime channel handles it!
-  }, [workspaceId, user]);
+  }, [dbAddEvent]);
 
   /**
    * Update an existing event
    */
   const updateEvent = useCallback(async (eventId: string, updates: Partial<CalendarEvent>) => {
-    // Only updates title, start, end, team, assignee, or metadata
-    const dbPayload: any = {};
-    if (updates.title) dbPayload.title = updates.title;
-    if (updates.startTime) dbPayload.start_time = updates.startTime.toISOString();
-    if (updates.endTime) dbPayload.end_time = updates.endTime.toISOString();
-    if (updates.teamId !== undefined) dbPayload.team_id = updates.teamId || null;
-    if (updates.assigneeId !== undefined) dbPayload.assignee_id = updates.assigneeId || null;
-
-    // Simplification for metadata: we just merge it all if category/desc/location changes
-    // In a real app we'd fetch the old metadata and merge it...
-    // For simplicity, we just trigger optimistic UI update and do basic backend override if possible
-
-    await supabase.from('events').update(dbPayload).eq('id', eventId);
-
-    // The realtime subscription handles triggering UI updates instantly based on this update
-  }, []);
+    try {
+      await dbUpdateEvent(eventId, updates);
+    } catch (error) {
+      console.error('Failed to update event:', error);
+    }
+  }, [dbUpdateEvent]);
 
   /**
    * Delete an event from the calendar
    */
   const deleteEvent = useCallback(async (eventId: string) => {
-    await supabase.from('events').delete().eq('id', eventId);
-    // Event is removed via realtime
-    setState(prev => ({
-      ...prev,
-      selectedEvent: prev.selectedEvent?.id === eventId ? null : prev.selectedEvent,
-    }));
-  }, []);
+    try {
+      await dbDeleteEvent(eventId);
+      setState(prev => ({
+        ...prev,
+        selectedEvent: prev.selectedEvent?.id === eventId ? null : prev.selectedEvent,
+      }));
+    } catch (error) {
+      console.error('Failed to delete event:', error);
+    }
+  }, [dbDeleteEvent]);
 
   /**
    * Select an event for viewing/editing

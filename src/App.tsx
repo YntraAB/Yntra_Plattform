@@ -14,7 +14,7 @@
  */
 
 import { LoginPage } from '@/components/login/LoginPage';
-import { SchedulerPage } from '@/components/scheduler/SchedulerPage';
+import { AppRoutes } from './AppRoutes';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkspaceProvider } from '@/contexts/WorkspaceContext';
 import { supabase } from '@/lib/supabase';
@@ -26,7 +26,7 @@ import './App.css';
  * Main App Component
  * 
  * This component serves as the entry point for the Volt Scheduler application.
- * It conditionally renders either the LoginPage or SchedulerPage based on
+ * It conditionally renders either the LoginPage or AppRoutes based on
  * the user's authentication state.
  */
 function App() {
@@ -155,10 +155,10 @@ function App() {
       ) : isAuthenticated && user ? (
         /* 
           SCHEDULER VIEW
-          The main application interface with sidebar, calendar, and event management
+          The main application interface with AppRoutes
         */
         <WorkspaceProvider>
-          <SchedulerPage
+          <AppRoutes
             userName={user.name}
             onLogout={handleLogout}
           />
