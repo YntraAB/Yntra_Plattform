@@ -21,7 +21,9 @@
     "date": "Date",
     "start_date": "Start Date",
     "end_date": "End Date",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "from": "From",
+    "to": "To"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -49,6 +51,7 @@
   },
   "scheduler": {
     "new_event": "New Event",
+    "edit_event": "Edit Event",
     "all_teams": "All Teams (Overview)",
     "active_schedule": "Active Schedule",
     "staff_assistants": "Staff / Assistants",
@@ -83,7 +86,13 @@
       "customer_staff_note": "Customer/Staff note",
       "severance_pay": "Severance pay",
       "other": "Other"
-    }
+    },
+    "overlap_waiting_active": "Overlap, waiting & active time",
+    "waiting_time": "Waiting time",
+    "active_time": "Active time",
+    "breaks": "Breaks",
+    "break": "Break",
+    "paid": "Paid"
   },
   "settings": {
     "title": "Settings",

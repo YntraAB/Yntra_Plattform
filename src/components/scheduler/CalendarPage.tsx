@@ -15,6 +15,7 @@ export const CalendarPage: React.FC = () => {
   const { user } = useAuth();
   const { t } = useTranslation();
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
+  const [editingEvent, setEditingEvent] = React.useState<CalendarEvent | null>(null);
   const isSv = settings.language === 'sv';
   const activeRole = user?.role || 'assistant';
   const isAdmin = activeRole === 'admin' || activeRole === 'platform_admin';
@@ -36,6 +37,7 @@ export const CalendarPage: React.FC = () => {
     navigateToToday,
     deleteEvent,
     addEvent,
+    updateEvent,
     selectedTeamId,
     setSelectedTeamId,
     selectedAssigneeId,
@@ -182,14 +184,28 @@ export const CalendarPage: React.FC = () => {
       <EventModal
         event={selectedEvent}
         onClose={() => selectEvent(null)}
+        onEdit={(event) => {
+          setEditingEvent(event);
+          selectEvent(null);
+        }}
         onDelete={handleDeleteEvent}
       />
 
-      {isAddModalOpen && (
+      {(isAddModalOpen || editingEvent) && (
         <AddEventModal
-          selectedDate={selectedDate}
-          onClose={() => setIsAddModalOpen(false)}
-          onSave={addEvent}
+          selectedDate={editingEvent ? editingEvent.startTime : selectedDate}
+          event={editingEvent}
+          onClose={() => {
+            setIsAddModalOpen(false);
+            setEditingEvent(null);
+          }}
+          onSave={async (eventData, eventId) => {
+            if (eventId) {
+              await updateEvent(eventId, eventData);
+            } else {
+              await addEvent(eventData);
+            }
+          }}
         />
       )}
     </div>

@@ -3,45 +3,63 @@ import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
 import type { CalendarEvent, EventCategory } from '@/types';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { ChevronDown } from 'lucide-react';
 
 interface AddEventModalProps {
   selectedDate: Date;
+  event?: CalendarEvent | null;
   onClose: () => void;
-  onSave: (event: Omit<CalendarEvent, 'id'>) => Promise<void>;
+  onSave: (event: Omit<CalendarEvent, 'id'>, eventId?: string) => Promise<void>;
 }
 
-export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, onClose, onSave }) => {
+export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, event, onClose, onSave }) => {
   const { workspaceId } = useWorkspace();
   const { t } = useTranslation();
   const { data: dbTeams = [] } = useWorkspaceTeams(workspaceId);
   const { data: dbUsers = [] } = useWorkspaceUsers(workspaceId);
 
-  const [teamId, setTeamId] = useState('');
-  const [assigneeId, setAssigneeId] = useState('');
-  const [startDate, setStartDate] = useState(selectedDate.toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(selectedDate.toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endTime, setEndTime] = useState('10:00');
-  const [category, setCategory] = useState<EventCategory>('assistance_time');
-  const [description, setDescription] = useState('');
+  const [teamId, setTeamId] = useState(event?.teamId || '');
+  const [assigneeId, setAssigneeId] = useState(event?.assigneeId || '');
+  const [startDate, setStartDate] = useState((event?.startTime || selectedDate).toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState((event?.endTime || selectedDate).toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState(event?.startTime ? event.startTime.toTimeString().slice(0, 5) : '09:00');
+  const [endTime, setEndTime] = useState(event?.endTime ? event.endTime.toTimeString().slice(0, 5) : '10:00');
+  const [category, setCategory] = useState<EventCategory>(event?.category || 'assistance_time');
+  const [description, setDescription] = useState(event?.description || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [waitingFrom, setWaitingFrom] = useState(event?.waitingTime?.from || '');
+  const [waitingTo, setWaitingTo] = useState(event?.waitingTime?.to || '');
+  const [active1From, setActive1From] = useState(event?.activeTimes?.[0]?.from || '');
+  const [active1To, setActive1To] = useState(event?.activeTimes?.[0]?.to || '');
+  const [active2From, setActive2From] = useState(event?.activeTimes?.[1]?.from || '');
+  const [active2To, setActive2To] = useState(event?.activeTimes?.[1]?.to || '');
+  const [active3From, setActive3From] = useState(event?.activeTimes?.[2]?.from || '');
+  const [active3To, setActive3To] = useState(event?.activeTimes?.[2]?.to || '');
+  const [breakFrom, setBreakFrom] = useState(event?.break?.from || '');
+  const [breakTo, setBreakTo] = useState(event?.break?.to || '');
+  const [isBreakPaid, setIsBreakPaid] = useState(event?.break?.isPaid || false);
 
-  // Auto-select team if only one exists
   useEffect(() => {
     if (dbTeams.length === 1) {
       setTeamId(dbTeams[0].id);
     }
   }, [dbTeams]);
 
-  // Sync end date if start date changes and they were same
   const handleStartDateChange = (newStartDate: string) => {
     if (startDate === endDate) {
       setEndDate(newStartDate);
@@ -63,7 +81,6 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, onCl
       const [endH, endM] = endTime.split(':').map(Number);
       end.setHours(endH, endM, 0, 0);
 
-      // Use category label as title
       const eventTitle = t(`scheduler.categories.${category}`, { defaultValue: category });
 
       await onSave({
@@ -74,7 +91,14 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, onCl
         endTime: end,
         category,
         description,
-      });
+        waitingTime: (waitingFrom || waitingTo) ? { from: waitingFrom, to: waitingTo } : undefined,
+        activeTimes: [
+          { from: active1From, to: active1To },
+          { from: active2From, to: active2To },
+          { from: active3From, to: active3To },
+        ].filter(t => t.from || t.to),
+        break: (breakFrom || breakTo) ? { from: breakFrom, to: breakTo, isPaid: isBreakPaid } : undefined,
+      }, event?.id);
       onClose();
     } catch (error) {
       console.error('Failed to save event:', error);
@@ -88,7 +112,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, onCl
       <DialogContent className="sm:max-w-lg p-0 overflow-hidden border-border bg-card shadow-2xl">
         <DialogHeader className="px-6 py-4 border-b border-border bg-card">
           <DialogTitle className="text-lg font-semibold text-foreground">
-            {t('scheduler.new_event')}
+            {event ? t('scheduler.edit_event', { defaultValue: 'Redigera händelse' }) : t('scheduler.new_event')}
           </DialogTitle>
         </DialogHeader>
 
@@ -191,6 +215,133 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, onCl
               />
             </div>
           </div>
+
+          {/* Overlap, waiting & active time section */}
+          <Collapsible className="space-y-2">
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex items-center justify-between w-full px-4 py-2 bg-muted/20 border border-border/50 rounded-lg text-sm font-medium hover:bg-muted/30 transition-all"
+              >
+                <span>{t('scheduler.overlap_waiting_active')}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 space-y-4 bg-muted/10 border border-border/30 rounded-lg mt-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-70">
+                  {t('scheduler.waiting_time')}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{t('common.from')}</span>
+                    <input
+                      type="time"
+                      value={waitingFrom}
+                      onChange={(e) => setWaitingFrom(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{t('common.to')}</span>
+                    <input
+                      type="time"
+                      value={waitingTo}
+                      onChange={(e) => setWaitingTo(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {[
+                { label: t('scheduler.active_time') + ' 1', from: active1From, setFrom: setActive1From, to: active1To, setTo: setActive1To },
+                { label: t('scheduler.active_time') + ' 2', from: active2From, setFrom: setActive2From, to: active2To, setTo: setActive2To },
+                { label: t('scheduler.active_time') + ' 3', from: active3From, setFrom: setActive3From, to: active3To, setTo: setActive3To }
+              ].map((item, idx) => (
+                <div key={idx} className="space-y-2">
+                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-70">
+                    {item.label}
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">{t('common.from')}</span>
+                      <input
+                        type="time"
+                        value={item.from}
+                        onChange={(e) => item.setFrom(e.target.value)}
+                        className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-muted-foreground">{t('common.to')}</span>
+                      <input
+                        type="time"
+                        value={item.to}
+                        onChange={(e) => item.setTo(e.target.value)}
+                        className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+
+          {/* Breaks section */}
+          <Collapsible className="space-y-2">
+            <CollapsibleTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex items-center justify-between w-full px-4 py-2 bg-muted/20 border border-border/50 rounded-lg text-sm font-medium hover:bg-muted/30 transition-all"
+              >
+                <span>{t('scheduler.breaks')}</span>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="p-4 space-y-4 bg-muted/10 border border-border/30 rounded-lg mt-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-70">
+                  {t('scheduler.break')}
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{t('common.from')}</span>
+                    <input
+                      type="time"
+                      value={breakFrom}
+                      onChange={(e) => setBreakFrom(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground">{t('common.to')}</span>
+                    <input
+                      type="time"
+                      value={breakTo}
+                      onChange={(e) => setBreakTo(e.target.value)}
+                      className="w-full bg-background border border-border rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 pt-1">
+                <Checkbox
+                  id="break-paid"
+                  checked={isBreakPaid}
+                  onCheckedChange={(checked) => setIsBreakPaid(checked === true)}
+                />
+                <Label
+                  htmlFor="break-paid"
+                  className="text-xs font-medium text-muted-foreground cursor-pointer"
+                >
+                  {t('scheduler.paid')}
+                </Label>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           <div className="space-y-1.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('common.description')}</label>

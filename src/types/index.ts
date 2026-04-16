@@ -39,6 +39,9 @@ export interface CalendarEvent {
   attendees?: string[];
   teamId?: string;
   assigneeId?: string;
+  waitingTime?: { from: string; to: string };
+  activeTimes?: { from: string; to: string }[];
+  break?: { from: string; to: string; isPaid: boolean };
 }
 
 export type EventCategory =

@@ -21,7 +21,9 @@
     "date": "Datum",
     "start_date": "Startdatum",
     "end_date": "Slutdatum",
-    "cancel": "Avbryt"
+    "cancel": "Avbryt",
+    "from": "Från",
+    "to": "Till"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -49,6 +51,7 @@
   },
   "scheduler": {
     "new_event": "Ny händelse",
+    "edit_event": "Redigera händelse",
     "all_teams": "Alla Team (Översikt)",
     "active_schedule": "Aktivt Schema",
     "staff_assistants": "Personal / Assistenter",
@@ -83,7 +86,13 @@
       "customer_staff_note": "Kund-/personalnotering",
       "severance_pay": "Uppsägningslön",
       "other": "Övrigt"
-    }
+    },
+    "overlap_waiting_active": "Överlappning, väntetid & aktiv tid",
+    "waiting_time": "Väntetid",
+    "active_time": "Aktiv tid",
+    "breaks": "Raster",
+    "break": "Rast",
+    "paid": "Betald"
   },
   "settings": {
     "title": "Inställningar",
