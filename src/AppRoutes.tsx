@@ -1,17 +1,17 @@
 import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { Navigate, useLocation, Outlet, useNavigate, useMatches } from 'react-router-dom';
-import { Sidebar } from './components/scheduler/Sidebar';
+import { Sidebar } from './features/scheduler/components/Sidebar';
 import { LogOut, Settings, ChevronDown, Loader2, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
 
-const CalendarPage = lazy(() => import('@/components/scheduler/CalendarPage').then(module => ({ default: module.CalendarPage })));
-const WorkNotesPage = lazy(() => import('@/components/notes/WorkNotesPage').then(module => ({ default: module.WorkNotesPage })));
-const MedicationPage = lazy(() => import('@/components/assistance/MedicationPage').then(module => ({ default: module.MedicationPage })));
-const DirectoryPage = lazy(() => import('@/components/directory/DirectoryPage').then(module => ({ default: module.DirectoryPage })));
-const MessagesPage = lazy(() => import('@/components/messages/MessagesPage').then(module => ({ default: module.MessagesPage })));
-const TimeManagerPage = lazy(() => import('@/components/time/TimeManagerPage').then(module => ({ default: module.TimeManagerPage })));
-const SettingsPage = lazy(() => import('@/components/settings/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const CalendarPage = lazy(() => import('@/features/scheduler/components/CalendarPage').then(module => ({ default: module.CalendarPage })));
+const WorkNotesPage = lazy(() => import('@/features/notes/components/WorkNotesPage').then(module => ({ default: module.WorkNotesPage })));
+const MedicationPage = lazy(() => import('@/features/assistance/components/MedicationPage').then(module => ({ default: module.MedicationPage })));
+const DirectoryPage = lazy(() => import('@/features/directory/components/DirectoryPage').then(module => ({ default: module.DirectoryPage })));
+const MessagesPage = lazy(() => import('@/features/messages/components/MessagesPage').then(module => ({ default: module.MessagesPage })));
+const TimeManagerPage = lazy(() => import('@/features/time/components/TimeManagerPage').then(module => ({ default: module.TimeManagerPage })));
+const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage').then(module => ({ default: module.SettingsPage })));
 
 export const Layout: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);

@@ -9,12 +9,12 @@
  * - UI components (reusable, well-documented)
  */
 
-import { LoginPage } from '@/components/login/LoginPage';
+import { LoginPage } from '@/features/auth/components/LoginPage';
 import { routes } from './AppRoutes';
 import { useAuth } from '@/hooks/useAuth';
 import { WorkspaceProvider } from '@/contexts/WorkspaceContext';
-import { PasswordResetPage } from '@/components/auth/PasswordResetPage';
-import { InviteError } from '@/components/auth/InviteError';
+import { PasswordResetPage } from '@/features/auth/components/PasswordResetPage';
+import { InviteError } from '@/features/auth/components/InviteError';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';

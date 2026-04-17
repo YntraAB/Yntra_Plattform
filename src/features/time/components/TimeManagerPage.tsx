@@ -1,9 +1,9 @@
 import React from 'react';
-import { useTimeManager } from './hooks/useTimeManager';
-import { PlatformOverview } from './components/PlatformOverview';
-import { TeamOverview } from './components/TeamOverview';
-import { AssistantTeams } from './components/AssistantTeams';
-import { ShiftSystem } from './components/ShiftSystem';
+import { useTimeManager } from '../hooks/useTimeManager';
+import { PlatformOverview } from './PlatformOverview';
+import { TeamOverview } from './TeamOverview';
+import { AssistantTeams } from './AssistantTeams';
+import { ShiftSystem } from './ShiftSystem';
 
 export const TimeManagerPage: React.FC = () => {
   const {

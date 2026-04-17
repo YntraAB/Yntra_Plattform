@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useDirectoryData } from './hooks/useDirectoryData';
-import { WorkspacesView } from './components/WorkspacesView';
-import { TeamsView } from './components/TeamsView';
-import { MembersView } from './components/MembersView';
-import { MemberDetailSheet } from './components/MemberDetailSheet';
-import { DevHubModal } from './components/DevHubModal';
-import { RoleManagerModal } from './components/RoleManagerModal';
-import { TeamManagerModal } from './components/TeamManagerModal';
-import { InviteManagerModal } from './components/InviteManagerModal';
+import { useDirectoryData } from '../hooks/useDirectoryData';
+import { WorkspacesView } from './WorkspacesView';
+import { TeamsView } from './TeamsView';
+import { MembersView } from './MembersView';
+import { MemberDetailSheet } from './MemberDetailSheet';
+import { DevHubModal } from './DevHubModal';
+import { RoleManagerModal } from './RoleManagerModal';
+import { TeamManagerModal } from './TeamManagerModal';
+import { InviteManagerModal } from './InviteManagerModal';
 
 export const DirectoryPage: React.FC = () => {
   const { t } = useTranslation();
