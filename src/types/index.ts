@@ -12,6 +12,7 @@ export interface User {
   role: string | 'platform_admin' | 'admin' | 'user' | 'assistant';
   permissions?: Record<string, any>;
   workspaceId?: string;
+  last_sign_in_at?: string;
 }
 
 export interface LoginCredentials {
@@ -130,10 +131,12 @@ export interface WorkspaceSettings {
     start: number;
     end: number;
   };
+  default_calendar_view?: 'day' | 'week' | 'month';
 }
 
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
   calendar_density: 'compact' | 'relaxed';
   font_scale: number;
+  accent_color?: string;
 }

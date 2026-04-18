@@ -20,12 +20,18 @@ export const workspaceService = {
    * Update workspace settings
    */
   async updateSettings(workspaceId: string, settings: Partial<WorkspaceSettings>) {
-    const { error } = await supabase
+    console.log('workspaceService.updateSettings called for WS:', workspaceId, 'with:', settings);
+    const { data, error } = await supabase
       .from('workspaces')
       .update({ settings })
-      .eq('id', workspaceId);
+      .eq('id', workspaceId)
+      .select();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error('Supabase error updating settings:', error);
+      throw new Error(error.message);
+    }
+    console.log('Supabase update response:', data);
   },
 
   /**

@@ -69,15 +69,15 @@ export const ModulesSettings: React.FC<ModulesSettingsProps> = ({ setIsSaving })
             <ul className="space-y-3 text-sm text-muted-foreground mt-2">
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-primary/10 text-primary"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.school_feature_1', { defaultValue: 'Närvarohantering och schema för elever.' })}</span>
+                <span>{t('settings.modules.school_feature_1')}</span>
               </li>
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-primary/10 text-primary"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.school_feature_2', { defaultValue: 'Betygskataloger och studieplaner.' })}</span>
+                <span>{t('settings.modules.school_feature_2')}</span>
               </li>
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-primary/10 text-primary"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.school_feature_3', { defaultValue: 'Utvecklingssamtal och rapportering.' })}</span>
+                <span>{t('settings.modules.school_feature_3')}</span>
               </li>
             </ul>
           </CardContent>
@@ -125,15 +125,15 @@ export const ModulesSettings: React.FC<ModulesSettingsProps> = ({ setIsSaving })
             <ul className="space-y-3 text-sm text-muted-foreground mt-2">
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-emerald-500/10 text-emerald-500"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.assistance_feature_1', { defaultValue: 'Brukarregister och digital journalföring.' })}</span>
+                <span>{t('settings.modules.assistance_feature_1')}</span>
               </li>
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-emerald-500/10 text-emerald-500"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.assistance_feature_2', { defaultValue: 'Hantera sovande jour och medicinsignering.' })}</span>
+                <span>{t('settings.modules.assistance_feature_2')}</span>
               </li>
               <li className="flex items-center gap-3 bg-background/40 p-3 rounded-xl border border-border/30 hover:bg-background/60 transition-colors">
                 <div className="p-1 rounded-full bg-emerald-500/10 text-emerald-500"><Sparkles className="w-3.5 h-3.5" /></div>
-                <span>{t('settings.modules.assistance_feature_3', { defaultValue: 'Beredskapsrapporter och avvikelsehantering.' })}</span>
+                <span>{t('settings.modules.assistance_feature_3')}</span>
               </li>
             </ul>
           </CardContent>

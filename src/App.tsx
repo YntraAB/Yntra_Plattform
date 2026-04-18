@@ -18,6 +18,7 @@ import { InviteError } from '@/features/auth/components/InviteError';
 import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { VisualEffectHandler } from './components/VisualEffectHandler';
 import './App.css';
 
 /**
@@ -97,6 +98,7 @@ function App() {
         />
       ) : isAuthenticated && user ? (
         <WorkspaceProvider>
+          <VisualEffectHandler />
           <RouterProvider router={router} />
         </WorkspaceProvider>
       ) : (

@@ -18,6 +18,12 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
   const { settings, updateSettings, preferences, updatePreferences } = useWorkspace();
   const { theme, setTheme } = useTheme();
 
+  const [localFontScale, setLocalFontScale] = React.useState(preferences.font_scale || 1);
+
+  React.useEffect(() => {
+    setLocalFontScale(preferences.font_scale || 1);
+  }, [preferences.font_scale]);
+
   const handleUpdateSettings = async (newSettings: any) => {
     setIsSaving(true);
     await updateSettings(newSettings);
@@ -152,15 +158,16 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
               <div className="flex justify-between items-center">
                 <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.font_scale')}</Label>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-secondary text-secondary-foreground font-mono">
-                  {Math.round((preferences.font_scale || 1) * 100)}%
+                  {Math.round(localFontScale * 100)}%
                 </span>
               </div>
               <Slider
-                value={[preferences.font_scale || 1]}
+                value={[localFontScale]}
                 min={0.8}
                 max={1.2}
                 step={0.05}
-                onValueChange={([val]) => handleUpdatePreferences({ font_scale: val })}
+                onValueChange={([val]) => setLocalFontScale(val)}
+                onValueCommit={([val]) => handleUpdatePreferences({ font_scale: val })}
                 className="py-2"
               />
             </div>

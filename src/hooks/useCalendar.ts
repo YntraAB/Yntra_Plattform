@@ -1,10 +1,6 @@
 /**
- * =============================================================================
- * CALENDAR HOOK
- * =============================================================================
  * This custom hook manages calendar state including events, selected date,
  * view mode, and filtering. It provides methods for CRUD operations on events.
- * =============================================================================
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -24,7 +20,7 @@ import type {
  * @returns Calendar state and methods for event management
  */
 export function useCalendar() {
-  const { workspaceId } = useWorkspace();
+  const { workspaceId, settings } = useWorkspace();
   const { user } = useAuth();
   const { events: dbEvents, addEvent: dbAddEvent, updateEvent: dbUpdateEvent, deleteEvent: dbDeleteEvent } = useEvents(workspaceId, user?.id || null);
 
@@ -40,7 +36,7 @@ export function useCalendar() {
   }>({
     selectedDate: new Date(),
     selectedEndDate: null,
-    view: 'week',
+    view: (settings?.default_calendar_view as CalendarView) || 'week',
     selectedEvent: null,
     filterCategories: [],
     selectedTeamId: 'all',
@@ -230,7 +226,7 @@ export function useCalendar() {
     return filteredEvents.filter(event => {
       const eventStart = new Date(event.startTime);
       const eventEnd = new Date(event.endTime);
-      
+
       return eventStart <= dayEnd && eventEnd >= dayStart;
     });
   }, [filteredEvents]);

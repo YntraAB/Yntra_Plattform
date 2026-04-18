@@ -45,37 +45,38 @@ interface EventCardProps {
   event: CalendarEvent;
   onClick: () => void;
   hourHeight?: number;
+  startHour?: number;
   locale?: string;
   tooltipPosition?: 'side' | 'top';
   currentDate: Date;
   users?: User[];
 }
 
-const EventCard: React.FC<EventCardProps> = ({ 
-  event, 
-  onClick, 
-  hourHeight = 60, 
+const EventCard: React.FC<EventCardProps> = ({
+  event,
+  onClick,
+  hourHeight = 60,
+  startHour = 0,
   locale = 'en-US',
   tooltipPosition = 'side',
   currentDate,
   users = []
 }) => {
   const categoryConfig = getCategoryConfig(event.category);
-  const { t } = useTranslation();
 
   // Helper to format assignee name
   const getDisplayName = () => {
     if (!event.assigneeId) return event.title;
     const user = users.find(u => u.id === event.assigneeId);
     if (!user) return event.title;
-    
+
     const fullName = user.name || (user as any).full_name || '';
     if (!fullName) return event.title;
-    
+
     const parts = fullName.trim().split(/\s+/);
     const firstName = parts[0];
     if (parts.length === 1) return firstName;
-    
+
     const lastName = parts[parts.length - 1];
     // If "First Last" is longer than 12 chars, use "First L."
     if (`${firstName} ${lastName}`.length > 12) {
@@ -94,7 +95,7 @@ const EventCard: React.FC<EventCardProps> = ({
   const effectiveStart = event.startTime < dayStart ? dayStart : event.startTime;
   const effectiveEnd = event.endTime > dayEnd ? dayEnd : event.endTime;
 
-  const top = calculateEventTop(effectiveStart, hourHeight);
+  const top = calculateEventTop(effectiveStart, hourHeight, startHour);
   const height = calculateEventHeight(effectiveStart, effectiveEnd, hourHeight);
 
   return (
@@ -267,8 +268,8 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, users, onEventC
   const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const startHour = 0;
-  const endHour = 23;
+  const startHour = settings.business_hours?.start ?? 0;
+  const endHour = settings.business_hours?.end ?? 23;
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
   const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
@@ -344,6 +345,7 @@ const DayView: React.FC<DayViewProps> = ({ selectedDate, events, users, onEventC
                 event={event}
                 onClick={() => onEventClick(event)}
                 hourHeight={HOUR_HEIGHT}
+                startHour={startHour}
                 locale={locale}
                 tooltipPosition="top"
                 currentDate={selectedDate}
@@ -373,8 +375,8 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
   const { settings, preferences } = useWorkspace();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const startHour = 0;
-  const endHour = 23;
+  const startHour = settings.business_hours?.start ?? 0;
+  const endHour = settings.business_hours?.end ?? 23;
   const timeSlots = useMemo(() => generateTimeSlots(startHour, endHour), [startHour, endHour]);
   const HOUR_HEIGHT = preferences.calendar_density === 'compact' ? 40 : 60;
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
@@ -396,7 +398,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
       return days;
     }
     const weekStart = getStartOfWeek(selectedDate, settings.week_start);
-    return generateWeekDays(weekStart, locale, settings.week_start);
+    return generateWeekDays(weekStart, locale);
   }, [selectedDate, selectedEndDate, settings.week_start, locale]);
 
   useEffect(() => {
@@ -478,6 +480,7 @@ const WeekView: React.FC<WeekViewProps> = ({ selectedDate, selectedEndDate, even
                     event={event}
                     onClick={() => onEventClick(event)}
                     hourHeight={HOUR_HEIGHT}
+                    startHour={startHour}
                     locale={locale}
                     tooltipPosition="side"
                     currentDate={day.date}
@@ -505,7 +508,7 @@ interface MonthViewProps {
   onDateChange: (date: Date) => void;
 }
 
-const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, users, onEventClick, onDateChange }) => {
+const MonthView: React.FC<MonthViewProps> = ({ selectedDate, events, onEventClick, onDateChange }) => {
   const { settings } = useWorkspace();
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
 
@@ -643,7 +646,7 @@ interface AgendaViewProps {
   onEventClick: (event: CalendarEvent) => void;
 }
 
-const AgendaView: React.FC<AgendaViewProps> = ({ events, users, onEventClick }) => {
+const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
   const { settings } = useWorkspace();
   const { t } = useTranslation();
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US';
@@ -847,7 +850,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       return days;
     }
     const weekStart = getStartOfWeek(selectedDate, settings.week_start);
-    return generateWeekDays(weekStart, locale, settings.week_start);
+    return generateWeekDays(weekStart, locale);
   }, [selectedDate, selectedEndDate, view, settings.week_start, locale]);
 
   /**

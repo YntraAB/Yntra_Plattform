@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import i18n from 'i18next';
 import { useWorkspaceInfo, useUserPreferences } from '@/hooks/queries/useWorkspaceData';
@@ -109,13 +109,38 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     updatePreferences: mutatePreferences
   } = useUserPreferences(user?.id || null);
 
+  useEffect(() => {
+    if (workspaceInfo) {
+      console.log('workspaceInfo fetched:', workspaceInfo);
+    }
+  }, [workspaceInfo]);
+
   const modules = workspaceInfo?.modules_active ? {
     school: !!workspaceInfo.modules_active.school,
     assistance: !!workspaceInfo.modules_active.assistance
   } : defaultModules;
 
-  const settings = (workspaceInfo?.settings as unknown as WorkspaceSettings) || defaultSettings;
-  const preferences = (userPrefs as unknown as UserPreferences) || defaultPreferences;
+  const settings = useMemo(() => {
+    const fetched = (workspaceInfo?.settings as unknown as WorkspaceSettings) || {};
+    const result = {
+      ...defaultSettings,
+      ...fetched,
+      business_hours: {
+        ...defaultSettings.business_hours,
+        ...(fetched.business_hours || {})
+      }
+    };
+    console.log('Derived settings:', result);
+    return result;
+  }, [workspaceInfo?.settings]);
+
+  const preferences = useMemo(() => {
+    const fetched = (userPrefs as unknown as UserPreferences) || {};
+    return {
+      ...defaultPreferences,
+      ...fetched
+    };
+  }, [userPrefs]);
 
   useEffect(() => {
     if (settings.language && i18n.language !== settings.language) {
@@ -137,20 +162,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const updateSettings = async (newSettings: Partial<WorkspaceSettings>) => {
     try {
-      await mutateSettings({ ...settings, ...newSettings });
+      const merged = { ...settings, ...newSettings };
+      console.log('Updating settings:', merged);
+      const success = await mutateSettings(merged);
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('Failed to update settings:', e);
       return false;
     }
   };
 
   const updatePreferences = async (newPrefs: Partial<UserPreferences>) => {
     try {
-      await mutatePreferences({ ...preferences, ...newPrefs });
+      const merged = { ...preferences, ...newPrefs };
+      console.log('Updating preferences:', merged);
+      await mutatePreferences(merged);
       return true;
     } catch (e) {
-      console.error(e);
+      console.error('Failed to update preferences:', e);
       return false;
     }
   };

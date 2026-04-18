@@ -166,7 +166,7 @@ export function generateTimeSlots(startHour: number = 0, endHour: number = 23): 
  * @param startDate - Start date of the week (typically Sunday or Monday)
  * @returns Array of day info objects
  */
-export function generateWeekDays(startDate: Date, locale: string = 'en-US', weekStart: number = 1): DayInfo[] {
+export function generateWeekDays(startDate: Date, locale: string = 'en-US'): DayInfo[] {
   const days: DayInfo[] = [];
   const currentDate = new Date(startDate);
   
@@ -352,10 +352,10 @@ export function getCategoryConfig(category: EventCategory): CategoryConfig {
  * @param hourHeight - Height of one hour in pixels (default: 60)
  * @returns Top position in pixels
  */
-export function calculateEventTop(date: Date, hourHeight: number = 60): number {
+export function calculateEventTop(date: Date, hourHeight: number = 60, startHour: number = 0): number {
   const hour = date.getHours();
   const minute = date.getMinutes();
-  return (hour + minute / 60) * hourHeight;
+  return (hour - startHour + minute / 60) * hourHeight;
 }
 
 /**

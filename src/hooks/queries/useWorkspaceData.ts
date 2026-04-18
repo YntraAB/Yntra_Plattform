@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query-keys';
 import { supabase } from '@/lib/supabase';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { teamService } from '@/services/teamService';
 import { userService } from '@/services/userService';
 import { workspaceService } from '@/services/workspaceService';
@@ -109,17 +109,23 @@ export function useWorkspaceInfo(workspaceId: string | null) {
     enabled: !!workspaceId,
   });
 
-  const updateSettings = async (settings: Partial<WorkspaceSettings>) => {
-    if (!workspaceId) return;
+  const updateSettings = useCallback(async (settings: Partial<WorkspaceSettings>) => {
+    if (!workspaceId) {
+      console.error('Cannot update settings: No workspace ID');
+      return;
+    }
     await workspaceService.updateSettings(workspaceId, settings);
     queryClient.invalidateQueries({ queryKey });
-  };
+  }, [workspaceId, queryClient, queryKey]);
 
-  const updateModules = async (modules_active: Partial<WorkspaceModules>) => {
-    if (!workspaceId) return;
+  const updateModules = useCallback(async (modules_active: Partial<WorkspaceModules>) => {
+    if (!workspaceId) {
+      console.error('Cannot update modules: No workspace ID');
+      return;
+    }
     await workspaceService.updateModules(workspaceId, modules_active);
     queryClient.invalidateQueries({ queryKey });
-  };
+  }, [workspaceId, queryClient, queryKey]);
 
   return useMemo(() => ({
     ...query,
@@ -161,11 +167,14 @@ export function useUserPreferences(userId: string | null) {
     enabled: !!userId,
   });
 
-  const updatePreferences = async (preferences: Partial<UserPreferences>) => {
-    if (!userId) return;
+  const updatePreferences = useCallback(async (preferences: Partial<UserPreferences>) => {
+    if (!userId) {
+      console.error('Cannot update preferences: No user ID');
+      return;
+    }
     await userService.updateUserPreferences(userId, preferences);
     queryClient.invalidateQueries({ queryKey });
-  };
+  }, [userId, queryClient, queryKey]);
 
   return useMemo(() => ({
     ...query,

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useTranslation } from 'react-i18next';
-import { Building2, Globe, LayoutGrid, Mail, Check, RotateCw } from 'lucide-react';
+import { Building2, Globe, LayoutGrid, Mail, Check, RotateCw, User as UserIcon, Calendar } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { GeneralSettings } from './GeneralSettings';
 import { ModulesSettings } from './ModulesSettings';
 import { NotificationsSettings } from './NotificationsSettings';
+import { AccountSettings } from './AccountSettings';
+import { SchedulerSettings } from './SchedulerSettings';
 
 import { useSearchParams } from 'react-router-dom';
 
@@ -62,23 +64,31 @@ export const SettingsPage: React.FC = () => {
           ) : (
             <>
               <Check className="w-4 h-4 text-emerald-500" />
-              <span className="text-xs font-semibold text-emerald-500 uppercase tracking-widest">{t('common.saved', { defaultValue: 'Alla ändringar sparade' })}</span>
+              <span className="text-xs font-semibold text-emerald-500 uppercase tracking-widest">{t('common.saved')}</span>
             </>
           )}
         </div>
       </div>
 
       <Tabs defaultValue="general" value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-muted/50 rounded-xl">
-          <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+        <TabsList className="flex w-full mb-8 p-1 bg-muted/50 rounded-xl overflow-x-auto no-scrollbar">
+          <TabsTrigger value="general" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Globe className="w-4 h-4 mr-2" />
             <span>{t('settings.tabs.general')}</span>
           </TabsTrigger>
-          <TabsTrigger value="modules" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="account" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <UserIcon className="w-4 h-4 mr-2" />
+            <span>{t('settings.tabs.account')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="scheduler" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <Calendar className="w-4 h-4 mr-2" />
+            <span>{t('settings.tabs.scheduler')}</span>
+          </TabsTrigger>
+          <TabsTrigger value="modules" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <LayoutGrid className="w-4 h-4 mr-2" />
             <span>{t('settings.tabs.modules')}</span>
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+          <TabsTrigger value="notifications" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Mail className="w-4 h-4 mr-2" />
             <span>{t('settings.tabs.notifications')}</span>
           </TabsTrigger>
@@ -103,6 +113,14 @@ export const SettingsPage: React.FC = () => {
           <>
             <TabsContent value="general" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
               <GeneralSettings setIsSaving={setIsSaving} />
+            </TabsContent>
+
+            <TabsContent value="account" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
+              <AccountSettings setIsSaving={setIsSaving} />
+            </TabsContent>
+
+            <TabsContent value="scheduler" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
+              <SchedulerSettings setIsSaving={setIsSaving} />
             </TabsContent>
 
             <TabsContent value="modules" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">

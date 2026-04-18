@@ -26,7 +26,11 @@
     "to": "To",
     "undo": "Undo",
     "active_team": "Active Team",
-    "all_teams": "All teams"
+    "all_teams": "All teams",
+    "name": "Name",
+    "email": "Email",
+    "saved": "All changes saved",
+    "last_active": "Last active"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -95,7 +99,12 @@
     "active_time": "Active time",
     "breaks": "Breaks",
     "break": "Break",
-    "paid": "Paid"
+    "paid": "Paid",
+    "views": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -128,6 +137,8 @@
     "modules_info_desc": "Activating a module tailoring the entire platform interface and tools for that specific purpose. Only one primary module can be active at a time for the best user experience.",
     "tabs": {
       "general": "General",
+      "account": "Profile",
+      "scheduler": "Scheduler",
       "modules": "Modules",
       "notifications": "Notifications"
     },
@@ -136,7 +147,13 @@
       "school_desc": "Learning platform & student management",
       "assistance_title": "Assistance Module",
       "assistance_desc": "Care & assistance services",
-      "beta": "BETA"
+      "beta": "BETA",
+      "school_feature_1": "Attendance management and student scheduling.",
+      "school_feature_2": "Gradebooks and study plans.",
+      "school_feature_3": "Progress reviews and reporting.",
+      "assistance_feature_1": "User registry and digital journaling.",
+      "assistance_feature_2": "Manage sleeping shifts and medication signing.",
+      "assistance_feature_3": "On-call reports and incident management."
     },
     "notifications": {
       "title": "Email Notifications",
@@ -146,6 +163,33 @@
       "alert_only": "Alert Only",
       "alert_only_desc": "We only send a short email stating \"You have a new message\". Better for your personal privacy.",
       "no_spam": "We never send spam. You can change these settings at any time."
+    },
+    "account": {
+      "profile": "Profile Information",
+      "profile_desc": "Manage your profile information and personal data.",
+      "email_change_info": "Contact administrator to change email.",
+      "role": "Your Role",
+      "appearance": "Personal Appearance",
+      "appearance_desc": "Customize your personal experience of the platform.",
+      "accent_color": "Accent Color",
+      "accent_info": "This color is used for buttons, links, and highlights.",
+      "security_title": "Security & Login",
+      "security_desc": "Two-factor authentication and session management coming soon."
+    },
+    "scheduler": {
+      "display": "Calendar View",
+      "display_desc": "Adjust how the schedule looks by default.",
+      "default_view": "Default View",
+      "density": "Information Density",
+      "density_compact": "Compact",
+      "density_relaxed": "Relaxed",
+      "hours": "Business Hours",
+      "hours_desc": "Set the normal operational hours for your organization.",
+      "start_hour": "Workday starts",
+      "end_hour": "Workday ends",
+      "hours_info": "These hours affect the default view in the calendar.",
+      "advanced_title": "Advanced Scheduling",
+      "advanced_desc": "Settings for automatic scheduling and warning rules coming soon."
     }
   },
   "directory": {

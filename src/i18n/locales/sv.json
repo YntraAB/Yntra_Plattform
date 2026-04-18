@@ -26,7 +26,11 @@
     "to": "Till",
     "undo": "Ångra",
     "active_team": "Aktivt Team",
-    "all_teams": "Alla team"
+    "all_teams": "Alla team",
+    "name": "Namn",
+    "email": "E-post",
+    "saved": "Alla ändringar sparade",
+    "last_active": "Senast aktiv"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -95,7 +99,12 @@
     "active_time": "Aktiv tid",
     "breaks": "Raster",
     "break": "Rast",
-    "paid": "Betald"
+    "paid": "Betald",
+    "views": {
+      "day": "Dag",
+      "week": "Vecka",
+      "month": "Månad"
+    }
   },
   "settings": {
     "title": "Inställningar",
@@ -128,6 +137,8 @@
     "modules_info_desc": "Genom att aktivera en modul anpassas hela plattformens gränssnitt och verktyg för det specifika ändamålet. Endast en huvudmodul kan vara aktiv åt gången för den bästa användarupplevelsen.",
     "tabs": {
       "general": "Allmänt",
+      "account": "Profil",
+      "scheduler": "Schema",
       "modules": "Moduler",
       "notifications": "Notiser"
     },
@@ -136,7 +147,13 @@
       "school_desc": "Lärplattform & elevhantering",
       "assistance_title": "Assistansmodul",
       "assistance_desc": "Vårdomsorg & assistans",
-      "beta": "BETA"
+      "beta": "BETA",
+      "school_feature_1": "Närvarohantering och schema för elever.",
+      "school_feature_2": "Betygskataloger och studieplaner.",
+      "school_feature_3": "Utvecklingssamtal och rapportering.",
+      "assistance_feature_1": "Brukarregister och digital journalföring.",
+      "assistance_feature_2": "Hantera sovande jour och medicinsignering.",
+      "assistance_feature_3": "Beredskapsrapporter och avvikelsehantering."
     },
     "notifications": {
       "title": "E-postnotiser",
@@ -146,6 +163,33 @@
       "alert_only": "Endast avisering",
       "alert_only_desc": "Vi skickar bara ett kort mejl om att \"Du har ett nytt meddelande\". Bättre för din personliga integritet.",
       "no_spam": "Vi skickar aldrig skräppost. Du kan när som helst ändra dessa inställningar."
+    },
+    "account": {
+      "profile": "Profilinformation",
+      "profile_desc": "Hantera din profilinformation och personuppgifter.",
+      "email_change_info": "Kontakta administratör för att ändra e-post.",
+      "role": "Din Roll",
+      "appearance": "Personligt utseende",
+      "appearance_desc": "Anpassa din personliga upplevelse av plattformen.",
+      "accent_color": "Accentfärg",
+      "accent_info": "Denna färg används för knappar, länkar och markeringar.",
+      "security_title": "Säkerhet & Loggin",
+      "security_desc": "Tvåfaktorsautentisering och sessionshantering kommer snart."
+    },
+    "scheduler": {
+      "display": "Kalendervy",
+      "display_desc": "Anpassa hur schemat visas som standard.",
+      "default_view": "Standardvy",
+      "density": "Informationstäthet",
+      "density_compact": "Kompakt",
+      "density_relaxed": "Luftig",
+      "hours": "Arbetstider",
+      "hours_desc": "Ställ in verksamhetens normala arbetstider.",
+      "start_hour": "Arbetsdag börjar",
+      "end_hour": "Arbetsdag slutar",
+      "hours_info": "Dessa tider påverkar standardvyn i kalendern.",
+      "advanced_title": "Avancerad Schemaläggning",
+      "advanced_desc": "Inställningar för automatisk schemaläggning och varningsregler kommer snart."
     }
   },
   "directory": {
