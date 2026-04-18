@@ -140,6 +140,8 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
 
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
 import { useTranslation } from 'react-i18next';
+import { TeamSwitcher } from './TeamSwitcher';
+import { GlobalSearch } from '@/components/GlobalSearch';
 
 /**
  * Main Sidebar Component
@@ -153,6 +155,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { t } = useTranslation();
   const { user } = useAuth();
   const unreadNotes = useUnreadNotes();
+
+  const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin';
 
   const [adminWorkspaces, setAdminWorkspaces] = useState<{ id: string, name: string }[]>([]);
   useEffect(() => {
@@ -183,6 +187,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set(['time'])
   );
+
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Keyboard shortcut for search (Ctrl+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const NAVIGATION_ITEMS: NavItem[] = modules.assistance ? [
     {
@@ -235,6 +254,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-64 h-full bg-sidebar border-r border-border flex flex-col">
+      <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+
       {/* Header / Logo Area */}
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-3">
@@ -272,26 +293,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Search Trigger */}
       <div className="px-3 py-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder={t('common.search')}
-            className="
-              w-full h-9 pl-9 pr-4 rounded-md
-              bg-secondary border border-border
-              text-foreground text-sm placeholder:text-muted-foreground
-              focus:outline-none focus:border-primary
-              transition-all duration-200
-            "
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">
+        <button
+          onClick={() => setIsSearchOpen(true)}
+          className="
+            flex items-center w-full h-9 px-3 gap-2 rounded-md
+            bg-secondary border border-border
+            text-muted-foreground transition-all duration-200
+            hover:bg-secondary/80 hover:border-primary/30
+          "
+        >
+          <Search className="w-4 h-4" />
+          <span className="text-sm font-medium">{t('common.search')}</span>
+          <span className="ml-auto text-[10px] bg-background/50 border border-border px-1.5 py-0.5 rounded text-muted-foreground opacity-60">
             Ctrl+K
           </span>
-        </div>
+        </button>
       </div>
+
+      {/* Team Switcher (Admins only) */}
+      {isAdmin && <TeamSwitcher />}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto scrollbar-dark">

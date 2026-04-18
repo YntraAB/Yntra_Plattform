@@ -13,10 +13,12 @@ interface WorkspaceState {
   settings: WorkspaceSettings;
   preferences: UserPreferences;
   isLoading: boolean;
+  selectedTeamId: string | null;
   updateModules: (newModules: Partial<WorkspaceModules>) => Promise<boolean>;
   updateSettings: (newSettings: Partial<WorkspaceSettings>) => Promise<boolean>;
   updatePreferences: (newPreferences: Partial<UserPreferences>) => Promise<boolean>;
   setAdminWorkspace: (id: string) => void;
+  setSelectedTeamId: (id: string | null) => void;
 }
 
 const defaultModules: WorkspaceModules = {
@@ -44,18 +46,30 @@ const WorkspaceContext = createContext<WorkspaceState>({
   settings: defaultSettings,
   preferences: defaultPreferences,
   isLoading: true,
+  selectedTeamId: null,
   updateModules: async () => false,
   updateSettings: async () => false,
   updatePreferences: async () => false,
   setAdminWorkspace: () => { },
+  setSelectedTeamId: () => { },
 });
 
 export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string | null>(null);
+  const [selectedTeamId, setSelectedTeamIdState] = useState<string | null>(() => {
+    return localStorage.getItem('yntra_selected_team_id');
+  });
   const [internalLoading, setInternalLoading] = useState(true);
 
-  // 1. Resolve workspaceId based on user or dev override
+  useEffect(() => {
+    if (selectedTeamId) {
+      localStorage.setItem('yntra_selected_team_id', selectedTeamId);
+    } else {
+      localStorage.removeItem('yntra_selected_team_id');
+    }
+  }, [selectedTeamId]);
+
   useEffect(() => {
     async function resolveWorkspace() {
       if (!user) {
@@ -82,7 +96,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     resolveWorkspace();
   }, [user]);
 
-  // 2. Use Hooks for data fetching
   const {
     data: workspaceInfo,
     isLoading: wsLoading,
@@ -96,7 +109,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     updatePreferences: mutatePreferences
   } = useUserPreferences(user?.id || null);
 
-  // 3. Derived values
   const modules = workspaceInfo?.modules_active ? {
     school: !!workspaceInfo.modules_active.school,
     assistance: !!workspaceInfo.modules_active.assistance
@@ -105,7 +117,6 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const settings = (workspaceInfo?.settings as unknown as WorkspaceSettings) || defaultSettings;
   const preferences = (userPrefs as unknown as UserPreferences) || defaultPreferences;
 
-  // Sync language with settings
   useEffect(() => {
     if (settings.language && i18n.language !== settings.language) {
       i18n.changeLanguage(settings.language);
@@ -158,10 +169,12 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       settings,
       preferences,
       isLoading,
+      selectedTeamId,
       updateModules,
       updateSettings,
       updatePreferences,
-      setAdminWorkspace
+      setAdminWorkspace,
+      setSelectedTeamId: setSelectedTeamIdState
     }}>
       {children}
     </WorkspaceContext.Provider>

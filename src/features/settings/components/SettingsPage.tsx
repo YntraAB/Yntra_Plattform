@@ -8,10 +8,19 @@ import { GeneralSettings } from './GeneralSettings';
 import { ModulesSettings } from './ModulesSettings';
 import { NotificationsSettings } from './NotificationsSettings';
 
+import { useSearchParams } from 'react-router-dom';
+
 export const SettingsPage: React.FC = () => {
   const { workspaceName, isLoading } = useWorkspace();
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
+
+  const activeTab = searchParams.get('tab') || 'general';
+
+  const handleTabChange = (val: string) => {
+    setSearchParams({ tab: val });
+  };
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -59,7 +68,7 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="general" className="w-full">
+      <Tabs defaultValue="general" value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-8 p-1 bg-muted/50 rounded-xl">
           <TabsTrigger value="general" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Globe className="w-4 h-4 mr-2" />

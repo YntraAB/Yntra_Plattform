@@ -1,14 +1,16 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/query-keys';
 import { supabase } from '@/lib/supabase';
 import { useEffect, useMemo } from 'react';
 import { teamService } from '@/services/teamService';
 import { userService } from '@/services/userService';
 import { workspaceService } from '@/services/workspaceService';
+import { noteService } from '@/services/noteService';
 import type { WorkspaceSettings, WorkspaceModules, UserPreferences } from '@/types';
 
 export function useWorkspaceTeams(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = ['teams', workspaceId];
+  const queryKey = queryKeys.workspaceTeams(workspaceId);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -42,7 +44,7 @@ export function useWorkspaceTeams(workspaceId: string | null) {
 
 export function useWorkspaceUsers(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = ['users', workspaceId];
+  const queryKey = queryKeys.workspaceUsers(workspaceId);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -76,7 +78,7 @@ export function useWorkspaceUsers(workspaceId: string | null) {
 
 export function useWorkspaceInfo(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = ['workspace', workspaceId];
+  const queryKey = queryKeys.workspace(workspaceId);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -128,7 +130,7 @@ export function useWorkspaceInfo(workspaceId: string | null) {
 
 export function useUserPreferences(userId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = ['user-preferences', userId];
+  const queryKey = queryKeys.userPreferences(userId);
 
   useEffect(() => {
     if (!userId) return;
@@ -170,3 +172,38 @@ export function useUserPreferences(userId: string | null) {
     updatePreferences
   }), [query, updatePreferences]);
 }
+
+export function useWorkspaceNotes(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+  const queryKey = queryKeys.workspaceNotes(workspaceId);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    const channelId = `notes-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`;
+    const channel = supabase.channel(channelId)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'work_notes',
+        filter: `workspace_id=eq.${workspaceId}`
+      }, () => {
+        queryClient.invalidateQueries({ queryKey });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
+
+  return useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!workspaceId) return [];
+      return noteService.getWorkspaceNotes(workspaceId);
+    },
+    enabled: !!workspaceId,
+  });
+}
+

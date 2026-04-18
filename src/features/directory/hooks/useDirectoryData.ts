@@ -50,22 +50,36 @@ export interface WorkspaceRole {
   };
 }
 
+import { useSearchParams } from 'react-router-dom';
+
 export const useDirectoryData = () => {
   const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
+  const initialTeam = searchParams.get('team');
+  const initialUser = searchParams.get('user');
+
   const [currentLevel, setCurrentLevel] = useState<DirectoryLevel>(
-    userRole === 'platform_admin' ? 'workspaces' : 'teams'
+    initialUser || initialTeam ? 'members' : (userRole === 'platform_admin' ? 'workspaces' : 'teams')
   );
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
-  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(initialTeam || (initialUser ? 'all_members' : null));
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
 
   const [dbWorkspaces, setDbWorkspaces] = useState<WorkspaceItem[]>([]);
   const [dbTeams, setDbTeams] = useState<TeamItem[]>([]);
   const [dbMembers, setDbMembers] = useState<MemberItem[]>([]);
   const [dbWorkspaceRoles, setDbWorkspaceRoles] = useState<WorkspaceRole[]>([]);
+
+  // Effect to handle selection of initial user if provided
+  useEffect(() => {
+    if (initialUser && dbMembers.length > 0) {
+      const target = dbMembers.find(m => m.id === initialUser);
+      if (target) setSelectedEntity(target);
+    }
+  }, [initialUser, dbMembers]);
 
   useEffect(() => {
     if (userRole === 'platform_admin' && !selectedWorkspace && currentLevel === 'teams') {

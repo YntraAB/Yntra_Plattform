@@ -30,17 +30,30 @@ interface Note {
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
+import { useSearchParams } from 'react-router-dom';
 
 export const WorkNotesPage: React.FC = () => {
   const { t } = useTranslation();
-  const { workspaceId, setAdminWorkspace } = useWorkspace();
+  const { workspaceId } = useWorkspace();
   const { user } = useAuth();
   const unreadNotes = useUnreadNotes();
+  const [searchParams] = useSearchParams();
   const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
   const [dbTeams, setDbTeams] = useState<any[]>([]);
+  const [activeNoteId, setActiveNoteId] = useState<string | null>(searchParams.get('note'));
+
+  React.useEffect(() => {
+    if (dbTeams.length > 0) {
+      const teamId = searchParams.get('team');
+      if (teamId) {
+        const team = dbTeams.find(t => t.id === teamId);
+        if (team) setSelectedTeam(team);
+      }
+    }
+  }, [dbTeams, searchParams]);
 
   React.useEffect(() => {
     async function loadTeams() {
@@ -118,7 +131,6 @@ export const WorkNotesPage: React.FC = () => {
 
   const currentUser = user?.id;
 
-  const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [isComposing, setIsComposing] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 

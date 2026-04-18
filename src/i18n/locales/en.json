@@ -23,7 +23,10 @@
     "end_date": "End Date",
     "cancel": "Cancel",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "undo": "Undo",
+    "active_team": "Active Team",
+    "all_teams": "All teams"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -345,7 +348,12 @@
     "from": "From",
     "date": "Date",
     "wrote": "wrote",
-    "error_sending": "Error sending"
+    "error_sending": "Error sending",
+    "undo_successful": "Deletion undone",
+    "messages_deleted": "Messages deleted",
+    "fill_required_fields": "Please fill in all required fields",
+    "message_sent": "Message sent successfully",
+    "error_deleting": "Could not delete messages"
   },
   "auth": {
     "invite_error": {

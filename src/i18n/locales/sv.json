@@ -23,7 +23,10 @@
     "end_date": "Slutdatum",
     "cancel": "Avbryt",
     "from": "Från",
-    "to": "Till"
+    "to": "Till",
+    "undo": "Ångra",
+    "active_team": "Aktivt Team",
+    "all_teams": "Alla team"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -345,7 +348,12 @@
     "from": "Från",
     "date": "Datum",
     "wrote": "skrev",
-    "error_sending": "Fel vid sändning"
+    "error_sending": "Fel vid sändning",
+    "undo_successful": "Radering ångrad",
+    "messages_deleted": "Meddelanden har tagits bort",
+    "fill_required_fields": "Vänligen fyll i alla obligatoriska fält",
+    "message_sent": "Meddelandet har skickats",
+    "error_deleting": "Kunde inte ta bort meddelanden"
   },
   "auth": {
     "invite_error": {
