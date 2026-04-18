@@ -4,6 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from 'react-i18next';
 import type { ComposeData } from '../types';
+import type { User } from '@/types';
+
+interface SimpleTeam {
+  id: string;
+  name: string;
+}
 
 interface MessageComposePaneProps {
   composeData: ComposeData;
@@ -11,8 +17,8 @@ interface MessageComposePaneProps {
   isSending: boolean;
   handleSendMessage: () => void;
   setIsComposing: (val: boolean) => void;
-  users: any[];
-  teams: any[];
+  users: User[];
+  teams: SimpleTeam[];
   currentUserId: string | undefined;
 }
 
@@ -99,7 +105,7 @@ export const MessageComposePane = memo<MessageComposePaneProps>(({
                   <option value="" disabled className="bg-card text-foreground">{t('messages.recipient_placeholder')}</option>
                   {composeData.targetType === 'user' ? (
                     users.filter(u => u.id !== currentUserId).map(u => (
-                      <option key={u.id} value={u.id} className="bg-card text-foreground">{u.full_name || u.email}</option>
+                      <option key={u.id} value={u.id} className="bg-card text-foreground">{u.name || u.email}</option>
                     ))
                   ) : (
                     teams.map(t => (

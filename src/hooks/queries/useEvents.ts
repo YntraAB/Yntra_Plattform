@@ -71,5 +71,5 @@ export function useEvents(workspaceId: string | null, userId: string | null) {
     addEvent: addEvent.mutateAsync,
     updateEvent: (eventId: string, updates: Partial<CalendarEvent>) => updateEvent.mutateAsync({ eventId, updates }),
     deleteEvent: deleteEvent.mutateAsync,
-  }), [query, addEvent.mutateAsync, updateEvent.mutateAsync, deleteEvent.mutateAsync]);
+  }), [query, addEvent, updateEvent, deleteEvent]);
 }

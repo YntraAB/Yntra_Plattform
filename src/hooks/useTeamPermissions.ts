@@ -35,7 +35,7 @@ export const useTeamPermissions = (teamId: string | null) => {
       return;
     }
 
-    const uRole = (user as any).role;
+    const uRole = user.role;
     if (uRole === 'platform_admin' || uRole === 'admin') {
       setPermissions(FULL_PERMISSIONS);
       setLoading(false);
@@ -78,7 +78,7 @@ export const useTeamPermissions = (teamId: string | null) => {
         }
 
         setPermissions(DEFAULT_PERMISSIONS);
-      } catch (e) {
+      } catch {
         setPermissions(DEFAULT_PERMISSIONS);
       } finally {
         setLoading(false);

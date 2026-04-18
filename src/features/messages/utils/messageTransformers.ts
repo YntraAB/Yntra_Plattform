@@ -1,13 +1,19 @@
 import type { TFunction } from 'i18next';
 import type { ProcessedMessage } from '../types';
+import type { User, Message } from '@/types';
+
+interface SimpleTeam {
+  id: string;
+  name: string;
+}
 
 export const transformMessages = (
-  rawMessages: any[],
-  teams: any[],
-  user: any,
+  rawMessages: Message[],
+  teams: SimpleTeam[],
+  user: User | null,
   t: TFunction
 ): ProcessedMessage[] => {
-  return rawMessages.map((m: any) => {
+  return rawMessages.map((m) => {
     let toName = t('messages.you');
     if (m.target_team_id) {
       toName = teams.find(team => team.id === m.target_team_id)?.name || t('common.team');
@@ -24,8 +30,8 @@ export const transformMessages = (
     return {
       id: m.id,
       sender_id: m.sender_id,
-      receiver_id: m.receiver_id,
-      target_team_id: m.target_team_id,
+      receiver_id: m.receiver_id || undefined,
+      target_team_id: m.target_team_id || undefined,
       folderId: m.sender_id === user?.id ? 'sent' : 'inbox' as const,
       sender: { name: senderName, avatar: '' },
       to: toName,

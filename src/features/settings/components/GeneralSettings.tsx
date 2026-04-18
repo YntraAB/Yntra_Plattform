@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import type { WorkspaceSettings, UserPreferences } from '@/types';
 
 interface GeneralSettingsProps {
   setIsSaving: (val: boolean) => void;
@@ -24,13 +25,13 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
     setLocalFontScale(preferences.font_scale || 1);
   }, [preferences.font_scale]);
 
-  const handleUpdateSettings = async (newSettings: any) => {
+  const handleUpdateSettings = async (newSettings: Partial<WorkspaceSettings>) => {
     setIsSaving(true);
     await updateSettings(newSettings);
     setTimeout(() => setIsSaving(false), 500);
   };
 
-  const handleUpdatePreferences = async (newPrefs: any) => {
+  const handleUpdatePreferences = async (newPrefs: Partial<UserPreferences>) => {
     setIsSaving(true);
     await updatePreferences(newPrefs);
     setTimeout(() => setIsSaving(false), 500);

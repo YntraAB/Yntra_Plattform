@@ -34,9 +34,24 @@ export interface MemberItem {
   avatar: string;
   alerts: string[];
   notes: string;
-  upcomingVisits: any[];
+  upcomingVisits: { id: string; date: string; title: string }[];
   roleId: string | null;
   role: string;
+}
+
+interface TeamMemberLink {
+  team_id: string;
+  user_id: string;
+  role_id: string | null;
+}
+
+interface UserDbRow {
+  id: string;
+  full_name: string | null;
+  email: string;
+  phone: string | null;
+  role: string | null;
+  workspace_id: string;
 }
 
 export interface WorkspaceRole {
@@ -56,7 +71,7 @@ export const useDirectoryData = () => {
   const { workspaceId, setAdminWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
+  const userRole = user?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
   const initialTeam = searchParams.get('team');
   const initialUser = searchParams.get('user');
@@ -66,7 +81,7 @@ export const useDirectoryData = () => {
   );
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string | null>(initialTeam || (initialUser ? 'all_members' : null));
-  const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
+  const [selectedEntity, setSelectedEntity] = useState<WorkspaceItem | TeamItem | MemberItem | null>(null);
 
   const [dbWorkspaces, setDbWorkspaces] = useState<WorkspaceItem[]>([]);
   const [dbTeams, setDbTeams] = useState<TeamItem[]>([]);
@@ -110,10 +125,10 @@ export const useDirectoryData = () => {
       const { data: teamData } = await supabase.from('teams').select('*').eq('workspace_id', filterWs);
       const { data: allUsers } = await supabase.from('users').select('id, role').eq('workspace_id', filterWs);
       const teamIds = teamData?.map(t => t.id) || [];
-      let allMemberships: any[] = [];
+      let allMemberships: TeamMemberLink[] = [];
       if (teamIds.length > 0) {
         const { data: memberships } = await supabase.from('team_members').select('team_id, user_id, role_id').in('team_id', teamIds);
-        allMemberships = memberships || [];
+        allMemberships = (memberships as TeamMemberLink[]) || [];
       }
 
       if (teamData) {
@@ -138,10 +153,10 @@ export const useDirectoryData = () => {
 
     if (selectedTeam) {
       let memberIds: string[] = [];
-      let teamMembersLinkData: any[] = [];
+      let teamMembersLinkData: TeamMemberLink[] = [];
       if (selectedTeam !== 'all_members') {
         const { data: tmData } = await supabase.from('team_members').select('user_id, role_id').eq('team_id', selectedTeam);
-        teamMembersLinkData = tmData || [];
+        teamMembersLinkData = (tmData as TeamMemberLink[]) || [];
         memberIds = teamMembersLinkData.map(tm => tm.user_id);
       }
 
@@ -151,7 +166,7 @@ export const useDirectoryData = () => {
         ? (usersData || [])
         : (usersData || []).filter(u => memberIds.includes(u.id));
 
-      const mappedUsers = actualTeamUsers.map((u: any) => {
+      const mappedUsers = actualTeamUsers.map((u: UserDbRow) => {
         let customRoleName: string | null = null;
         let customRoleId: string | null = null;
         if (selectedTeam !== 'all_members') {
@@ -186,7 +201,9 @@ export const useDirectoryData = () => {
   }, [selectedWorkspace, workspaceId, selectedTeam, userRole, dbWorkspaceRoles]);
 
   useEffect(() => {
-    loadDirectory();
+    // Call loadDirectory without awaiting to avoid the synchronous-looking call in effect body
+    // that the linter might be flagging.
+    loadDirectory().catch(console.error);
 
     const channel = supabase.channel('directory-auto-update')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'workspaces' }, () => { loadDirectory(); })

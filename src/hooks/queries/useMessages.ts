@@ -4,10 +4,11 @@ import { supabase } from '@/lib/supabase';
 import { useEffect } from 'react';
 import { queryKeys } from '@/lib/query-keys';
 import { toast } from 'sonner';
+import type { Message } from '@/types';
 
-export const useMessages = <TData = any>(
+export const useMessages = <TData = Message[]>(
   workspaceId: string | undefined,
-  options?: { select?: (data: any) => TData }
+  options?: { select?: (data: Message[]) => TData }
 ) => {
   const queryClient = useQueryClient();
   const queryKey = queryKeys.messages(workspaceId);
@@ -24,13 +25,13 @@ export const useMessages = <TData = any>(
         filter: `workspace_id=eq.${workspaceId}`
       }, (payload) => {
         if (payload.eventType === 'INSERT') {
-          queryClient.setQueryData(queryKey, (old: any[] = []) => [payload.new, ...old]);
+          queryClient.setQueryData(queryKey, (old: Message[] = []) => [payload.new as Message, ...old]);
         } else if (payload.eventType === 'UPDATE') {
-          queryClient.setQueryData(queryKey, (old: any[] = []) =>
-            old.map(m => m.id === payload.new.id ? payload.new : m)
+          queryClient.setQueryData(queryKey, (old: Message[] = []) =>
+            old.map(m => m.id === payload.new.id ? { ...m, ...payload.new } : m)
           );
         } else if (payload.eventType === 'DELETE') {
-          queryClient.setQueryData(queryKey, (old: any[] = []) =>
+          queryClient.setQueryData(queryKey, (old: Message[] = []) =>
             old.filter(m => m.id !== payload.old.id)
           );
         } else {
@@ -60,9 +61,9 @@ export const useMarkMessageAsRead = (workspaceId: string | undefined) => {
     mutationFn: (messageId: string) => messageService.markAsRead(messageId),
     onMutate: async (messageId) => {
       await queryClient.cancelQueries({ queryKey });
-      const previousMessages = queryClient.getQueryData(queryKey);
+      const previousMessages = queryClient.getQueryData<Message[]>(queryKey);
 
-      queryClient.setQueryData(queryKey, (old: any[] = []) =>
+      queryClient.setQueryData(queryKey, (old: Message[] = []) =>
         old.map(m => m.id === messageId ? { ...m, is_read: true } : m)
       );
 
@@ -99,9 +100,9 @@ export const useDeleteMessages = (workspaceId: string | undefined) => {
     mutationFn: (messageIds: string[]) => messageService.deleteMessages(messageIds),
     onMutate: async (messageIds) => {
       await queryClient.cancelQueries({ queryKey });
-      const previousMessages = queryClient.getQueryData(queryKey);
+      const previousMessages = queryClient.getQueryData<Message[]>(queryKey);
 
-      queryClient.setQueryData(queryKey, (old: any[] = []) =>
+      queryClient.setQueryData(queryKey, (old: Message[] = []) =>
         old.filter(m => !messageIds.includes(m.id))
       );
 

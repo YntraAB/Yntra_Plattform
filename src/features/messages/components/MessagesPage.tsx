@@ -14,6 +14,17 @@ import { MessageComposePane } from './MessageComposePane';
 import { useMessagesState } from '../hooks/useMessagesState';
 import { transformMessages } from '../utils/messageTransformers';
 import { useSearchParams } from 'react-router-dom';
+import type { Message } from '@/types';
+
+interface MessagePayload {
+  workspace_id: string;
+  sender_id: string;
+  receiver_id?: string;
+  target_team_id?: string;
+  subject: string;
+  body: string;
+  is_read: false;
+}
 
 export const MessagesPage: React.FC = () => {
   const { workspaceId } = useWorkspace();
@@ -117,7 +128,7 @@ export const MessagesPage: React.FC = () => {
       return;
     }
 
-    const payload: any = {
+    const payload: MessagePayload = {
       workspace_id: workspaceId,
       sender_id: user.id,
       subject: composeData.subject || t('messages.no_header'),
@@ -152,7 +163,7 @@ export const MessagesPage: React.FC = () => {
     const previousMessages = queryClient.getQueryData(queryKey);
 
     // Optimistically update the cache
-    queryClient.setQueryData(queryKey, (old: any[] = []) =>
+    queryClient.setQueryData(queryKey, (old: Message[] = []) =>
       old.filter(m => !msgsToDelete.includes(m.id))
     );
 

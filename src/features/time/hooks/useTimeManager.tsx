@@ -1,19 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from "sonner";
 import { supabase } from '@/lib/supabase';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import type { TimeReportUI, DevRole, NavLevel } from '../types';
+import type { User } from '@/types';
+
+interface WorkspaceRow {
+  id: string;
+  name: string;
+}
+
+interface TeamRow {
+  id: string;
+  name: string;
+  workspace_id: string;
+}
 
 export const useTimeManager = () => {
   const { workspaceId } = useWorkspace();
   const { user } = useAuth();
 
-  const activeRole: DevRole = (user as any)?.user_metadata?.role as DevRole || 'admin';
+  const activeRole: DevRole = user?.role as DevRole || 'admin';
   const [shifts, setShifts] = useState<TimeReportUI[]>([]);
-  const [dbTeams, setDbTeams] = useState<any[]>([]);
-  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([]);
-  const [dbUsers, setDbUsers] = useState<any[]>([]);
+  const [dbTeams, setDbTeams] = useState<TeamRow[]>([]);
+  const [dbWorkspaces, setDbWorkspaces] = useState<WorkspaceRow[]>([]);
+  const [dbUsers, setDbUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [currentLevel, setCurrentLevel] = useState<NavLevel>('team_overview');
@@ -33,9 +45,9 @@ export const useTimeManager = () => {
     setLoading(true);
     try {
       let reportsData: any[] = [];
-      let teamsData: any[] = [];
-      let workspacesData: any[] = [];
-      let usersData: any[] = [];
+      let teamsData: TeamRow[] = [];
+      let workspacesData: WorkspaceRow[] = [];
+      let usersData: User[] = [];
 
       const promises = [];
 
@@ -90,16 +102,17 @@ export const useTimeManager = () => {
         };
       });
       setShifts(mapped);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching data:', error);
-      toast.error('Kunde inte hämta data: ' + error.message);
+      const message = error instanceof Error ? error.message : 'Okänt fel';
+      toast.error('Kunde inte hämta data: ' + message);
     } finally {
       setLoading(false);
     }
   }, [workspaceId, activeRole, user?.id]);
 
   useEffect(() => {
-    fetchData();
+    fetchData().catch(console.error);
 
     const channel = supabase.channel('timemanager-reports')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'time_reports' }, () => { fetchData(); })
@@ -134,7 +147,7 @@ export const useTimeManager = () => {
         const roleIds = memberships.map(m => m.role_id).filter(Boolean);
         if (roleIds.length > 0) {
           const { data: roles } = await supabase.from('workspace_roles').select('permissions').in('id', roleIds);
-          if (roles?.some(r => (r.permissions as any)?.can_approve_time_reports)) {
+          if (roles?.some(r => (r.permissions as Record<string, boolean>)?.can_approve_time_reports)) {
             setHasApprovePermission(true);
             return;
           }

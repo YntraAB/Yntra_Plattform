@@ -10,7 +10,7 @@ import type { WorkspaceSettings, WorkspaceModules, UserPreferences } from '@/typ
 
 export function useWorkspaceTeams(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.workspaceTeams(workspaceId);
+  const queryKey = useMemo(() => queryKeys.workspaceTeams(workspaceId), [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -30,7 +30,7 @@ export function useWorkspaceTeams(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
+  }, [workspaceId, queryClient, queryKey]);
 
   return useQuery({
     queryKey,
@@ -44,7 +44,7 @@ export function useWorkspaceTeams(workspaceId: string | null) {
 
 export function useWorkspaceUsers(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.workspaceUsers(workspaceId);
+  const queryKey = useMemo(() => queryKeys.workspaceUsers(workspaceId), [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -64,7 +64,7 @@ export function useWorkspaceUsers(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
+  }, [workspaceId, queryClient, queryKey]);
 
   return useQuery({
     queryKey,
@@ -78,7 +78,7 @@ export function useWorkspaceUsers(workspaceId: string | null) {
 
 export function useWorkspaceInfo(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.workspace(workspaceId);
+  const queryKey = useMemo(() => queryKeys.workspace(workspaceId), [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -98,7 +98,7 @@ export function useWorkspaceInfo(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
+  }, [workspaceId, queryClient, queryKey]);
 
   const query = useQuery({
     queryKey,
@@ -136,7 +136,7 @@ export function useWorkspaceInfo(workspaceId: string | null) {
 
 export function useUserPreferences(userId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.userPreferences(userId);
+  const queryKey = useMemo(() => queryKeys.userPreferences(userId), [userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -156,7 +156,7 @@ export function useUserPreferences(userId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, queryClient, JSON.stringify(queryKey)]);
+  }, [userId, queryClient, queryKey]);
 
   const query = useQuery({
     queryKey,
@@ -184,7 +184,7 @@ export function useUserPreferences(userId: string | null) {
 
 export function useWorkspaceNotes(workspaceId: string | null) {
   const queryClient = useQueryClient();
-  const queryKey = queryKeys.workspaceNotes(workspaceId);
+  const queryKey = useMemo(() => queryKeys.workspaceNotes(workspaceId), [workspaceId]);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -204,7 +204,7 @@ export function useWorkspaceNotes(workspaceId: string | null) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [workspaceId, queryClient, JSON.stringify(queryKey)]);
+  }, [workspaceId, queryClient, queryKey]);
 
   return useQuery({
     queryKey,

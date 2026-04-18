@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { User, Shield, Palette, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import type { UserPreferences } from '@/types';
 
 interface AccountSettingsProps {
   setIsSaving: (val: boolean) => void;
@@ -30,7 +31,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
   const { preferences, updatePreferences } = useWorkspace();
   const [name, setName] = useState(user?.name || '');
 
-  const handleUpdatePreference = async (newPrefs: any) => {
+  const handleUpdatePreference = async (newPrefs: Partial<UserPreferences>) => {
     setIsSaving(true);
     await updatePreferences(newPrefs);
     setTimeout(() => setIsSaving(false), 500);
@@ -70,7 +71,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('common.email')}</Label>
-              <Input id="email" value={user?.email} disabled className="bg-muted/50 border-border/50" />
+              <Input id="email" value={user?.email || ''} disabled className="bg-muted/50 border-border/50" />
               <p className="text-[10px] text-muted-foreground">{t('settings.account.email_change_info')}</p>
             </div>
             <div className="space-y-2">
@@ -160,7 +161,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
             </p>
             <div className="mt-2 pt-2 border-t border-amber-500/10 flex items-center gap-2 text-[10px] text-amber-600/60 font-medium italic">
               <Clock className="w-3 h-3" />
-              {t('common.last_active')}: {new Date(user?.last_sign_in_at || Date.now()).toLocaleString()}
+              {t('common.last_active')}: {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '-'}
             </div>
           </div>
         </CardContent>

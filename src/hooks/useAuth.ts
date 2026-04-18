@@ -32,7 +32,7 @@ export function useAuth() {
           isLoading: false,
           error: null,
           user_metadata: session.user.user_metadata,
-        } as any);
+        });
       } else {
         setAuthState(prev => ({ ...prev, isLoading: false, isAuthenticated: false, user: null }));
       }
@@ -54,7 +54,7 @@ export function useAuth() {
           isLoading: false,
           error: null,
           user_metadata: session.user.user_metadata,
-        } as any);
+        });
       } else {
         setAuthState({
           isAuthenticated: false,
@@ -81,12 +81,13 @@ export function useAuth() {
         throw error;
       }
       return true;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Ogiltiga uppgifter eller fel på servern.';
       setAuthState({
         isAuthenticated: false,
         user: null,
         isLoading: false,
-        error: error.message || 'Ogiltiga uppgifter eller fel på servern.',
+        error: message,
       });
       return false;
     }

@@ -685,7 +685,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
     });
 
     return groups;
-  }, [events]);
+  }, [events, locale, t]);
 
   return (
     <div className="flex-1 overflow-y-auto scrollbar-dark p-4">
@@ -866,7 +866,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           year: 'numeric'
         });
 
-      case 'week':
+      case 'week': {
         const start = weekDays[0].date;
         const end = weekDays[weekDays.length - 1].date;
         if (start.getMonth() === end.getMonth()) {
@@ -876,6 +876,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         } else {
           return `${start.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })} - ${end.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}`;
         }
+      }
 
       case 'month':
         return formatMonthYear(selectedDate, locale);

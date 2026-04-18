@@ -10,7 +10,7 @@ export interface User {
   name: string;
   avatar?: string;
   role: string | 'platform_admin' | 'admin' | 'user' | 'assistant';
-  permissions?: Record<string, any>;
+  permissions?: Record<string, unknown>;
   workspaceId?: string;
   last_sign_in_at?: string;
 }
@@ -25,6 +25,7 @@ export interface AuthState {
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  user_metadata?: Record<string, unknown>;
 }
 
 export interface CalendarEvent {
@@ -139,4 +140,18 @@ export interface UserPreferences {
   calendar_density: 'compact' | 'relaxed';
   font_scale: number;
   accent_color?: string;
+}
+
+export interface Message {
+  id: string;
+  workspace_id: string;
+  sender_id: string;
+  receiver_id?: string | null;
+  target_team_id?: string | null;
+  subject: string;
+  body: string;
+  is_read: boolean;
+  created_at: string;
+  sender?: User;
+  receiver?: User;
 }

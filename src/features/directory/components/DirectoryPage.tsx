@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
-import { useDirectoryData } from '../hooks/useDirectoryData';
+import { useDirectoryData, type MemberItem } from '../hooks/useDirectoryData';
 import { WorkspacesView } from './WorkspacesView';
 import { TeamsView } from './TeamsView';
 import { MembersView } from './MembersView';
@@ -12,7 +11,6 @@ import { TeamManagerModal } from './TeamManagerModal';
 import { InviteManagerModal } from './InviteManagerModal';
 
 export const DirectoryPage: React.FC = () => {
-  const { t } = useTranslation();
   const {
     userRole,
     currentLevel,
@@ -71,7 +69,7 @@ export const DirectoryPage: React.FC = () => {
 
       {/* Sheets & Modals */}
       <MemberDetailSheet
-        member={selectedEntity}
+        member={currentLevel === 'members' ? (selectedEntity as MemberItem | null) : null}
         onClose={() => setSelectedEntity(null)}
         userRole={userRole}
       />

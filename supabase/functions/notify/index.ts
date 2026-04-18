@@ -1,8 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const RESEND_API_KEY = (Deno as any).env.get("RESEND_API_KEY")
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SUPABASE_URL = (Deno as any).env.get("SUPABASE_INTERNAL_URL") // Or SUPABASE_URL
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SUPABASE_SERVICE_ROLE_KEY = (Deno as any).env.get("SUPABASE_SERVICE_ROLE_KEY")
 
 const corsHeaders = {
@@ -28,7 +31,7 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ message: 'Ignore' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    let notifications: { email: string, subject: string, body: string }[] = []
+    const notifications: { email: string, subject: string, body: string }[] = []
 
     if (table === 'messages' && type === 'INSERT') {
       const msg = record
@@ -48,9 +51,9 @@ serve(async (req: Request) => {
         // Team message
         const { data: members } = await supabase.from('team_members').select('user_id').eq('team_id', msg.target_team_id)
         if (members) {
-          const userIds = members.map(m => m.user_id)
+          const userIds = members.map((m: { user_id: string }) => m.user_id)
           const { data: users } = await supabase.from('users').select('email, notifications_on, notification_type').in('id', userIds)
-          users?.forEach(u => {
+          users?.forEach((u: { email: string, notifications_on: boolean, notification_type: string }) => {
             if (u.notifications_on) {
               notifications.push({
                 email: u.email,
@@ -77,7 +80,6 @@ serve(async (req: Request) => {
       }
     }
 
-    // Send emails via Resend
     for (const note of notifications) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',

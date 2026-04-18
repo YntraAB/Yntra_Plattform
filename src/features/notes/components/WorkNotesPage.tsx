@@ -27,6 +27,15 @@ interface Note {
   editHistory: { editedBy: string; editedAt: string }[];
 }
 
+interface Team {
+  id: string;
+  name: string;
+  workspace_id: string;
+  notesCount: number;
+  displayName: string;
+  workspaces?: { name: string } | { name: string }[];
+  recentNote?: string;
+}
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
@@ -38,11 +47,11 @@ export const WorkNotesPage: React.FC = () => {
   const { user } = useAuth();
   const unreadNotes = useUnreadNotes();
   const [searchParams] = useSearchParams();
-  const userRole = (user as any)?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
+  const userRole = user?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
 
   const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
-  const [dbTeams, setDbTeams] = useState<any[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [dbTeams, setDbTeams] = useState<Team[]>([]);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(searchParams.get('note'));
 
   React.useEffect(() => {
@@ -67,10 +76,10 @@ export const WorkNotesPage: React.FC = () => {
       const { data: teamData } = await query;
 
       const teamIds = teamData?.map(t => t.id) || [];
-      let allNotes: any[] = [];
+      let allNotes: { team_id: string }[] = [];
       if (teamIds.length > 0) {
         const { data: notes } = await supabase.from('work_notes').select('team_id').in('team_id', teamIds);
-        allNotes = notes || [];
+        allNotes = (notes as { team_id: string }[]) || [];
       }
 
       if (teamData) {
@@ -127,7 +136,7 @@ export const WorkNotesPage: React.FC = () => {
       }
     }
     fetchNotes();
-  }, [selectedTeam]);
+  }, [selectedTeam, t]);
 
   const currentUser = user?.id;
 
@@ -143,8 +152,9 @@ export const WorkNotesPage: React.FC = () => {
   const activeNote = notes.find(n => n.id === activeNoteId);
 
   const handleSaveNote = async () => {
+    if (!selectedTeam || !composeSubject || !composeText || !user) return;
     const targetWorkspaceId = userRole === 'platform_admin' ? selectedTeam.workspace_id : workspaceId;
-    if (!selectedTeam || !composeSubject || !composeText || !targetWorkspaceId || !user) return;
+    if (!targetWorkspaceId) return;
 
     if (editingNoteId) {
       const oldNote = notes.find(n => n.id === editingNoteId);
@@ -152,7 +162,7 @@ export const WorkNotesPage: React.FC = () => {
 
       const now = new Date();
       const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-      const newHistory = [{ editedBy: (user as any)?.email || 'Unknown', editedAt: timeStr }, ...oldNote.editHistory];
+      const newHistory = [{ editedBy: user?.email || 'Unknown', editedAt: timeStr }, ...oldNote.editHistory];
 
       await supabase.from('work_notes').update({
         subject: composeSubject,
@@ -184,7 +194,7 @@ export const WorkNotesPage: React.FC = () => {
           authorId: data.author_id,
           date: dateObj.toLocaleDateString(),
           timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          author: (user as any)?.email || t('notes.general.me'),
+          author: user?.email || t('notes.general.me'),
           subject: data.subject,
           content: data.content,
           editHistory: []
