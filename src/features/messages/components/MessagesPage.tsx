@@ -46,6 +46,118 @@ export const MessagesPage: React.FC = () => {
   const sendMessageMutation = useSendMessage(workspaceId || undefined);
   const deleteMessagesMutation = useDeleteMessages(workspaceId || undefined);
 
+  const [clientData, setClientData] = React.useState<any>(null);
+  const [teamMembers, setTeamMembers] = React.useState<string[]>([]);
+  const [currentUserTeams, setCurrentUserTeams] = React.useState<string[]>([]);
+  const [accessibleColleagues, setAccessibleColleagues] = React.useState<string[]>([]);
+
+  const [allClients, setAllClients] = React.useState<any[]>([]);
+
+  React.useEffect(() => {
+    const fetchRelations = async () => {
+      // 1. Fetch all clients so assistants can evaluate permissions
+      const { data: clientsData } = await supabase.from('clients').select('*');
+      if (clientsData) setAllClients(clientsData);
+
+      // 2. Client logic
+      if (user?.role === 'client') {
+         const { data: userData } = await supabase.from('users').select('client_id').eq('id', user.id).single();
+         if (userData?.client_id) {
+             const { data: client } = await supabase.from('clients').select('*').eq('id', userData.client_id).single();
+             if (client) {
+                 setClientData(client);
+                 if (client.team_id) {
+                     const { data: tm } = await supabase.from('team_members').select('user_id').eq('team_id', client.team_id);
+                     if (tm) setTeamMembers(tm.map((t: any) => t.user_id));
+                 }
+             }
+         }
+      } 
+      // 3. Assistant logic
+      else if (user?.role === 'assistant') {
+         const { data: myTeams } = await supabase.from('team_members').select('team_id').eq('user_id', user.id);
+         if (myTeams && myTeams.length > 0) {
+            const teamIds = myTeams.map((t: any) => t.team_id);
+            setCurrentUserTeams(teamIds);
+            
+            const { data: colleagues } = await supabase.from('team_members').select('user_id').in('team_id', teamIds);
+            if (colleagues) {
+              setAccessibleColleagues(Array.from(new Set(colleagues.map(c => c.user_id))));
+            }
+         }
+      }
+    };
+    fetchRelations();
+  }, [user]);
+
+  const availableUsers = React.useMemo(() => {
+     // Admin / Platform Admin can contact everyone
+     if (user?.role === 'admin' || user?.role === 'platform_admin') return users;
+     
+     // Assistant: restricted to own teams and admins + OPEN clients
+     if (user?.role === 'assistant') {
+       return users.filter(u => {
+         if (u.role === 'admin' || u.role === 'platform_admin') return true;
+         if (accessibleColleagues.includes(u.id)) return true;
+         
+         if (u.role === 'client' && u.client_id) {
+            const c = allClients.find(c => c.id === u.client_id);
+            if (c) {
+               const mode = c.message_settings?.allowed_contacts;
+               if (mode === 'open' && currentUserTeams.includes(c.team_id)) return true;
+               if (mode === 'contact_person' && c.message_settings?.contact_person_email?.toLowerCase() === user.email?.toLowerCase()) return true;
+            }
+         }
+         return false;
+       });
+     }
+
+     // Client: restricted to admins, contact person, and team
+     if (user?.role === 'client') {
+       if (!clientData) return [];
+       
+       const mode = clientData.message_settings?.allowed_contacts || 'admin_only';
+       const contactPersonEmail = clientData.message_settings?.contact_person_email?.toLowerCase();
+       
+       return users.filter(u => {
+          if (u.role === 'admin' || u.role === 'platform_admin') return true;
+          
+          if (mode === 'contact_person' || mode === 'open') {
+             if (contactPersonEmail && u.email.toLowerCase() === contactPersonEmail) return true;
+          }
+          
+          if (mode === 'open') {
+             if (teamMembers.includes(u.id)) return true;
+          }
+          return false;
+       });
+     }
+
+     return [];
+  }, [users, user, clientData, teamMembers, accessibleColleagues, allClients, currentUserTeams]);
+
+  const availableTeams = React.useMemo(() => {
+     // Admin / Platform Admin can contact all teams
+     if (user?.role === 'admin' || user?.role === 'platform_admin') return teams;
+     
+     // Assistant: can only group-chat their own teams
+     if (user?.role === 'assistant') {
+       return teams.filter(t => currentUserTeams.includes(t.id));
+     }
+
+     // Client: can only group-chat their own assigned team IF they are in 'open' mode
+     if (user?.role === 'client') {
+       if (!clientData || !clientData.team_id) return [];
+       
+       const mode = clientData.message_settings?.allowed_contacts;
+       if (mode === 'open') {
+         return teams.filter(t => t.id === clientData.team_id);
+       }
+       return [];
+     }
+     
+     return [];
+  }, [teams, user, clientData, currentUserTeams]);
 
 
   const {
@@ -255,8 +367,8 @@ export const MessagesPage: React.FC = () => {
         isSending={sendMessageMutation.isPending}
         handleSendMessage={handleSendMessage}
         setIsComposing={setIsComposing}
-        users={users}
-        teams={teams}
+        users={availableUsers}
+        teams={availableTeams}
         currentUserId={user?.id}
       />
     );

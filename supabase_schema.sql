@@ -88,7 +88,44 @@ CREATE TABLE time_reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. Notification Trigger Logic
+-- 7. Skapa "clients" (Brukare/Patienter)
+CREATE TABLE clients (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
+  team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  personal_number TEXT,
+  care_level TEXT DEFAULT 'normal',
+  message_settings JSONB DEFAULT '{"allowed_contacts": "admins_only"}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE users ADD COLUMN client_id UUID REFERENCES clients(id) ON DELETE SET NULL;
+ALTER TABLE events ADD COLUMN client_id UUID REFERENCES clients(id) ON DELETE SET NULL;
+
+-- 8. Skapa "client_medications" (Medicinlistor)
+CREATE TABLE client_medications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  dosage TEXT NOT NULL,
+  time_to_take TEXT NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. Skapa "client_journals" (Daganteckningar / Journaler)
+CREATE TABLE client_journals (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
+  author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  type TEXT DEFAULT 'daily' NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 10. Notification Trigger Logic
 -- Denna funktion anropar vår Edge Function "notify" när nåt händer
 CREATE OR REPLACE FUNCTION public.handle_new_notification()
 RETURNS TRIGGER AS $$
@@ -129,6 +166,9 @@ ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_medications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_journals ENABLE ROW LEVEL SECURITY;
 
 -- För att det ska vara enkelt nu i början, tillåter vi alla att läsa och skriva.
 CREATE POLICY "Allow all access to workspaces" ON workspaces FOR ALL USING (true);
@@ -137,3 +177,6 @@ CREATE POLICY "Allow all access to events" ON events FOR ALL USING (true);
 CREATE POLICY "Allow all access to teams" ON teams FOR ALL USING (true);
 CREATE POLICY "Allow all access to messages" ON messages FOR ALL USING (true);
 CREATE POLICY "Allow all access to time_reports" ON time_reports FOR ALL USING (true);
+CREATE POLICY "Allow all access to clients" ON clients FOR ALL USING (true);
+CREATE POLICY "Allow all access to client_medications" ON client_medications FOR ALL USING (true);
+CREATE POLICY "Allow all access to client_journals" ON client_journals FOR ALL USING (true);

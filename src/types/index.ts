@@ -9,9 +9,10 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  role: string | 'platform_admin' | 'admin' | 'user' | 'assistant';
+  role: string | 'platform_admin' | 'admin' | 'user' | 'assistant' | 'client';
   permissions?: Record<string, unknown>;
   workspaceId?: string;
+  client_id?: string | null;
   last_sign_in_at?: string;
 }
 
@@ -41,6 +42,7 @@ export interface CalendarEvent {
   attendees?: string[];
   teamId?: string;
   assigneeId?: string;
+  clientId?: string;
   waitingTime?: { from: string; to: string };
   activeTimes?: { from: string; to: string }[];
   break?: { from: string; to: string; isPaid: boolean };
@@ -154,4 +156,38 @@ export interface Message {
   created_at: string;
   sender?: User;
   receiver?: User;
+}
+
+export interface Client {
+  id: string;
+  workspace_id: string;
+  team_id?: string | null;
+  first_name: string;
+  last_name: string;
+  personal_number?: string;
+  care_level?: string;
+  message_settings?: {
+    allowed_contacts: 'admin_only' | 'contact_person' | 'open';
+    contact_person_email?: string;
+  };
+  created_at?: string;
+}
+
+export interface ClientMedication {
+  id: string;
+  client_id: string;
+  name: string;
+  dosage: string;
+  time_to_take: string;
+  is_active: boolean;
+  created_at?: string;
+}
+
+export interface ClientJournal {
+  id: string;
+  client_id: string;
+  author_id?: string | null;
+  type: 'daily' | 'incident' | 'medical';
+  content: string;
+  created_at?: string;
 }

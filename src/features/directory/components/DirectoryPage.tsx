@@ -9,6 +9,7 @@ import { DevHubModal } from './DevHubModal';
 import { RoleManagerModal } from './RoleManagerModal';
 import { TeamManagerModal } from './TeamManagerModal';
 import { InviteManagerModal } from './InviteManagerModal';
+import { ClientManagerModal } from './ClientManagerModal';
 
 export const DirectoryPage: React.FC = () => {
   const {
@@ -32,6 +33,7 @@ export const DirectoryPage: React.FC = () => {
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false);
   const [isInviteManagerOpen, setIsInviteManagerOpen] = useState(false);
+  const [isClientManagerOpen, setIsClientManagerOpen] = useState(false);
 
   return (
     <div className="h-full flex flex-col bg-background relative">
@@ -53,6 +55,7 @@ export const DirectoryPage: React.FC = () => {
             onSelectTeam={handleSelectTeam}
             onOpenRoleManager={() => setIsRoleManagerOpen(true)}
             onOpenTeamManager={() => setIsTeamManagerOpen(true)}
+            onOpenClientManager={() => setIsClientManagerOpen(true)}
           />
         )}
         {currentLevel === 'members' && (
@@ -100,6 +103,13 @@ export const DirectoryPage: React.FC = () => {
         selectedTeam={selectedTeam}
         selectedWorkspace={selectedWorkspace}
         workspaceId={workspaceId}
+      />
+
+      <ClientManagerModal
+        isOpen={isClientManagerOpen}
+        onClose={() => setIsClientManagerOpen(false)}
+        workspaceId={workspaceId}
+        teams={dbTeams}
       />
     </div>
   );
