@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { AuthState, LoginCredentials } from '@/types';
+import type { Database } from '@/types/database';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -22,7 +23,23 @@ const defaultAuthState: AuthState = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function getAuthStateFromSession(session: Session | null): AuthState {
+type DbUser = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'email' | 'full_name' | 'role' | 'workspace_id'>;
+
+async function getDbUser(userId: string): Promise<DbUser | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, email, full_name, role, workspace_id')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function getAuthStateFromSession(session: Session | null): Promise<AuthState> {
   if (!session) {
     return {
       isAuthenticated: false,
@@ -32,13 +49,16 @@ function getAuthStateFromSession(session: Session | null): AuthState {
     };
   }
 
+  const dbUser = await getDbUser(session.user.id);
+
   return {
     isAuthenticated: true,
     user: {
       id: session.user.id,
-      email: session.user.email || '',
-      name: session.user.user_metadata?.full_name || session.user.email || 'Användare',
-      role: session.user.user_metadata?.role || 'user',
+      email: dbUser?.email || session.user.email || '',
+      name: dbUser?.full_name || session.user.email || 'Anvandare',
+      role: dbUser?.role || 'user',
+      workspaceId: dbUser?.workspace_id || undefined,
       last_sign_in_at: session.user.last_sign_in_at,
     },
     isLoading: false,
@@ -47,26 +67,60 @@ function getAuthStateFromSession(session: Session | null): AuthState {
   };
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(defaultAuthState);
 
   useEffect(() => {
     let isMounted = true;
 
-    const fetchSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    const syncSession = async (session: Session | null, fallbackMessage: string) => {
+      try {
+        const nextState = await getAuthStateFromSession(session);
 
-      if (isMounted) {
-        setAuthState(getAuthStateFromSession(session));
+        if (isMounted) {
+          setAuthState(nextState);
+        }
+      } catch (error: unknown) {
+        if (isMounted) {
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            isLoading: false,
+            error: getErrorMessage(error, fallbackMessage),
+          });
+        }
+      }
+    };
+
+    const fetchSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          throw error;
+        }
+
+        await syncSession(session, 'Kunde inte lasa autentiseringssessionen.');
+      } catch (error: unknown) {
+        if (isMounted) {
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            isLoading: false,
+            error: getErrorMessage(error, 'Kunde inte lasa autentiseringssessionen.'),
+          });
+        }
       }
     };
 
     fetchSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) {
-        setAuthState(getAuthStateFromSession(session));
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      await syncSession(session, 'Kunde inte uppdatera autentiseringssessionen.');
     });
 
     return () => {
@@ -90,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return true;
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : 'Ogiltiga uppgifter eller fel på servern.';
+      const message = getErrorMessage(error, 'Ogiltiga uppgifter eller fel pa servern.');
 
       setAuthState({
         isAuthenticated: false,
@@ -104,8 +158,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true }));
-    await supabase.auth.signOut();
+    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: unknown) {
+      setAuthState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: getErrorMessage(error, 'Utloggningen misslyckades.'),
+      }));
+
+      throw error;
+    }
   }, []);
 
   const clearError = useCallback(() => {
