@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, User, HeartPulse, ChevronRight, Trash2, Plus } from 'lucide-react';
+import { Users, User, HeartPulse, ChevronRight, Trash2, Plus, UserPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ interface TeamsViewProps {
   onSelectTeam: (id: string) => void;
   onOpenRoleManager: () => void;
   onOpenTeamManager: () => void;
+  onOpenClientManager: () => void;
 }
 
 export const TeamsView: React.FC<TeamsViewProps> = ({
@@ -19,7 +20,8 @@ export const TeamsView: React.FC<TeamsViewProps> = ({
   userRole,
   onSelectTeam,
   onOpenRoleManager,
-  onOpenTeamManager
+  onOpenTeamManager,
+  onOpenClientManager
 }) => {
   const { t } = useTranslation();
 
@@ -36,7 +38,10 @@ export const TeamsView: React.FC<TeamsViewProps> = ({
                 {t('directory.teams.manage_roles')}
               </Button>
               <Button size="sm" className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white h-8 text-xs" onClick={onOpenTeamManager}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" /> {t('directory.teams.create_button')}
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> Nytt Team
+              </Button>
+              <Button size="sm" className="bg-secondary text-foreground hover:bg-muted border border-border h-8 text-xs" onClick={onOpenClientManager}>
+                <UserPlus className="w-3.5 h-3.5 mr-1.5 text-primary" /> Ny Brukare
               </Button>
             </>
           )}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
+import { supabase } from '@/lib/supabase';
 import type { CalendarEvent, EventCategory } from '@/types';
 import {
   Dialog,
@@ -41,6 +42,8 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
   const [endTime, setEndTime] = useState(event?.endTime ? event.endTime.toTimeString().slice(0, 5) : '10:00');
   const [category, setCategory] = useState<EventCategory>(event?.category || 'assistance_time');
   const [description, setDescription] = useState(event?.description || '');
+  const [clientId, setClientId] = useState(event?.clientId || '');
+  const [clients, setClients] = useState<{ id: string, name: string }[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [waitingFrom, setWaitingFrom] = useState(event?.waitingTime?.from || '');
   const [waitingTo, setWaitingTo] = useState(event?.waitingTime?.to || '');
@@ -59,6 +62,14 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
       setTeamId(dbTeams[0].id);
     }
   }, [dbTeams]);
+
+  useEffect(() => {
+    if (workspaceId) {
+       supabase.from('clients').select('id, first_name, last_name').eq('workspace_id', workspaceId).then(({ data }) => {
+          if (data) setClients(data.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
+       });
+    }
+  }, [workspaceId]);
 
   const handleStartDateChange = (newStartDate: string) => {
     if (startDate === endDate) {
@@ -87,6 +98,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
         title: eventTitle,
         teamId,
         assigneeId,
+        clientId: clientId || undefined,
         startTime: start,
         endTime: end,
         category,
@@ -175,6 +187,19 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
                 {dbUsers.map(u => <option key={u.id} value={u.id}>{u.full_name || u.name}</option>)}
               </select>
             </div>
+            {clients.length > 0 && (
+              <div className="space-y-1.5 col-span-2 mt-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brukare (Frivilligt)</label>
+                <select
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  className="w-full bg-muted/50 border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+                >
+                  <option value="">Ingen specifik brukare</option>
+                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-4 bg-muted/30 rounded-xl border border-border/50">

@@ -338,6 +338,9 @@ ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE work_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_medications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_journals ENABLE ROW LEVEL SECURITY;
 
 -- Remove insecure starter policies if the script is re-run.
 DROP POLICY IF EXISTS "Allow all access to workspaces" ON workspaces;

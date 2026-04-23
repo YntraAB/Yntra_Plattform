@@ -7,11 +7,46 @@ import { useTranslation } from 'react-i18next';
 
 const CalendarPage = lazy(() => import('@/features/scheduler/components/CalendarPage').then(module => ({ default: module.CalendarPage })));
 const WorkNotesPage = lazy(() => import('@/features/notes/components/WorkNotesPage').then(module => ({ default: module.WorkNotesPage })));
-const MedicationPage = lazy(() => import('@/features/assistance/components/MedicationPage').then(module => ({ default: module.MedicationPage })));
+const ClientOverviewPage = lazy(() => import('@/features/assistance/components/ClientOverviewPage').then(module => ({ default: module.ClientOverviewPage })));
 const DirectoryPage = lazy(() => import('@/features/directory/components/DirectoryPage').then(module => ({ default: module.DirectoryPage })));
 const MessagesPage = lazy(() => import('@/features/messages/components/MessagesPage').then(module => ({ default: module.MessagesPage })));
 const TimeManagerPage = lazy(() => import('@/features/time/components/TimeManagerPage').then(module => ({ default: module.TimeManagerPage })));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage').then(module => ({ default: module.SettingsPage })));
+
+import { ClientLayout } from './features/client-portal/components/ClientLayout';
+const ClientHomePage = lazy(() => import('./features/client-portal/components/ClientHomePage').then(module => ({ default: module.ClientHomePage })));
+
+const RoleGuard: React.FC<{ children: React.ReactNode, allowedRoles: string[] }> = ({ children, allowedRoles }) => {
+  const { user } = useAuth();
+  const location = useLocation();
+  if (!user) return <Navigate to="/" replace />;
+  if (!allowedRoles.includes(user.role)) {
+     const fallback = user.role === 'client' ? "/home" : "/schedule";
+     if (location.pathname === fallback || location.pathname === fallback + '/') {
+       // Prevent infinite redirect loop if fallback is also denied
+       return (
+         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
+           <h2 className="text-2xl font-bold text-destructive mb-2">Access Denied</h2>
+           <p className="text-muted-foreground">Your role "{user.role}" does not have permission to view this page.</p>
+         </div>
+       );
+     }
+     return <Navigate to={fallback} replace />;
+  }
+  return <>{children}</>;
+};
+
+const AppLayoutWrapper: React.FC = () => {
+  const { user } = useAuth();
+  if (user?.role === 'client') return <ClientLayout />;
+  return <Layout />;
+};
+
+const RootRedirect: React.FC = () => {
+    const { user } = useAuth();
+    if (user?.role === 'client') return <Navigate to="/home" replace />;
+    return <Navigate to="/schedule" replace />;
+};
 
 export const Layout: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -117,47 +152,52 @@ export const Layout: React.FC = () => {
 export const routes = [
   {
     path: "/",
-    element: <Layout />,
+    element: <AppLayoutWrapper />,
     children: [
-      { index: true, element: <Navigate to="/schedule" replace /> },
+      { index: true, element: <RootRedirect /> },
+      {
+        path: "home",
+        element: <RoleGuard allowedRoles={['client']}><ClientHomePage /></RoleGuard>,
+        handle: { breadcrumb: (t: any) => t('common.home', 'Hem') }
+      },
       {
         path: "schedule",
-        element: <CalendarPage />,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><CalendarPage /></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.schedule') }
       },
       {
         path: "inbox",
-        element: <MessagesPage />,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant', 'client']}><MessagesPage /></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.inbox') }
       },
       {
         path: "directory",
-        element: <DirectoryPage />,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><DirectoryPage /></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.directory') }
       },
       {
         path: "work-notes",
-        element: <WorkNotesPage />,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><WorkNotesPage /></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.notes') }
       },
       {
         path: "medication",
-        element: <MedicationPage />,
-        handle: { breadcrumb: (t: any) => t('sidebar.sections.assistance') }
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><ClientOverviewPage /></RoleGuard>,
+        handle: { breadcrumb: (t: any) => t('sidebar.sections.assistance', 'Assistance') }
       },
       {
         path: "settings",
-        element: <SettingsPage />,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin']}><SettingsPage /></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('common.settings') }
       },
       {
         path: "time",
-        element: <div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div>,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.time') }
       },
       {
         path: "timereports",
-        element: <div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div>,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div></RoleGuard>,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.timereports') }
       },
     ]
