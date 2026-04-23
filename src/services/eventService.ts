@@ -1,8 +1,9 @@
 import { supabase } from '@/lib/supabase';
-import type { CalendarEvent } from '@/types';
+import type { CalendarEvent, EventCategory } from '@/types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/types/database';
 
 interface EventMetadata {
-  category?: string;
+  category?: EventCategory;
   description?: string;
   location?: string;
   isAllDay?: boolean;
@@ -21,20 +22,20 @@ export const eventService = {
 
     if (error) throw new Error(error.message);
 
-    return (data || []).map((event) => {
-      const metadata = (event.metadata as unknown as EventMetadata) || {};
+    return (data || []).map((event: Tables<'events'>) => {
+      const metadata = (event.metadata as EventMetadata | null) || {};
       return {
         id: event.id,
         title: event.title,
         startTime: new Date(event.start_time),
         endTime: new Date(event.end_time),
-        category: (metadata.category as any) || 'other',
+        category: metadata.category === undefined ? 'other' : metadata.category,
         description: metadata.description || '',
         location: metadata.location || '',
         isAllDay: metadata.isAllDay || false,
         attendees: metadata.attendees || [],
-        teamId: event.team_id,
-        assigneeId: event.assignee_id
+        teamId: event.team_id ?? undefined,
+        assigneeId: event.assignee_id ?? undefined
       };
     });
   },
@@ -43,7 +44,7 @@ export const eventService = {
    * Create a new event
    */
   async createEvent(workspaceId: string, userId: string, event: Omit<CalendarEvent, 'id'>) {
-    const dbPayload = {
+    const dbPayload: TablesInsert<'events'> = {
       workspace_id: workspaceId,
       user_id: userId,
       title: event.title,
@@ -74,7 +75,7 @@ export const eventService = {
    * Update an existing event
    */
   async updateEvent(eventId: string, updates: Partial<CalendarEvent>) {
-    const dbPayload: Record<string, unknown> = {};
+    const dbPayload: TablesUpdate<'events'> = {};
     if (updates.title) dbPayload.title = updates.title;
     if (updates.startTime) dbPayload.start_time = updates.startTime.toISOString();
     if (updates.endTime) dbPayload.end_time = updates.endTime.toISOString();
@@ -91,7 +92,7 @@ export const eventService = {
     ) {
       // First get current metadata to merge
       const { data: current } = await supabase.from('events').select('metadata').eq('id', eventId).single();
-      const currentMeta = (current?.metadata as unknown as EventMetadata) || {};
+      const currentMeta = (current?.metadata as EventMetadata | null) || {};
       dbPayload.metadata = {
         ...currentMeta,
         description: updates.description ?? currentMeta.description,

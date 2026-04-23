@@ -164,7 +164,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const merged = { ...settings, ...newSettings };
       console.log('Updating settings:', merged);
-      const success = await mutateSettings(merged);
+      await mutateSettings(merged);
       return true;
     } catch (e) {
       console.error('Failed to update settings:', e);

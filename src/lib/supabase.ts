@@ -7,4 +7,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("⚠️ Saknar Supabase miljövariabler. Applikationen kommer inte kunna hämta data från databasen.")
 }
 
-export const supabase = createClient(supabaseUrl || "https://placeholder-url.supabase.co", supabaseAnonKey || "placeholder-key")
+export const supabase = createClient(
+  supabaseUrl || "https://placeholder-url.supabase.co",
+  supabaseAnonKey || "placeholder-key"
+)
