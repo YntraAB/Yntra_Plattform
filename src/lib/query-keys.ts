@@ -7,6 +7,8 @@ export const queryKeys = {
 
   userPreferences: (userId: string | null) => ['user-preferences', userId] as const,
   messages: (workspaceId: string | undefined) => ['messages', workspaceId] as const,
+  noteTeams: (scope: string | null) => ['note-teams', scope] as const,
+  teamNotes: (teamId: string | null) => ['team-notes', teamId] as const,
 
   // Scheduler (to be added as needed)
   events: (workspaceId: string | null, teamId: string | null) => ['events', workspaceId, teamId] as const,

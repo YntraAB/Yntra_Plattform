@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FileText,
   Search,
@@ -13,33 +13,24 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
-
-interface Note {
-  id: string;
-  teamId: string;
-  date: string;
-  timestamp: string;
-  author: string;
-  authorId: string;
-  subject: string;
-  content: string;
-  editHistory: { editedBy: string; editedAt: string }[];
-}
-
-interface Team {
-  id: string;
-  name: string;
-  workspace_id: string;
-  notesCount: number;
-  displayName: string;
-  workspaces?: { name: string } | { name: string }[];
-  recentNote?: string;
-}
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useUnreadNotes } from '@/hooks/useUnreadNotes';
 import { useSearchParams } from 'react-router-dom';
+import {
+  useCreateNote,
+  useDeleteNote,
+  useMarkTeamNotesRead,
+  useNoteTeams,
+  useTeamNotes,
+  useUpdateNote
+} from '@/hooks/queries/useNotes';
+
+interface EditHistoryEntry {
+  editedBy: string;
+  editedAt: string;
+  [key: string]: string;
+}
 
 export const WorkNotesPage: React.FC = () => {
   const { t } = useTranslation();
@@ -48,95 +39,56 @@ export const WorkNotesPage: React.FC = () => {
   const unreadNotes = useUnreadNotes();
   const [searchParams] = useSearchParams();
   const userRole = user?.role as 'platform_admin' | 'admin' | 'assistant' || 'admin';
-
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [dbTeams, setDbTeams] = useState<Team[]>([]);
+  const notesScope = userRole === 'platform_admin' ? 'all' : workspaceId || null;
+  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(searchParams.get('team'));
   const [activeNoteId, setActiveNoteId] = useState<string | null>(searchParams.get('note'));
 
-  React.useEffect(() => {
-    if (dbTeams.length > 0) {
-      const teamId = searchParams.get('team');
-      if (teamId) {
-        const team = dbTeams.find(t => t.id === teamId);
-        if (team) setSelectedTeam(team);
-      }
-    }
-  }, [dbTeams, searchParams]);
+  const { data: teams = [] } = useNoteTeams(workspaceId || undefined, userRole === 'platform_admin');
+  const selectedTeam = useMemo(() => teams.find(team => team.id === selectedTeamId) || null, [teams, selectedTeamId]);
+  const { data: teamNotes = [] } = useTeamNotes(selectedTeam?.id || null);
+  const createNoteMutation = useCreateNote(notesScope, selectedTeam?.id || null);
+  const updateNoteMutation = useUpdateNote(notesScope, selectedTeam?.id || null);
+  const deleteNoteMutation = useDeleteNote(notesScope, selectedTeam?.id || null);
+  const markTeamNotesReadMutation = useMarkTeamNotesRead();
 
   React.useEffect(() => {
-    async function loadTeams() {
-      if (userRole !== 'platform_admin' && !workspaceId) return;
-
-      let query = supabase.from('teams').select('*, workspaces(name)');
-      if (userRole !== 'platform_admin') {
-        query = query.eq('workspace_id', workspaceId);
-      }
-
-      const { data: teamData } = await query;
-
-      const teamIds = teamData?.map(t => t.id) || [];
-      let allNotes: { team_id: string }[] = [];
-      if (teamIds.length > 0) {
-        const { data: notes } = await supabase.from('work_notes').select('team_id').in('team_id', teamIds);
-        allNotes = (notes as { team_id: string }[]) || [];
-      }
-
-      if (teamData) {
-        setDbTeams(teamData.map(t => {
-          const notesCount = allNotes.filter(n => n.team_id === t.id).length;
-          const orgName = Array.isArray(t.workspaces) ? t.workspaces[0]?.name : t.workspaces?.name;
-          const displayName = orgName ? `${t.name} - ${orgName}` : t.name;
-
-          return {
-            ...t,
-            notesCount: notesCount,
-            displayName
-          };
-        }).sort((a, b) => a.displayName.localeCompare(b.displayName)));
-      }
+    const teamId = searchParams.get('team');
+    if (teamId) {
+      setSelectedTeamId(teamId);
     }
-    loadTeams();
-  }, [workspaceId, userRole]);
+  }, [searchParams]);
+
+  const notes = useMemo(() => {
+    return teamNotes.map((dbNote) => {
+      const createdAt = dbNote.created_at ? new Date(dbNote.created_at) : new Date();
+      const authorData = Array.isArray(dbNote.author) ? dbNote.author[0] : dbNote.author;
+      const authorName = authorData?.full_name || authorData?.email || t('notes.general.unknown_agent');
+
+      return {
+        id: dbNote.id,
+        teamId: dbNote.team_id,
+        date: createdAt.toLocaleDateString(),
+        timestamp: createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        author: authorName,
+        authorId: dbNote.author_id || '',
+        subject: dbNote.subject,
+        content: dbNote.content,
+        editHistory: Array.isArray(dbNote.edit_history) ? dbNote.edit_history as unknown as EditHistoryEntry[] : []
+      };
+    });
+  }, [teamNotes, t]);
 
   React.useEffect(() => {
-    async function fetchNotes() {
-      if (!selectedTeam) return;
-      const { data } = await supabase
-        .from('work_notes')
-        .select(`*, author:users(full_name, email)`)
-        .eq('team_id', selectedTeam.id)
-        .order('created_at', { ascending: false });
-
-      if (data) {
-        const mappedNotes: Note[] = data.map(dbNote => {
-          const dateObj = new Date(dbNote.created_at);
-
-          let authorName = t('notes.general.unknown_agent');
-          if (dbNote.author) {
-            const authorData = Array.isArray(dbNote.author) ? dbNote.author[0] : dbNote.author;
-            if (authorData) {
-              authorName = authorData.full_name || authorData.email || t('notes.general.unknown_agent');
-            }
-          }
-
-          return {
-            id: dbNote.id,
-            teamId: dbNote.team_id,
-            date: dateObj.toLocaleDateString(),
-            timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            author: authorName,
-            authorId: dbNote.author_id,
-            subject: dbNote.subject,
-            content: dbNote.content,
-            editHistory: dbNote.edit_history || []
-          };
-        });
-        setNotes(mappedNotes);
-      }
+    if (selectedTeamId && !selectedTeam && teams.length > 0) {
+      setSelectedTeamId(null);
     }
-    fetchNotes();
-  }, [selectedTeam, t]);
+  }, [selectedTeamId, selectedTeam, teams.length]);
+
+  React.useEffect(() => {
+    if (activeNoteId && !notes.some(note => note.id === activeNoteId)) {
+      setActiveNoteId(null);
+    }
+  }, [activeNoteId, notes]);
 
   const currentUser = user?.id;
 
@@ -164,54 +116,33 @@ export const WorkNotesPage: React.FC = () => {
       const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
       const newHistory = [{ editedBy: user?.email || 'Unknown', editedAt: timeStr }, ...oldNote.editHistory];
 
-      await supabase.from('work_notes').update({
+      await updateNoteMutation.mutateAsync({
+        noteId: editingNoteId,
         subject: composeSubject,
         content: composeText,
-        edit_history: newHistory
-      }).eq('id', editingNoteId);
-
-      setNotes(notes.map(n => {
-        if (n.id === editingNoteId) {
-          return { ...n, subject: composeSubject, content: composeText, editHistory: newHistory };
-        }
-        return n;
-      }));
+        edit_history: newHistory as unknown as import('@/types/database').Json
+      });
     } else {
-      const { data } = await supabase.from('work_notes').insert({
+      await createNoteMutation.mutateAsync({
         workspace_id: targetWorkspaceId,
         team_id: selectedTeam.id,
         author_id: user.id,
         subject: composeSubject,
         content: composeText,
         edit_history: []
-      }).select().single();
-
-      if (data) {
-        const dateObj = new Date(data.created_at);
-        const newNote: Note = {
-          id: data.id,
-          teamId: data.team_id,
-          authorId: data.author_id,
-          date: dateObj.toLocaleDateString(),
-          timestamp: dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          author: user?.email || t('notes.general.me'),
-          subject: data.subject,
-          content: data.content,
-          editHistory: []
-        };
-        setNotes([newNote, ...notes]);
-      }
+      });
     }
 
     setIsComposing(false);
     setEditingNoteId(null);
+    setComposeSubject('');
+    setComposeText('');
   };
 
   const handleDeleteNote = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (confirm(t('notes.list.delete_confirm'))) {
-      await supabase.from('work_notes').delete().eq('id', id);
-      setNotes(notes.filter(n => n.id !== id));
+      await deleteNoteMutation.mutateAsync(id);
       if (activeNoteId === id) setActiveNoteId(null);
     }
   };
@@ -228,10 +159,10 @@ export const WorkNotesPage: React.FC = () => {
   };
 
   const renderTeamOverview = () => {
-    let teams = dbTeams;
+    let filteredTeams = teams;
 
     if (searchQuery) {
-      teams = teams.filter(t => (t.displayName || t.name).toLowerCase().includes(searchQuery.toLowerCase()));
+      filteredTeams = filteredTeams.filter(t => (t.displayName || t.name).toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
     return (
@@ -252,22 +183,22 @@ export const WorkNotesPage: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {teams.length === 0 ? (
+          {filteredTeams.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-12">
               <Users className="w-12 h-12 mb-4 opacity-20" />
               <p className="text-sm">{t('notes.teams.empty_state')}</p>
             </div>
           ) : (
-            teams.map((team) => {
+            filteredTeams.map((team) => {
               const unreadInTeam = unreadNotes?.byTeam[team.id] || 0;
               return (
                 <div
                   key={team.id}
                   onClick={async () => {
-                    setSelectedTeam(team);
+                    setSelectedTeamId(team.id);
                     setSearchQuery('');
                     if (unreadInTeam > 0 && user) {
-                      await supabase.from('team_members').update({ notes_last_read_at: new Date().toISOString() }).eq('team_id', team.id).eq('user_id', user.id);
+                      await markTeamNotesReadMutation.mutateAsync({ teamId: team.id, userId: user.id });
                     }
                   }}
                   className="group flex items-center px-8 py-3 border-b border-border hover:bg-muted cursor-pointer transition-colors"
@@ -293,7 +224,7 @@ export const WorkNotesPage: React.FC = () => {
                     {team.recentNote && (
                       <div className="text-right mr-4">
                         <div className="text-muted-foreground text-[11px] uppercase tracking-wider font-semibold">{t('notes.teams.last_updated')}</div>
-                        <div className="text-[13px] text-muted-foreground mt-0.5">{team.recentNote}</div>
+                        <div className="text-[13px] text-muted-foreground mt-0.5">{new Date(team.recentNote).toLocaleString()}</div>
                       </div>
                     )}
                   </div>
@@ -314,9 +245,9 @@ export const WorkNotesPage: React.FC = () => {
   // NOTE LIST (EDGE-TO-EDGE)
   const renderNoteList = () => {
     if (!selectedTeam) return null;
-    let teamNotes = notes.filter(n => n.teamId === selectedTeam.id);
+    let filteredNotes = notes.filter(n => n.teamId === selectedTeam.id);
     if (noteSearchQuery) {
-      teamNotes = teamNotes.filter(n =>
+      filteredNotes = filteredNotes.filter(n =>
         n.subject.toLowerCase().includes(noteSearchQuery.toLowerCase()) ||
         n.content.toLowerCase().includes(noteSearchQuery.toLowerCase())
       );
@@ -330,7 +261,7 @@ export const WorkNotesPage: React.FC = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setSelectedTeam(null)}
+              onClick={() => setSelectedTeamId(null)}
               className="text-muted-foreground hover:text-foreground shrink-0"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -352,14 +283,14 @@ export const WorkNotesPage: React.FC = () => {
 
         {/* List */}
         <div className="flex-1 overflow-y-auto w-full scrollbar-dark">
-          {teamNotes.length === 0 ? (
+          {filteredNotes.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
               <FileText className="w-12 h-12 mb-4 opacity-20" />
               <p className="text-sm">{t('notes.list.empty_state')}</p>
             </div>
           ) : (
             <div className="flex flex-col w-full text-sm">
-              {teamNotes.map((note) => {
+              {filteredNotes.map((note) => {
                 const canEdit = note.authorId === currentUser;
                 const canDelete = canEdit || userRole === 'admin' || userRole === 'platform_admin';
 
