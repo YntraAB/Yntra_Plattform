@@ -16,10 +16,7 @@ export interface User {
   last_sign_in_at?: string;
 }
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
+export type SocialAuthProvider = 'google' | 'facebook' | 'apple';
 
 export interface AuthState {
   isAuthenticated: boolean;

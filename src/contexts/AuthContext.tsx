@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
-import type { AuthState, LoginCredentials } from '@/types';
+import type { AuthState, SocialAuthProvider } from '@/types';
 import type { Database } from '@/types/database';
 
 interface AuthContextValue {
@@ -9,7 +9,7 @@ interface AuthContextValue {
   user: AuthState['user'];
   isLoading: boolean;
   error: string | null;
-  login: (credentials: LoginCredentials) => Promise<boolean>;
+  loginWithProvider: (provider: SocialAuthProvider) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -71,6 +71,10 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error ? error.message : fallback;
 }
 
+function getAuthRedirectUrl() {
+  return `${window.location.origin}/`;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthState>(defaultAuthState);
 
@@ -129,13 +133,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
+  const loginWithProvider = useCallback(async (provider: SocialAuthProvider): Promise<boolean> => {
     setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: credentials.email,
-        password: credentials.password,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: getAuthRedirectUrl(),
+        },
       });
 
       if (error) {
@@ -144,7 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return true;
     } catch (error: unknown) {
-      const message = getErrorMessage(error, 'Ogiltiga uppgifter eller fel pa servern.');
+      const message = getErrorMessage(error, 'Social inloggning kunde inte startas.');
 
       setAuthState({
         isAuthenticated: false,
@@ -186,10 +192,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user: authState.user,
     isLoading: authState.isLoading,
     error: authState.error,
-    login,
+    loginWithProvider,
     logout,
     clearError,
-  }), [authState.error, authState.isAuthenticated, authState.isLoading, authState.user, clearError, login, logout]);
+  }), [authState.error, authState.isAuthenticated, authState.isLoading, authState.user, clearError, loginWithProvider, logout]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

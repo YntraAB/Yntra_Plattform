@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase';
 import { useState, useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { VisualEffectHandler } from './components/VisualEffectHandler';
+import type { SocialAuthProvider } from '@/types';
 import './App.css';
 
 /**
@@ -29,14 +30,14 @@ function App() {
   const {
     isAuthenticated,
     user,
-    isLoading,
     error,
-    login,
+    loginWithProvider,
     logout
   } = useAuth();
 
   const [needsPasswordReset, setNeedsPasswordReset] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [pendingProvider, setPendingProvider] = useState<SocialAuthProvider | null>(null);
 
   const router = useMemo(() => createBrowserRouter(routes), []);
 
@@ -69,9 +70,17 @@ function App() {
     }
   }, [isAuthenticated, needsPasswordReset]);
 
-  const handleLogin = async (credentials: { email: string; password: string }) => {
-    await login(credentials);
-    localStorage.removeItem('pending_invite_path');
+  const handleLogin = async (provider: SocialAuthProvider) => {
+    setPendingProvider(provider);
+
+    const didStart = await loginWithProvider(provider);
+
+    if (didStart) {
+      localStorage.removeItem('pending_invite_path');
+      return;
+    }
+
+    setPendingProvider(null);
   };
 
   const handleLogout = () => {
@@ -104,7 +113,7 @@ function App() {
       ) : (
         <LoginPage
           onLogin={handleLogin}
-          isLoading={isLoading}
+          pendingProvider={pendingProvider}
           error={error}
         />
       )}

@@ -1,6 +1,11 @@
 -- YNTRA PLATFORM - SQL schema for Supabase
 -- Paste this into the Supabase SQL Editor and run it.
 
+ALTER TABLE IF EXISTS public.users
+  DROP CONSTRAINT IF EXISTS only_one_platform_admin;
+
+DROP INDEX IF EXISTS public.only_one_platform_admin;
+
 -- Create workspaces
 CREATE TABLE IF NOT EXISTS workspaces (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -22,6 +27,13 @@ CREATE TABLE IF NOT EXISTS users (
   notification_type TEXT DEFAULT 'full_content',
   preferences JSONB NOT NULL DEFAULT '{"theme": "system", "calendar_density": "relaxed", "font_scale": 100}',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Platform admin email allowlist
+CREATE TABLE IF NOT EXISTS platform_admin_allowlist (
+  email TEXT PRIMARY KEY,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+  CONSTRAINT platform_admin_allowlist_email_lowercase CHECK (email = lower(email))
 );
 
 -- Create events
@@ -140,6 +152,96 @@ CREATE TRIGGER on_time_report_status_change
 
 -- Private helper functions for RLS
 CREATE SCHEMA IF NOT EXISTS private;
+
+ALTER TABLE public.platform_admin_allowlist ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION private.is_platform_admin_email(candidate_email TEXT)
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.platform_admin_allowlist pal
+    WHERE pal.email = lower(candidate_email)
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION private.resolve_user_full_name(raw_meta JSONB, fallback_email TEXT)
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+STABLE
+AS $$
+  SELECT COALESCE(
+    NULLIF(trim(raw_meta ->> 'full_name'), ''),
+    NULLIF(trim(raw_meta ->> 'name'), ''),
+    NULLIF(trim(raw_meta ->> 'user_name'), ''),
+    fallback_email
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION private.sync_public_user_from_auth()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  resolved_email TEXT;
+  resolved_role TEXT;
+  resolved_full_name TEXT;
+BEGIN
+  resolved_email := lower(new.email);
+  resolved_role := CASE
+    WHEN private.is_platform_admin_email(resolved_email) THEN 'platform_admin'
+    ELSE 'user'
+  END;
+  resolved_full_name := private.resolve_user_full_name(new.raw_user_meta_data, resolved_email);
+
+  INSERT INTO public.users (id, email, full_name, role)
+  VALUES (new.id, resolved_email, resolved_full_name, resolved_role)
+  ON CONFLICT (id) DO UPDATE
+  SET email = excluded.email,
+      full_name = COALESCE(excluded.full_name, public.users.full_name),
+      role = CASE
+        WHEN private.is_platform_admin_email(excluded.email) THEN 'platform_admin'
+        WHEN public.users.role = 'platform_admin' THEN public.users.role
+        ELSE COALESCE(public.users.role, excluded.role)
+      END;
+
+  RETURN new;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS on_auth_user_synced ON auth.users;
+CREATE TRIGGER on_auth_user_synced
+  AFTER INSERT OR UPDATE OF email, raw_user_meta_data ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION private.sync_public_user_from_auth();
+
+CREATE OR REPLACE FUNCTION private.sync_platform_admin_allowlist()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  affected INTEGER;
+BEGIN
+  UPDATE public.users
+  SET role = 'platform_admin',
+      email = lower(public.users.email)
+  WHERE lower(public.users.email) IN (
+    SELECT email FROM public.platform_admin_allowlist
+  );
+
+  GET DIAGNOSTICS affected = ROW_COUNT;
+  RETURN affected;
+END;
+$$;
 
 CREATE OR REPLACE FUNCTION private.current_user_role()
 RETURNS TEXT

@@ -15,6 +15,7 @@ import { useMessagesState } from '../hooks/useMessagesState';
 import { transformMessages } from '../utils/messageTransformers';
 import { useSearchParams } from 'react-router-dom';
 import type { Message } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface MessagePayload {
   workspace_id: string;
