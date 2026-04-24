@@ -3,6 +3,13 @@ import { User, ChevronRight, Trash2, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from '@/lib/supabase';
 import type { MemberItem, WorkspaceRole } from '../hooks/useDirectoryData';
 
@@ -91,20 +98,24 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <div className="flex-1 min-w-0 pr-4 flex items-center justify-end">
                       {selectedTeam !== 'all_members' && (userRole === 'admin' || userRole === 'platform_admin') ? (
                         <div className="w-48" onClick={e => e.stopPropagation()}>
-                          <select
-                            className="w-full bg-muted border border-border text-foreground rounded-md px-2 py-1 text-xs focus:outline-none focus:border-primary appearance-none cursor-pointer"
-                            value={member.roleId || ''}
-                            onChange={async (e) => {
-                              const newRoleId = e.target.value === '' ? null : e.target.value;
+                          <Select
+                            value={member.roleId || 'none'}
+                            onValueChange={async (value) => {
+                              const newRoleId = value === 'none' ? null : value;
                               const { error } = await supabase.from('team_members').update({ role_id: newRoleId }).eq('user_id', member.id).eq('team_id', selectedTeam);
                               if (error) alert(t('directory.members.update_role_error') + " " + error.message);
                             }}
                           >
-                            <option value="">{t('directory.members.default_assistant_role')}</option>
-                            {dbWorkspaceRoles.map(r => (
-                              <option key={r.id} value={r.id}>{r.name}</option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="w-full h-8 text-xs bg-muted/50 border-border">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">{t('directory.members.default_assistant_role')}</SelectItem>
+                              {dbWorkspaceRoles.map(r => (
+                                <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       ) : null}
                     </div>

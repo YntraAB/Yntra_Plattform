@@ -1,9 +1,10 @@
 import React from 'react';
-import { User, Phone, Mail, MapPin, AlertTriangle, FileText } from 'lucide-react';
+import { User, Phone, Mail, MapPin, AlertTriangle, FileText, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Sheet,
   SheetContent,
@@ -25,9 +26,19 @@ export const MemberDetailSheet: React.FC<MemberDetailSheetProps> = ({
   userRole
 }) => {
   const { t } = useTranslation();
+  const { user: viewer } = useAuth();
 
   if (!member) return null;
   const isPatient = member.role === 'Patient';
+  const isSelf = viewer?.id === member.id;
+  const canSeeAll = userRole === 'admin' || userRole === 'platform_admin' || isSelf;
+
+  // Privacy checks
+  const showPhone = canSeeAll || member.privacy_settings?.phone === 'everyone' || 
+    (member.privacy_settings?.phone === 'organization'); // Since we only show members of the same org in the directory anyway
+  
+  const showLocation = canSeeAll || member.privacy_settings?.location === 'everyone' || 
+    (member.privacy_settings?.location === 'organization');
 
   let headerGradient = 'from-primary/20';
   if (isPatient) headerGradient = 'from-violet-500/20';
@@ -74,20 +85,41 @@ export const MemberDetailSheet: React.FC<MemberDetailSheetProps> = ({
           <div className="space-y-3">
             <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('directory.detail.info_title')}</h4>
             <div className="bg-background rounded-lg p-3 space-y-2 border border-border">
-              <div className="flex items-center gap-3 text-xs">
-                <Phone className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-foreground">{member.phone || t('directory.detail.phone_unspecified')}</span>
+              {/* Phone */}
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <Phone className="w-3.5 h-3.5 text-muted-foreground" />
+                  {showPhone ? (
+                    <span className="text-foreground">{member.phone || t('directory.detail.phone_unspecified')}</span>
+                  ) : (
+                    <span className="text-muted-foreground italic flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" /> {t('directory.detail.private')}
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Email */}
               {!isPatient && member.email && (
                 <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
                   <Mail className="w-3.5 h-3.5 text-muted-foreground" />
                   <span className="text-foreground">{member.email}</span>
                 </div>
               )}
-              {isPatient && member.address && (
+
+              {/* Location/Address */}
+              {(isPatient || member.location) && (
                 <div className="flex items-center gap-3 text-xs border-t border-border pt-2 mt-2">
                   <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-foreground">{member.address}</span>
+                  {isPatient ? (
+                    <span className="text-foreground">{member.address}</span>
+                  ) : showLocation ? (
+                    <span className="text-foreground">{member.location || t('directory.detail.location_unspecified')}</span>
+                  ) : (
+                    <span className="text-muted-foreground italic flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" /> {t('directory.detail.private')}
+                    </span>
+                  )}
                 </div>
               )}
             </div>

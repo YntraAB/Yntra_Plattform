@@ -9,7 +9,14 @@ import { Button } from '@/components/ui/button';
 import { User, Shield, Palette, Check, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
-import type { UserPreferences } from '@/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { UserPreferences, UserPrivacySettings } from '@/types';
 
 interface AccountSettingsProps {
   setIsSaving: (val: boolean) => void;
@@ -30,6 +37,12 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
   const { user } = useAuth();
   const { preferences, updatePreferences } = useWorkspace();
   const [name, setName] = useState(user?.name || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [location, setLocation] = useState(user?.location || '');
+  const [privacy, setPrivacy] = useState<UserPrivacySettings>(user?.privacy_settings || {
+    phone: 'organization',
+    location: 'organization'
+  });
 
   const handleUpdatePreference = async (newPrefs: Partial<UserPreferences>) => {
     setIsSaving(true);
@@ -41,22 +54,31 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
     if (!user) return;
     setIsSaving(true);
 
-    // Update auth metadata
-    await supabase.auth.updateUser({
-      data: { full_name: name }
-    });
+    try {
+      // Update auth metadata
+      await supabase.auth.updateUser({
+        data: { full_name: name }
+      });
 
-    // Update users table
-    await supabase.from('users').update({ name }).eq('id', user.id);
-
-    setTimeout(() => setIsSaving(false), 500);
+      // Update users table
+      await supabase.from('users').update({ 
+        full_name: name,
+        phone,
+        location,
+        privacy_settings: privacy
+      }).eq('id', user.id);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 500);
+    }
   };
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Personal Details */}
-        <Card className="bg-card/40 backdrop-blur-sm border-2 border-border/50 shadow-sm">
+        <Card className="bg-card/40 backdrop-blur-sm border-2 border-border/50 shadow-sm flex flex-col">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -68,34 +90,79 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ setIsSaving })
               </div>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 flex-1">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('common.email')}</Label>
-              <Input id="email" value={user?.email || ''} disabled className="bg-muted/50 border-border/50" />
+              <Input id="email" value={user?.email || ''} disabled className="bg-muted/50 border-border/50 h-11" />
               <p className="text-[10px] text-muted-foreground">{t('settings.account.email_change_info')}</p>
             </div>
+            
             <div className="space-y-2">
               <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('common.name')}</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="bg-background/50 border-border/50"
-                />
-                <Button variant="outline" size="sm" onClick={handleUpdateProfile}>
-                  {t('common.save')}
-                </Button>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="bg-background/50 border-border/50 h-11"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.account.phone')}</Label>
+                <div className="space-y-1.5">
+                  <Input
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+46..."
+                    className="bg-background/50 border-border/50 h-11"
+                  />
+                  <Select 
+                    value={privacy.phone} 
+                    onValueChange={(val: any) => setPrivacy(prev => ({ ...prev, phone: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-[11px] bg-secondary/30 border-border/40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="everyone">{t('settings.account.visibility_everyone')}</SelectItem>
+                      <SelectItem value="organization">{t('settings.account.visibility_organization')}</SelectItem>
+                      <SelectItem value="none">{t('settings.account.visibility_none')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.account.location')}</Label>
+                <div className="space-y-1.5">
+                  <Input
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="Stockholm, SE"
+                    className="bg-background/50 border-border/50 h-11"
+                  />
+                  <Select 
+                    value={privacy.location} 
+                    onValueChange={(val: any) => setPrivacy(prev => ({ ...prev, location: val }))}
+                  >
+                    <SelectTrigger className="h-8 text-[11px] bg-secondary/30 border-border/40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="everyone">{t('settings.account.visibility_everyone')}</SelectItem>
+                      <SelectItem value="organization">{t('settings.account.visibility_organization')}</SelectItem>
+                      <SelectItem value="none">{t('settings.account.visibility_none')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
-            <div className="pt-4 border-t border-border/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{t('settings.account.role')}</p>
-                  <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
-                </div>
-                <Shield className="w-5 h-5 text-muted-foreground/50" />
-              </div>
+
+            <div className="pt-4 mt-auto">
+              <Button className="w-full shadow-lg shadow-primary/20" onClick={handleUpdateProfile}>
+                {t('common.save')}
+              </Button>
             </div>
           </CardContent>
         </Card>

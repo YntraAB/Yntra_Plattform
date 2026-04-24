@@ -8,9 +8,8 @@ export function VisualEffectHandler() {
     if (!preferences?.accent_color) return;
 
     const root = document.documentElement;
-    
+
     if (preferences.accent_color === 'primary') {
-      // Reset to default
       root.style.removeProperty('--primary');
       root.style.removeProperty('--primary-foreground');
       return;
@@ -24,7 +23,6 @@ export function VisualEffectHandler() {
     root.style.setProperty('--primary-foreground', foregroundString);
     root.style.setProperty('--ring', hslString);
 
-    // Apply font scale
     if (preferences.font_scale) {
       root.style.fontSize = `${preferences.font_scale * 100}%`;
     } else {

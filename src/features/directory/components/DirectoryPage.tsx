@@ -10,6 +10,8 @@ import { RoleManagerModal } from './RoleManagerModal';
 import { TeamManagerModal } from './TeamManagerModal';
 import { InviteManagerModal } from './InviteManagerModal';
 import { ClientManagerModal } from './ClientManagerModal';
+import { useBreadcrumbContext } from '@/contexts/BreadcrumbContext';
+import { useEffect } from 'react';
 
 export const DirectoryPage: React.FC = () => {
   const {
@@ -34,6 +36,32 @@ export const DirectoryPage: React.FC = () => {
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false);
   const [isInviteManagerOpen, setIsInviteManagerOpen] = useState(false);
   const [isClientManagerOpen, setIsClientManagerOpen] = useState(false);
+
+  const { setDynamicBreadcrumbs } = useBreadcrumbContext();
+
+  useEffect(() => {
+    const breadcrumbs = [];
+    if (currentLevel === 'teams' || currentLevel === 'members') {
+      const workspace = dbWorkspaces.find(w => w.id === selectedWorkspace);
+      if (workspace) {
+        breadcrumbs.push({ label: workspace.name, onClick: () => { setSelectedEntity(null); handleSelectWorkspace(workspace.id); } });
+      }
+    }
+    if (currentLevel === 'members') {
+      const team = dbTeams.find(t => t.id === selectedTeam);
+      if (team) {
+        breadcrumbs.push({ label: team.name, onClick: () => { setSelectedEntity(null); handleSelectTeam(team.id); } });
+      }
+    }
+    if (selectedEntity) {
+      breadcrumbs.push({ label: (selectedEntity as MemberItem).name || (selectedEntity as MemberItem).email });
+    }
+    setDynamicBreadcrumbs(breadcrumbs);
+  }, [currentLevel, selectedWorkspace, selectedTeam, selectedEntity, dbWorkspaces, dbTeams, setDynamicBreadcrumbs, handleSelectWorkspace, handleSelectTeam, setSelectedEntity]);
+
+  useEffect(() => {
+    return () => setDynamicBreadcrumbs([]);
+  }, [setDynamicBreadcrumbs]);
 
   return (
     <div className="h-full flex flex-col bg-background relative">

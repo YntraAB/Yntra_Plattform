@@ -3,12 +3,18 @@
  * It manages the application state, routing between login and scheduler views,
  * and provides the overall application structure.
  * 
+/**
+ * This is the root component.
+ * It manages the application state, routing between login and scheduler views,
+ * and provides the overall application structure.
+ * 
  * The app follows a modular architecture with clear separation of concerns:
  * - Authentication (login/logout)
  * - Scheduling system (calendar, events, navigation)
  * - UI components (reusable, well-documented)
  */
 
+import { useTranslation } from 'react-i18next';
 import { LoginPage } from '@/features/auth/components/LoginPage';
 import { routes } from './AppRoutes';
 import { useAuth } from '@/hooks/useAuth';
@@ -27,9 +33,11 @@ import './App.css';
  * It conditionally renders either the LoginPage or the Router with authenticated routes.
  */
 function App() {
+  const { t } = useTranslation();
   const {
     isAuthenticated,
     user,
+    isLoading,
     error,
     loginWithProvider,
     logout
@@ -45,7 +53,7 @@ function App() {
     const hash = window.location.hash;
 
     if (hash.includes('error=')) {
-      setUrlError("Inbjudningslänken är ogiltig, har gått ut, eller så har kontot tagits bort av en administratör.");
+      setUrlError(t('auth.invite_error.message', 'Inbjudningslänken är ogiltig, har gått ut, eller så har kontot tagits bort av en administratör.'));
       window.location.hash = '';
     }
     else if (hash.includes('type=invite') || hash.includes('type=recovery')) {
@@ -86,6 +94,22 @@ function App() {
   const handleLogout = () => {
     logout();
   };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-background gap-4">
+        <div className="relative">
+          <div className="w-12 h-12 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+          </div>
+        </div>
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">
+          {t('auth.securing_connection', 'Säkrar anslutningen...')}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">

@@ -30,7 +30,8 @@
     "name": "Namn",
     "email": "E-post",
     "saved": "Alla ändringar sparade",
-    "last_active": "Senast aktiv"
+    "last_active": "Senast aktiv",
+    "user": "Användare"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -174,7 +175,13 @@
       "accent_color": "Accentfärg",
       "accent_info": "Denna färg används för knappar, länkar och markeringar.",
       "security_title": "Säkerhet & Loggin",
-      "security_desc": "Tvåfaktorsautentisering och sessionshantering kommer snart."
+      "security_desc": "Tvåfaktorsautentisering och sessionshantering kommer snart.",
+      "phone": "Telefonnummer",
+      "location": "Plats",
+      "privacy": "Integritetsinställningar",
+      "visibility_everyone": "Alla",
+      "visibility_organization": "Organisationen",
+      "visibility_none": "Privat"
     },
     "scheduler": {
       "display": "Kalendervy",
@@ -238,12 +245,14 @@
     "detail": {
       "info_title": "Information",
       "phone_unspecified": "Gömmer nummer / Ej angivet",
+      "location_unspecified": "Plats saknas",
       "warnings_title": "Varningar",
       "care_plan_title": "Genomförandeplan",
       "journal_button": "Journal",
       "edit_button": "Redigera {{type}}",
       "patient": "Brukare",
-      "staff": "Personal"
+      "staff": "Personal",
+      "private": "Privat"
     },
     "hub": {
       "title": "Skapa Nytt Assistansbolag",
@@ -400,8 +409,21 @@
     "error_deleting": "Kunde inte ta bort meddelanden"
   },
   "auth": {
+    "login": {
+      "title": "Välkommen till Volt",
+      "subtitle": "Logga in med din organisations godkända identitetsleverantör.",
+      "sign_in": "Logga in",
+      "google_label": "Fortsätt med Google",
+      "google_desc": "Använd ditt Google Workspace- eller personliga konto.",
+      "facebook_label": "Fortsätt med Facebook",
+      "facebook_desc": "Logga in med Facebook Login.",
+      "apple_label": "Fortsätt med Apple",
+      "apple_desc": "Använd Logga in med Apple för ett privat inloggningsflöde.",
+      "footer_info": "Din arbetsyta måste aktivera Google, Facebook och Apple i Supabase Auth för att dessa knappar ska fungera."
+    },
     "invite_error": {
       "title": "Ett fel uppstod",
+      "message": "Inbjudningslänken är ogiltig, har gått ut, eller så har kontot tagits bort av en administratör.",
       "back_to_login": "Återgå till inloggning"
     },
     "setup": {
@@ -412,7 +434,24 @@
       "new_password": "Nytt lösenord",
       "save_continue": "Spara & Fortsätt",
       "cancel_logout": "Avbryt och Logga ut",
-      "error_prefix": "Fel vid kontoskapande: "
+      "error_prefix": "Fel vid kontoskapande: ",
+      "sync_error": "Kunde inte uppdatera autentiseringssessionen.",
+      "init_error": "Kunde inte initiera autentisering.",
+      "securing_connection": "Säkrar anslutningen...",
+      "social_login_start_error": "Social inloggning kunde inte startas.",
+      "logout_failed": "Utloggningen misslyckades."
+    },
+    "role_simulator": {
+      "placeholder": "Roll",
+      "platform_admin": "Dev Mode",
+      "admin": "Admin",
+      "assistant": "Assistent",
+      "user": "Användare",
+      "client": "Klient"
+    },
+    "access_denied": {
+      "title": "Åtkomst nekad",
+      "message": "Din roll \"{{role}}\" har inte behörighet att se denna sida."
     }
   }
 }

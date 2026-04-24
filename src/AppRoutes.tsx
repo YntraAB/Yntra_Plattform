@@ -1,9 +1,25 @@
 import React, { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { Navigate, useLocation, Outlet, useNavigate, useMatches } from 'react-router-dom';
 import { Sidebar } from './features/scheduler/components/Sidebar';
-import { LogOut, Settings, ChevronDown, Loader2, ChevronRight } from 'lucide-react';
+import { LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { BreadcrumbProvider, useBreadcrumbContext } from '@/contexts/BreadcrumbContext';
 
 const CalendarPage = lazy(() => import('@/features/scheduler/components/CalendarPage').then(module => ({ default: module.CalendarPage })));
 const WorkNotesPage = lazy(() => import('@/features/notes/components/WorkNotesPage').then(module => ({ default: module.WorkNotesPage })));
@@ -21,17 +37,16 @@ const RoleGuard: React.FC<{ children: React.ReactNode, allowedRoles: string[] }>
   const location = useLocation();
   if (!user) return <Navigate to="/" replace />;
   if (!allowedRoles.includes(user.role)) {
-     const fallback = user.role === 'client' ? "/home" : "/schedule";
-     if (location.pathname === fallback || location.pathname === fallback + '/') {
-       // Prevent infinite redirect loop if fallback is also denied
-       return (
-         <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
-           <h2 className="text-2xl font-bold text-destructive mb-2">Access Denied</h2>
-           <p className="text-muted-foreground">Your role "{user.role}" does not have permission to view this page.</p>
-         </div>
-       );
-     }
-     return <Navigate to={fallback} replace />;
+    const fallback = user.role === 'client' ? "/home" : "/schedule";
+    if (location.pathname === fallback || location.pathname === fallback + '/') {
+      return (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background">
+          <h2 className="text-2xl font-bold text-destructive mb-2">{t('auth.access_denied.title')}</h2>
+          <p className="text-muted-foreground">{t('auth.access_denied.message', { role: user.role })}</p>
+        </div>
+      );
+    }
+    return <Navigate to={fallback} replace />;
   }
   return <>{children}</>;
 };
@@ -39,19 +54,23 @@ const RoleGuard: React.FC<{ children: React.ReactNode, allowedRoles: string[] }>
 const AppLayoutWrapper: React.FC = () => {
   const { user } = useAuth();
   if (user?.role === 'client') return <ClientLayout />;
-  return <Layout />;
+  return (
+    <BreadcrumbProvider>
+      <Layout />
+    </BreadcrumbProvider>
+  );
 };
 
 const RootRedirect: React.FC = () => {
-    const { user } = useAuth();
-    if (user?.role === 'client') return <Navigate to="/home" replace />;
-    return <Navigate to="/schedule" replace />;
+  const { user } = useAuth();
+  if (user?.role === 'client') return <Navigate to="/home" replace />;
+  return <Navigate to="/schedule" replace />;
 };
 
 export const Layout: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-  const { user, logout } = useAuth();
+  const { user, logout, isPlatformAdmin, simulateRole } = useAuth();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,7 +89,9 @@ export const Layout: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const breadcrumbs = matches
+  const { dynamicBreadcrumbs } = useBreadcrumbContext();
+
+  const baseBreadcrumbs: import('@/contexts/BreadcrumbContext').DynamicBreadcrumbItem[] = matches
     .filter((match: any) => match.handle && match.handle.breadcrumb)
     .map((match: any) => ({
       label: typeof match.handle.breadcrumb === 'function'
@@ -78,6 +99,8 @@ export const Layout: React.FC = () => {
         : match.handle.breadcrumb,
       path: match.pathname
     }));
+
+  const breadcrumbs = [...baseBreadcrumbs, ...dynamicBreadcrumbs];
 
   return (
     <div className="h-screen flex bg-background overflow-hidden">
@@ -89,25 +112,59 @@ export const Layout: React.FC = () => {
         <header className="h-14 bg-sidebar border-b border-border flex items-center justify-between px-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-1.5 animate-in fade-in slide-in-from-left-2 duration-200">
-              {breadcrumbs.length > 0 ? (
-                breadcrumbs.map((bc, idx) => (
-                  <React.Fragment key={bc.path}>
-                    <span className={idx === breadcrumbs.length - 1 ? "text-foreground font-medium" : "cursor-pointer hover:text-foreground transition-colors"} onClick={() => navigate(bc.path)}>
-                      {bc.label}
-                    </span>
-                    {idx < breadcrumbs.length - 1 && <ChevronRight className="w-3.5 h-3.5 opacity-50" />}
-                  </React.Fragment>
-                ))
-              ) : (
-                <span className="text-foreground capitalize font-medium">{activeSection.replace('-', ' ')}</span>
-              )}
+              <Breadcrumb>
+                <BreadcrumbList>
+                  {breadcrumbs.length > 0 ? (
+                    breadcrumbs.map((bc, idx) => (
+                      <React.Fragment key={bc.path}>
+                        <BreadcrumbItem>
+                          {idx === breadcrumbs.length - 1 ? (
+                            <BreadcrumbPage>{bc.label}</BreadcrumbPage>
+                          ) : (
+                            <BreadcrumbLink asChild>
+                              <span className="cursor-pointer" onClick={() => bc.onClick ? bc.onClick() : (bc.path && navigate(bc.path))}>
+                                {bc.label}
+                              </span>
+                            </BreadcrumbLink>
+                          )}
+                        </BreadcrumbItem>
+                        {idx < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
+                      </React.Fragment>
+                    ))
+                  ) : (
+                    <BreadcrumbItem>
+                      <BreadcrumbPage className="capitalize">
+                        {t(`sidebar.sections.${activeSection === 'work-notes' ? 'notes' : activeSection.replace('-', '')}`, activeSection.replace('-', ' '))}
+                      </BreadcrumbPage>
+                    </BreadcrumbItem>
+                  )}
+                </BreadcrumbList>
+              </Breadcrumb>
             </div>
           </div>
-          <div className="flex items-center gap-3 relative" ref={profileRef}>
+          <div className="flex items-center gap-4">
+            {isPlatformAdmin && (
+              <Select
+                value={user?.role || ''}
+                onValueChange={(val) => simulateRole(val)}
+              >
+                <SelectTrigger className="h-8 w-[120px] bg-secondary/50 border-border rounded-full text-[11px] font-bold shadow-none focus:ring-0 focus:ring-offset-0 animate-in fade-in zoom-in duration-300">
+                  <SelectValue placeholder={t('auth.role_simulator.placeholder')} />
+                </SelectTrigger>
+                <SelectContent align="end" className="bg-sidebar border-border">
+                  <SelectItem value="platform_admin">{t('auth.role_simulator.platform_admin')}</SelectItem>
+                  <SelectItem value="admin">{t('auth.role_simulator.admin')}</SelectItem>
+                  <SelectItem value="assistant">{t('auth.role_simulator.assistant')}</SelectItem>
+                  <SelectItem value="user">{t('auth.role_simulator.user')}</SelectItem>
+                  <SelectItem value="client">{t('auth.role_simulator.client')}</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+            <div className="flex items-center gap-3 relative" ref={profileRef}>
             <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 pl-3 py-1 cursor-pointer hover:bg-secondary rounded-md transition-colors">
               <div className="text-right hidden md:block">
                 <div className="text-foreground text-sm font-medium leading-tight">{userName}</div>
-                <div className="text-primary text-[10px] font-bold uppercase tracking-wider">{user?.role === 'platform_admin' ? 'dev' : user?.role || 'admin'}</div>
+                <div className="text-primary text-[10px] font-bold uppercase tracking-wider">{user?.role === 'platform_admin' ? t('auth.role_simulator.platform_admin') : (user?.role || t('auth.role_simulator.admin'))}</div>
               </div>
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-inner">
                 <span className="text-foreground text-sm font-bold">{userName.charAt(0).toUpperCase()}</span>
@@ -132,6 +189,7 @@ export const Layout: React.FC = () => {
                 </button>
               </div>
             )}
+            </div>
           </div>
         </header>
         <Suspense fallback={
@@ -153,6 +211,7 @@ export const routes = [
   {
     path: "/",
     element: <AppLayoutWrapper />,
+    handle: { breadcrumb: (t: any) => t('common.home', 'Home') },
     children: [
       { index: true, element: <RootRedirect /> },
       {

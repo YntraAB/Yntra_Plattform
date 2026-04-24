@@ -4,11 +4,19 @@
  * makes the codebase more maintainable.
  */
 
+export interface UserPrivacySettings {
+  phone: 'everyone' | 'organization' | 'none';
+  location: 'everyone' | 'organization' | 'none';
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   avatar?: string;
+  phone?: string;
+  location?: string;
+  privacy_settings?: UserPrivacySettings;
   role: string | 'platform_admin' | 'admin' | 'user' | 'assistant' | 'client';
   permissions?: Record<string, unknown>;
   workspaceId?: string;

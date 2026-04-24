@@ -30,7 +30,8 @@
     "name": "Name",
     "email": "Email",
     "saved": "All changes saved",
-    "last_active": "Last active"
+    "last_active": "Last active",
+    "user": "User"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -174,7 +175,13 @@
       "accent_color": "Accent Color",
       "accent_info": "This color is used for buttons, links, and highlights.",
       "security_title": "Security & Login",
-      "security_desc": "Two-factor authentication and session management coming soon."
+      "security_desc": "Two-factor authentication and session management coming soon.",
+      "phone": "Phone Number",
+      "location": "Location",
+      "privacy": "Privacy Settings",
+      "visibility_everyone": "Everyone",
+      "visibility_organization": "Organization",
+      "visibility_none": "Private"
     },
     "scheduler": {
       "display": "Calendar View",
@@ -238,12 +245,14 @@
     "detail": {
       "info_title": "Information",
       "phone_unspecified": "Hidden number / Not specified",
+      "location_unspecified": "Location missing",
       "warnings_title": "Warnings",
       "care_plan_title": "Implementation Plan",
       "journal_button": "Journal",
       "edit_button": "Edit {{type}}",
       "patient": "Client",
-      "staff": "Staff"
+      "staff": "Staff",
+      "private": "Private"
     },
     "hub": {
       "title": "Create New Assistance Company",
@@ -400,8 +409,21 @@
     "error_deleting": "Could not delete messages"
   },
   "auth": {
+    "login": {
+      "title": "Welcome to Volt",
+      "subtitle": "Sign in with your organization-approved identity provider.",
+      "sign_in": "Sign In",
+      "google_label": "Continue with Google",
+      "google_desc": "Use your Google workspace or personal account.",
+      "facebook_label": "Continue with Facebook",
+      "facebook_desc": "Sign in with Facebook Login.",
+      "apple_label": "Continue with Apple",
+      "apple_desc": "Use Sign in with Apple for a private login flow.",
+      "footer_info": "Your workspace must enable Google, Facebook and Apple in Supabase Auth for these buttons to work."
+    },
     "invite_error": {
       "title": "An error occurred",
+      "message": "The invitation link is invalid, has expired, or the account has been removed by an administrator.",
       "back_to_login": "Back to login"
     },
     "setup": {
@@ -412,7 +434,24 @@
       "new_password": "New password",
       "save_continue": "Save & Continue",
       "cancel_logout": "Cancel and Log out",
-      "error_prefix": "Error profile creation: "
+      "error_prefix": "Error profile creation: ",
+      "sync_error": "Could not update authentication session.",
+      "init_error": "Could not initialize authentication.",
+      "securing_connection": "Securing connection...",
+      "social_login_start_error": "Social login could not be started.",
+      "logout_failed": "Logout failed."
+    },
+    "role_simulator": {
+      "placeholder": "Role",
+      "platform_admin": "Dev Mode",
+      "admin": "Admin",
+      "assistant": "Assistant",
+      "user": "User",
+      "client": "Client"
+    },
+    "access_denied": {
+      "title": "Access Denied",
+      "message": "Your role \"{{role}}\" does not have permission to view this page."
     }
   }
 }

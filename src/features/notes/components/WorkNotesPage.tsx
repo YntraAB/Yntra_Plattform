@@ -25,6 +25,7 @@ import {
   useTeamNotes,
   useUpdateNote
 } from '@/hooks/queries/useNotes';
+import { useBreadcrumbContext } from '@/contexts/BreadcrumbContext';
 
 interface EditHistoryEntry {
   editedBy: string;
@@ -91,15 +92,34 @@ export const WorkNotesPage: React.FC = () => {
   }, [activeNoteId, notes]);
 
   const currentUser = user?.id;
-
+  const { setDynamicBreadcrumbs } = useBreadcrumbContext();
   const [isComposing, setIsComposing] = useState(false);
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [noteSearchQuery, setNoteSearchQuery] = useState('');
   const [composeText, setComposeText] = useState('');
   const [composeSubject, setComposeSubject] = useState('');
   const [expandedAudit, setExpandedAudit] = useState(false);
+
+  React.useEffect(() => {
+    const breadcrumbs = [];
+    if (selectedTeam) {
+      breadcrumbs.push({ label: selectedTeam.displayName || selectedTeam.name, onClick: () => { setActiveNoteId(null); setSelectedTeamId(null); } });
+    }
+    if (activeNoteId) {
+      const note = notes.find(n => n.id === activeNoteId);
+      if (note) {
+        breadcrumbs.push({ label: note.subject, onClick: () => { } });
+      }
+    } else if (isComposing) {
+      breadcrumbs.push({ label: t('notes.compose.title') });
+    }
+    setDynamicBreadcrumbs(breadcrumbs);
+  }, [selectedTeam, activeNoteId, isComposing, notes, setDynamicBreadcrumbs, t]);
+
+  React.useEffect(() => {
+    return () => setDynamicBreadcrumbs([]);
+  }, [setDynamicBreadcrumbs]);
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 

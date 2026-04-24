@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight, Loader2, Minus, Square, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { SocialAuthProvider } from '@/types';
 
 interface LoginPageProps {
@@ -36,51 +37,44 @@ const VoltLogo: React.FC = () => (
   </div>
 );
 
-const WindowTitleBar: React.FC = () => (
-  <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3">
-    <div className="flex items-center gap-2">
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 48 48"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="-rotate-12 transform"
-      >
-        <path
-          d="M28 4L12 24H22L18 44L36 20H24L28 4Z"
-          fill="#8B5CF6"
-          stroke="#8B5CF6"
-          strokeWidth="2"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <span className="text-sm text-muted-foreground">Sign In</span>
-    </div>
+const WindowTitleBar: React.FC = () => {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3">
+      <div className="flex items-center gap-2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 48 48"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="-rotate-12 transform"
+        >
+          <path
+            d="M28 4L12 24H22L18 44L36 20H24L28 4Z"
+            fill="#8B5CF6"
+            stroke="#8B5CF6"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="text-sm text-muted-foreground">{t('auth.login.sign_in')}</span>
+      </div>
 
-    <div className="flex items-center gap-2">
-      <button className="rounded p-1.5 transition-colors hover:bg-muted" type="button">
-        <Minus className="h-4 w-4 text-muted-foreground" />
-      </button>
-      <button className="rounded p-1.5 transition-colors hover:bg-muted" type="button">
-        <Square className="h-3.5 w-3.5 text-muted-foreground" />
-      </button>
-      <button className="rounded p-1.5 transition-colors hover:bg-red-600" type="button">
-        <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-      </button>
+      <div className="flex items-center gap-2">
+        <button className="rounded p-1.5 transition-colors hover:bg-muted" type="button">
+          <Minus className="h-4 w-4 text-muted-foreground" />
+        </button>
+        <button className="rounded p-1.5 transition-colors hover:bg-muted" type="button">
+          <Square className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+        <button className="rounded p-1.5 transition-colors hover:bg-red-600" type="button">
+          <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+        </button>
+      </div>
     </div>
-  </div>
-);
-
-const providers: Array<{
-  provider: SocialAuthProvider;
-  label: string;
-  description: string;
-}> = [
-  { provider: 'google', label: 'Continue with Google', description: 'Use your Google workspace or personal account.' },
-  { provider: 'facebook', label: 'Continue with Facebook', description: 'Sign in with Facebook Login.' },
-  { provider: 'apple', label: 'Continue with Apple', description: 'Use Sign in with Apple for a private login flow.' },
-];
+  );
+};
 
 const providerIcon: Record<SocialAuthProvider, React.ReactNode> = {
   google: (
@@ -148,47 +142,74 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   onLogin,
   pendingProvider = null,
   error = null,
-}) => (
-  <div className="flex min-h-screen flex-col bg-background">
-    <WindowTitleBar />
+}) => {
+  const { t } = useTranslation();
 
-    <div className="flex flex-1 items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md animate-fade-in">
-        <div className="mb-10 text-center">
-          <VoltLogo />
-          <h1 className="mb-2 text-3xl font-bold text-foreground">
-            Welcome to Volt
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Sign in with your organization-approved identity provider.
-          </p>
-        </div>
+  const loginProviders: Array<{
+    provider: SocialAuthProvider;
+    label: string;
+    description: string;
+  }> = [
+    {
+      provider: 'google',
+      label: t('auth.login.google_label'),
+      description: t('auth.login.google_desc')
+    },
+    {
+      provider: 'facebook',
+      label: t('auth.login.facebook_label'),
+      description: t('auth.login.facebook_desc')
+    },
+    {
+      provider: 'apple',
+      label: t('auth.login.apple_label'),
+      description: t('auth.login.apple_desc')
+    },
+  ];
 
-        <div className="space-y-3">
-          {providers.map(({ provider, label, description }) => (
-            <SocialButton
-              key={provider}
-              provider={provider}
-              label={label}
-              description={description}
-              isPending={pendingProvider === provider}
-              onClick={onLogin}
-            />
-          ))}
-        </div>
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <WindowTitleBar />
 
-        {error && (
-          <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            {error}
+      <div className="flex flex-1 items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md animate-fade-in">
+          <div className="mb-10 text-center">
+            <VoltLogo />
+            <h1 className="mb-2 text-3xl font-bold text-foreground">
+              {t('auth.login.title')}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {t('auth.login.subtitle')}
+            </p>
           </div>
-        )}
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          Your workspace must enable Google, Facebook, and Apple in Supabase Auth for these buttons to succeed.
+          <div className="space-y-3">
+            {loginProviders.map(({ provider, label, description }) => (
+              <SocialButton
+                key={provider}
+                provider={provider}
+                label={label}
+                description={description}
+                isPending={pendingProvider === provider}
+                onClick={onLogin}
+              />
+            ))}
+          </div>
+
+          {error && (
+            <div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+              {error}
+            </div>
+          )}
+
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            {t('auth.login.footer_info')}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default LoginPage;
+

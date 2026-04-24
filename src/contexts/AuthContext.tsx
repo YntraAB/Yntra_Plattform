@@ -1,8 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n/config';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import type { AuthState, SocialAuthProvider } from '@/types';
-import type { Database } from '@/types/database';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
@@ -12,6 +13,8 @@ interface AuthContextValue {
   loginWithProvider: (provider: SocialAuthProvider) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
+  simulateRole: (role: string | null) => void;
+  isPlatformAdmin: boolean;
 }
 
 const defaultAuthState: AuthState = {
@@ -23,20 +26,33 @@ const defaultAuthState: AuthState = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-type DbUser = Pick<Database['public']['Tables']['users']['Row'], 'id' | 'email' | 'full_name' | 'role' | 'workspace_id'>;
+interface DbUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  role: string | null;
+  workspace_id: string | null;
+  phone: string | null;
+  location: string | null;
+  privacy_settings: import('@/types').UserPrivacySettings | null;
+}
 
 async function getDbUser(userId: string): Promise<DbUser | null> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('id, email, full_name, role, workspace_id')
-    .eq('id', userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, full_name, role, workspace_id, phone, location, privacy_settings')
+      .eq('id', userId)
+      .maybeSingle();
 
-  if (error) {
-    throw error;
+    if (error) {
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    return null;
   }
-
-  return data;
 }
 
 async function getAuthStateFromSession(session: Session | null): Promise<AuthState> {
@@ -49,16 +65,13 @@ async function getAuthStateFromSession(session: Session | null): Promise<AuthSta
     };
   }
 
-  const dbUser = await getDbUser(session.user.id);
-
   return {
     isAuthenticated: true,
     user: {
       id: session.user.id,
-      email: dbUser?.email || session.user.email || '',
-      name: dbUser?.full_name || session.user.email || 'Anvandare',
-      role: dbUser?.role || 'user',
-      workspaceId: dbUser?.workspace_id || undefined,
+      email: session.user.email || '',
+      name: session.user.email || i18n.t('common.user', 'Användare'),
+      role: (session.user.user_metadata?.role as any) || 'user',
       last_sign_in_at: session.user.last_sign_in_at,
     },
     isLoading: false,
@@ -76,55 +89,80 @@ function getAuthRedirectUrl() {
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { t } = useTranslation();
   const [authState, setAuthState] = useState<AuthState>(defaultAuthState);
+  const [simulatedRole, setSimulatedRole] = useState<string | null>(null);
+
+  const isPlatformAdmin = useMemo(() => {
+    return (authState.user_metadata?.role === 'platform_admin') || (authState.user?.role === 'platform_admin') || (simulatedRole !== null);
+  }, [authState.user_metadata, authState.user, simulatedRole]);
 
   useEffect(() => {
     let isMounted = true;
 
-    const syncSession = async (session: Session | null, fallbackMessage: string) => {
+    const syncSession = async (session: Session | null, _event: string) => {
       try {
         const nextState = await getAuthStateFromSession(session);
 
         if (isMounted) {
           setAuthState(nextState);
         }
+
+        if (session) {
+          getDbUser(session.user.id).then(dbUser => {
+            if (isMounted && dbUser) {
+              setAuthState((prev: AuthState) => {
+                if (!prev.user) return prev;
+                return {
+                  ...prev,
+                  user: {
+                    ...prev.user!,
+                    email: dbUser.email || prev.user!.email,
+                    name: dbUser.full_name || prev.user!.email,
+                    role: (dbUser.role as any) || prev.user!.role,
+                    workspaceId: dbUser.workspace_id || undefined,
+                    phone: dbUser.phone || undefined,
+                    location: dbUser.location || undefined,
+                    privacy_settings: dbUser.privacy_settings as any,
+                  }
+                };
+              });
+            }
+          }).catch(() => {
+            // silently
+          });
+        }
       } catch (error: unknown) {
         if (isMounted) {
           setAuthState({
             isAuthenticated: false,
             user: null,
             isLoading: false,
-            error: getErrorMessage(error, fallbackMessage),
+            error: getErrorMessage(error, t('auth.sync_error', 'Kunde inte uppdatera autentiseringssessionen.')),
           });
         }
       }
     };
 
-    const fetchSession = async () => {
+    const initAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) {
-          throw error;
-        }
-
-        await syncSession(session, 'Kunde inte lasa autentiseringssessionen.');
-      } catch (error: unknown) {
+        if (error) throw error;
+        await syncSession(session, 'INITIAL_GET_SESSION');
+      } catch (error) {
+        console.error('[AuthContext] Init error:', error);
         if (isMounted) {
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-            isLoading: false,
-            error: getErrorMessage(error, 'Kunde inte lasa autentiseringssessionen.'),
-          });
+          setAuthState((prev: AuthState) => ({ ...prev, isLoading: false }));
         }
       }
     };
 
-    fetchSession();
+    initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      await syncSession(session, 'Kunde inte uppdatera autentiseringssessionen.');
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (isMounted) {
+        await syncSession(session, event);
+      }
     });
 
     return () => {
@@ -134,7 +172,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const loginWithProvider = useCallback(async (provider: SocialAuthProvider): Promise<boolean> => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev: AuthState) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -150,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return true;
     } catch (error: unknown) {
-      const message = getErrorMessage(error, 'Social inloggning kunde inte startas.');
+      const message = getErrorMessage(error, t('auth.social_login_start_error', 'Social inloggning kunde inte startas.'));
 
       setAuthState({
         isAuthenticated: false,
@@ -164,7 +202,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const logout = useCallback(async () => {
-    setAuthState(prev => ({ ...prev, isLoading: true, error: null }));
+    setAuthState((prev: AuthState) => ({ ...prev, isLoading: true, error: null }));
 
     try {
       const { error } = await supabase.auth.signOut();
@@ -173,10 +211,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw error;
       }
     } catch (error: unknown) {
-      setAuthState(prev => ({
+      setAuthState((prev: AuthState) => ({
         ...prev,
         isLoading: false,
-        error: getErrorMessage(error, 'Utloggningen misslyckades.'),
+        error: getErrorMessage(error, t('auth.logout_failed', 'Utloggningen misslyckades.')),
       }));
 
       throw error;
@@ -184,18 +222,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const clearError = useCallback(() => {
-    setAuthState(prev => ({ ...prev, error: null }));
+    setAuthState((prev: AuthState) => ({ ...prev, error: null }));
   }, []);
+
+  const simulateRole = useCallback((role: string | null) => {
+    setSimulatedRole(role);
+  }, []);
+
+  const userWithSimulation = useMemo(() => {
+    if (!authState.user) return null;
+    if (!simulatedRole) return authState.user;
+    return {
+      ...authState.user,
+      role: simulatedRole as any
+    };
+  }, [authState.user, simulatedRole]);
 
   const value = useMemo<AuthContextValue>(() => ({
     isAuthenticated: authState.isAuthenticated,
-    user: authState.user,
+    user: userWithSimulation,
     isLoading: authState.isLoading,
     error: authState.error,
     loginWithProvider,
     logout,
     clearError,
-  }), [authState.error, authState.isAuthenticated, authState.isLoading, authState.user, clearError, loginWithProvider, logout]);
+    simulateRole,
+    isPlatformAdmin,
+  }), [authState.error, authState.isAuthenticated, authState.isLoading, userWithSimulation, clearError, loginWithProvider, logout, simulateRole, isPlatformAdmin]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

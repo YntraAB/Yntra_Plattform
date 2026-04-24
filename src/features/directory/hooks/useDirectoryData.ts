@@ -29,6 +29,7 @@ export interface MemberItem {
   ssn: string;
   teamId: string | null;
   phone: string;
+  location?: string;
   address: string;
   careLevel: string;
   avatar: string;
@@ -37,6 +38,7 @@ export interface MemberItem {
   upcomingVisits: { id: string; date: string; title: string }[];
   roleId: string | null;
   role: string;
+  privacy_settings?: import('@/types').UserPrivacySettings;
 }
 
 interface TeamMemberLink {
@@ -50,6 +52,8 @@ interface UserDbRow {
   full_name: string | null;
   email: string;
   phone: string | null;
+  location: string | null;
+  privacy_settings: import('@/types').UserPrivacySettings | null;
   role: string | null;
   workspace_id: string;
 }
@@ -185,6 +189,8 @@ export const useDirectoryData = () => {
           ssn: '',
           teamId: selectedTeam,
           phone: u.phone || '',
+          location: u.location || '',
+          privacy_settings: u.privacy_settings || undefined,
           address: '',
           careLevel: '',
           avatar: '',
