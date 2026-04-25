@@ -1,34 +1,34 @@
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { MiniCalendar } from './MiniCalendar';
-import { CalendarView } from './CalendarView';
-import { useCalendar } from '@/hooks/useCalendar';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useAuth } from '@/hooks/useAuth';
-import { EventModal } from './EventModal';
-import { AddEventModal } from './AddEventModal';
-import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
+import React, { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { MiniCalendar } from './MiniCalendar'
+import { CalendarView } from './CalendarView'
+import { useCalendar } from '@/hooks/useCalendar'
+import { useWorkspace } from '@/contexts/WorkspaceContext'
+import { useAuth } from '@/hooks/useAuth'
+import { EventModal } from './EventModal'
+import { AddEventModal } from './AddEventModal'
+import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import type { CalendarEvent } from '@/types';
+} from '@/components/ui/select'
+import type { CalendarEvent } from '@/types'
 
 export const CalendarPage: React.FC = () => {
-  const { workspaceId, isLoading, settings } = useWorkspace();
-  const { user } = useAuth();
-  const { t } = useTranslation();
-  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-  const [editingEvent, setEditingEvent] = React.useState<CalendarEvent | null>(null);
-  const isSv = settings.language === 'sv';
-  const activeRole = user?.role || 'assistant';
-  const isAdmin = activeRole === 'admin' || activeRole === 'platform_admin';
+  const { workspaceId, isLoading, settings } = useWorkspace()
+  const { user } = useAuth()
+  const { t } = useTranslation()
+  const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
+  const [editingEvent, setEditingEvent] = React.useState<CalendarEvent | null>(null)
+  const isSv = settings.language === 'sv'
+  const activeRole = user?.role || 'assistant'
+  const isAdmin = activeRole === 'admin' || activeRole === 'platform_admin'
 
-  const { data: dbTeams = [] } = useWorkspaceTeams(workspaceId || null);
-  const { data: dbUsers = [] } = useWorkspaceUsers(workspaceId || null);
+  const { data: dbTeams = [] } = useWorkspaceTeams(workspaceId || null)
+  const { data: dbUsers = [] } = useWorkspaceUsers(workspaceId || null)
 
   const {
     selectedDate,
@@ -49,59 +49,69 @@ export const CalendarPage: React.FC = () => {
     setSelectedTeamId,
     selectedAssigneeId,
     setSelectedAssigneeId,
-  } = useCalendar();
+  } = useCalendar()
 
   useEffect(() => {
     if (selectedTeamId === 'all' && dbTeams.length > 0) {
-      setSelectedTeamId(dbTeams[0].id);
+      setSelectedTeamId(dbTeams[0].id)
     }
 
     if (!isAdmin) {
       if (selectedAssigneeId !== 'all' && selectedAssigneeId !== user?.id) {
-        setSelectedAssigneeId(user?.id || 'all');
+        setSelectedAssigneeId(user?.id || 'all')
       }
     }
-  }, [isAdmin, selectedTeamId, setSelectedTeamId, selectedAssigneeId, setSelectedAssigneeId, dbTeams, user]);
+  }, [
+    isAdmin,
+    selectedTeamId,
+    setSelectedTeamId,
+    selectedAssigneeId,
+    setSelectedAssigneeId,
+    dbTeams,
+    user,
+  ])
 
   const handleEventClick = (event: CalendarEvent) => {
-    selectEvent(event);
-  };
+    selectEvent(event)
+  }
 
   const handleDeleteEvent = (eventId: string) => {
-    deleteEvent(eventId);
-    selectEvent(null);
-  };
+    deleteEvent(eventId)
+    selectEvent(null)
+  }
 
   return (
-    <div className="flex-1 flex overflow-hidden">
+    <div className="flex flex-1 overflow-hidden">
       {/* Left Panel - Mini Calendar and Filters */}
-      <div className="w-72 bg-sidebar border-r border-border overflow-y-auto scrollbar-dark p-4">
+      <div className="scrollbar-dark w-72 overflow-y-auto border-r border-border bg-sidebar p-4">
         <MiniCalendar
           selectedDate={selectedDate}
           selectedEndDate={selectedEndDate}
           onSelectDate={setSelectedDate}
           onNewEvent={() => setIsAddModalOpen(true)}
-          datesWithEvents={filteredEvents.map(e => e.startTime)}
+          datesWithEvents={filteredEvents.map((e) => e.startTime)}
         />
 
         {isLoading ? (
           <div className="mt-6 border-b border-border pb-6">
-            <div className="w-24 h-4 bg-muted animate-pulse mb-3 rounded" />
-            <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
+            <div className="mb-3 h-4 w-24 animate-pulse rounded bg-muted" />
+            <div className="h-[38px] w-full animate-pulse rounded-lg border border-border bg-muted" />
           </div>
         ) : dbTeams.length > 1 ? (
           <div className="mt-6 border-b border-border pb-6">
-            <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
+            <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('scheduler.active_schedule')}
             </h3>
             <div className="space-y-2">
               <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
-                <SelectTrigger className="w-full bg-muted border-border text-foreground text-sm rounded-lg h-[38px]">
+                <SelectTrigger className="h-[38px] w-full rounded-lg border-border bg-muted text-sm text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {dbTeams.map(team => (
-                    <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                  {dbTeams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -110,29 +120,33 @@ export const CalendarPage: React.FC = () => {
         ) : null}
 
         <div className="mt-6 border-b border-border pb-6">
-          <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
+          <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t('scheduler.staff_assistants')}
           </h3>
           <div className="space-y-2">
             {isLoading ? (
-              <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
+              <div className="h-[38px] w-full animate-pulse rounded-lg border border-border bg-muted" />
             ) : (
               <Select value={selectedAssigneeId} onValueChange={setSelectedAssigneeId}>
-                <SelectTrigger className="w-full bg-muted border-border text-foreground text-sm rounded-lg h-[38px]">
+                <SelectTrigger className="h-[38px] w-full rounded-lg border-border bg-muted text-sm text-foreground">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   {isAdmin ? (
                     <>
                       <SelectItem value="all">{t('scheduler.all_assistants')}</SelectItem>
-                      {dbUsers.map(u => (
-                        <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || t('common.unknown_agent')}</SelectItem>
+                      {dbUsers.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name || u.email || t('common.unknown_agent')}
+                        </SelectItem>
                       ))}
                     </>
                   ) : (
                     <>
                       <SelectItem value="all">{t('scheduler.all_assistants')}</SelectItem>
-                      <SelectItem value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</SelectItem>
+                      <SelectItem value={user?.id || 'all'}>
+                        {t('scheduler.only_my_shifts')}
+                      </SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -142,16 +156,16 @@ export const CalendarPage: React.FC = () => {
         </div>
 
         <div className="mt-6">
-          <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3">
+          <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t('common.upcoming')}
           </h3>
           <div className="space-y-2">
             {isLoading ? (
-              [1, 2, 3].map(i => (
-                <div key={i} className="h-[68px] w-full bg-muted rounded-lg animate-pulse" />
+              [1, 2, 3].map((i) => (
+                <div key={i} className="h-[68px] w-full animate-pulse rounded-lg bg-muted" />
               ))
             ) : filteredEvents.length === 0 ? (
-              <div className="text-sm text-muted-foreground italic p-2 border border-dashed border-border rounded-lg text-center">
+              <div className="rounded-lg border border-dashed border-border p-2 text-center text-sm italic text-muted-foreground">
                 {t('scheduler.no_upcoming_events')}
               </div>
             ) : (
@@ -159,13 +173,19 @@ export const CalendarPage: React.FC = () => {
                 <div
                   key={event.id}
                   onClick={() => handleEventClick(event)}
-                  className="p-3 bg-secondary hover:bg-muted rounded-lg cursor-pointer transition-colors"
+                  className="cursor-pointer rounded-lg bg-secondary p-3 transition-colors hover:bg-muted"
                 >
-                  <div className="text-foreground text-sm font-medium truncate">{event.title}</div>
-                  <div className="text-muted-foreground text-xs mt-1">
-                    {event.startTime.toLocaleDateString(isSv ? 'sv-SE' : 'en-US', { month: 'short', day: 'numeric' })}
+                  <div className="truncate text-sm font-medium text-foreground">{event.title}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {event.startTime.toLocaleDateString(isSv ? 'sv-SE' : 'en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                     {' · '}
-                    {event.startTime.toLocaleTimeString(isSv ? 'sv-SE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                    {event.startTime.toLocaleTimeString(isSv ? 'sv-SE' : 'en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </div>
                 </div>
               ))
@@ -174,7 +194,7 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <CalendarView
           selectedDate={selectedDate}
           selectedEndDate={selectedEndDate}
@@ -194,8 +214,8 @@ export const CalendarPage: React.FC = () => {
         event={selectedEvent}
         onClose={() => selectEvent(null)}
         onEdit={(event) => {
-          setEditingEvent(event);
-          selectEvent(null);
+          setEditingEvent(event)
+          selectEvent(null)
         }}
         onDelete={handleDeleteEvent}
       />
@@ -205,18 +225,18 @@ export const CalendarPage: React.FC = () => {
           selectedDate={editingEvent ? editingEvent.startTime : selectedDate}
           event={editingEvent}
           onClose={() => {
-            setIsAddModalOpen(false);
-            setEditingEvent(null);
+            setIsAddModalOpen(false)
+            setEditingEvent(null)
           }}
           onSave={async (eventData, eventId) => {
             if (eventId) {
-              await updateEvent(eventId, eventData);
+              await updateEvent(eventId, eventData)
             } else {
-              await addEvent(eventData);
+              await addEvent(eventData)
             }
           }}
         />
       )}
     </div>
-  );
-};
+  )
+}

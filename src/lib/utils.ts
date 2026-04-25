@@ -1,120 +1,104 @@
 /**
- * =============================================================================
- * UTILITY FUNCTIONS
- * =============================================================================
- * This file contains utility functions used throughout the Volt Scheduler
- * application. These include date formatting, class name merging, and
- * other helper functions.
- * =============================================================================
+ * This file contains utility functions used throughout the application.
+ * These include date formatting, class name merging, and other helper
+ * functions.
  */
 
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import type { EventCategory, CategoryConfig, TimeSlot, DayInfo } from '@/types';
-
-/**
- * -----------------------------------------------------------------------------
- * CLASS NAME UTILITIES
- * -----------------------------------------------------------------------------
- */
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+import type { EventCategory, CategoryConfig, TimeSlot, DayInfo } from '@/types'
 
 /**
  * Merge Tailwind CSS classes with proper precedence
  * Uses clsx for conditional classes and tailwind-merge to resolve conflicts
- * 
+ *
  * @param inputs - Class values to merge
  * @returns Merged class string
  */
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs))
 }
 
 /**
- * -----------------------------------------------------------------------------
- * DATE FORMATTING UTILITIES
- * -----------------------------------------------------------------------------
- */
-
-/**
  * Format a date to a localized string
- * 
+ *
  * @param date - Date to format
  * @param options - Intl.DateTimeFormatOptions
  * @returns Formatted date string
  */
 export function formatDate(
   date: Date,
-  options: Intl.DateTimeFormatOptions = { 
-    weekday: 'short', 
-    month: 'short', 
-    day: 'numeric' 
+  options: Intl.DateTimeFormatOptions = {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
   },
-  locale: string = 'en-US'
+  locale: string = 'en-US',
 ): string {
-  return new Intl.DateTimeFormat(locale, options).format(date);
+  return new Intl.DateTimeFormat(locale, options).format(date)
 }
 
 /**
  * Format a date to show month and year (e.g., "February 2025")
- * 
+ *
  * @param date - Date to format
  * @returns Formatted month and year string
  */
 export function formatMonthYear(date: Date, locale: string = 'en-US'): string {
-  return new Intl.DateTimeFormat(locale, { 
-    month: 'long', 
-    year: 'numeric' 
-  }).format(date);
+  return new Intl.DateTimeFormat(locale, {
+    month: 'long',
+    year: 'numeric',
+  }).format(date)
 }
 
 /**
  * Format time from a Date object (e.g., "09:00")
- * 
+ *
  * @param date - Date to extract time from
  * @returns Formatted time string (24-hour format)
  */
 export function formatTime(date: Date, locale: string = 'en-US'): string {
-  return new Intl.DateTimeFormat(locale, { 
-    hour: '2-digit', 
+  return new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
     minute: '2-digit',
-    hour12: false 
-  }).format(date);
+    hour12: false,
+  }).format(date)
 }
 
 /**
  * Format time range (e.g., "09:00 - 10:30")
- * 
+ *
  * @param startTime - Start date/time
  * @param endTime - End date/time
  * @returns Formatted time range string
  */
 export function formatTimeRange(startTime: Date, endTime: Date, locale: string = 'en-US'): string {
-  return `${formatTime(startTime, locale)} - ${formatTime(endTime, locale)}`;
+  return `${formatTime(startTime, locale)} - ${formatTime(endTime, locale)}`
 }
 
 /**
  * Get short day name (e.g., "Mon", "Tue")
- * 
+ *
  * @param date - Date to get day name from
  * @returns Short day name
  */
 export function getShortDayName(date: Date, locale: string = 'en-US'): string {
-  return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date);
+  return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(date)
 }
 
 /**
  * Get full day name (e.g., "Monday")
- * 
+ *
  * @param date - Date to get day name from
  * @returns Full day name
  */
 export function getFullDayName(date: Date, locale: string = 'en-US'): string {
-  return new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(date);
+  return new Intl.DateTimeFormat(locale, { weekday: 'long' }).format(date)
 }
 
 /**
  * Check if two dates are the same day
- * 
+ *
  * @param date1 - First date
  * @param date2 - Second date
  * @returns True if same day
@@ -124,17 +108,17 @@ export function isSameDay(date1: Date, date2: Date): boolean {
     date1.getDate() === date2.getDate() &&
     date1.getMonth() === date2.getMonth() &&
     date1.getFullYear() === date2.getFullYear()
-  );
+  )
 }
 
 /**
  * Check if a date is today
- * 
+ *
  * @param date - Date to check
  * @returns True if today
  */
 export function isToday(date: Date): boolean {
-  return isSameDay(date, new Date());
+  return isSameDay(date, new Date())
 }
 
 /**
@@ -146,38 +130,38 @@ export function isToday(date: Date): boolean {
 /**
  * Generate time slots for the calendar grid
  * Creates slots from 00:00 to 23:00
- * 
+ *
  * @returns Array of time slot objects
  */
 export function generateTimeSlots(startHour: number = 0, endHour: number = 23): TimeSlot[] {
-  const slots: TimeSlot[] = [];
+  const slots: TimeSlot[] = []
   for (let hour = startHour; hour <= endHour; hour++) {
     slots.push({
       hour,
       label: `${hour.toString().padStart(2, '0')}:00`,
-    });
+    })
   }
-  return slots;
+  return slots
 }
 
 /**
  * Generate days for a week view
- * 
+ *
  * @param startDate - Start date of the week (typically Sunday or Monday)
  * @returns Array of day info objects
  */
 export function generateWeekDays(startDate: Date, locale: string = 'en-US'): DayInfo[] {
-  const days: DayInfo[] = [];
-  const currentDate = new Date(startDate);
-  
+  const days: DayInfo[] = []
+  const currentDate = new Date(startDate)
+
   // StartDate is already presumed to be the "start of week" from getStartOfWeek
-  
+
   for (let i = 0; i < 7; i++) {
-    const date = new Date(currentDate);
-    date.setDate(date.getDate() + i);
-    
-    const dayOfWeek = date.getDay();
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    const date = new Date(currentDate)
+    date.setDate(date.getDate() + i)
+
+    const dayOfWeek = date.getDay()
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
 
     days.push({
       date,
@@ -185,37 +169,28 @@ export function generateWeekDays(startDate: Date, locale: string = 'en-US'): Day
       dayOfMonth: date.getDate(),
       isToday: isToday(date),
       isWeekend: isWeekend,
-    });
+    })
   }
-  
-  return days;
+
+  return days
 }
 
 /**
  * Get the start of the week for a given date
- * 
+ *
  * @param date - Date to find week start for
  * @returns Date representing start of week (Monday)
  */
 export function getStartOfWeek(date: Date, weekStart: number = 1): Date {
-  const result = new Date(date);
-  const dayOfWeek = result.getDay();
-  
-  // Calculate difference to target week start
-  // if weekStart = 1 (Mon) and dayOfWeek = 0 (Sun), diff = 6
-  // if weekStart = 0 (Sun) and dayOfWeek = 1 (Mon), diff = 1
-  const diff = (dayOfWeek < weekStart ? 7 : 0) + dayOfWeek - weekStart;
-  
-  result.setDate(result.getDate() - diff);
-  result.setHours(0, 0, 0, 0);
-  return result;
-}
+  const result = new Date(date)
+  const dayOfWeek = result.getDay()
 
-/**
- * -----------------------------------------------------------------------------
- * EVENT CATEGORY CONFIGURATION
- * -----------------------------------------------------------------------------
- */
+  const diff = (dayOfWeek < weekStart ? 7 : 0) + dayOfWeek - weekStart
+
+  result.setDate(result.getDate() - diff)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
 
 /**
  * Configuration for event categories including colors and labels
@@ -326,52 +301,50 @@ export const EVENT_CATEGORIES: Record<EventCategory, CategoryConfig> = {
     bgColor: 'rgba(156, 163, 175, 0.2)',
     icon: 'MoreHorizontal',
   },
-};
+}
 
 /**
  * Get category configuration by category ID
- * 
+ *
  * @param category - Event category
  * @returns Category configuration object
  */
 export function getCategoryConfig(category: EventCategory): CategoryConfig {
-  return EVENT_CATEGORIES[category] || EVENT_CATEGORIES['other'];
+  return EVENT_CATEGORIES[category] || EVENT_CATEGORIES['other']
 }
-
-/**
- * -----------------------------------------------------------------------------
- * EVENT POSITIONING UTILITIES
- * -----------------------------------------------------------------------------
- */
 
 /**
  * Calculate the top position for an event in the calendar grid
  * Based on the hour and minute of the start time
- * 
+ *
  * @param date - Event start time
  * @param hourHeight - Height of one hour in pixels (default: 60)
  * @returns Top position in pixels
  */
-export function calculateEventTop(date: Date, hourHeight: number = 60, startHour: number = 0): number {
-  const hour = date.getHours();
-  const minute = date.getMinutes();
-  return (hour - startHour + minute / 60) * hourHeight;
+export function calculateEventTop(
+  date: Date,
+  hourHeight: number = 60,
+  startHour: number = 0,
+): number {
+  const hour = date.getHours()
+  const minute = date.getMinutes()
+  return (hour - startHour + minute / 60) * hourHeight
 }
 
 /**
  * Calculate the height of an event based on its duration
- * 
+ *
  * @param startTime - Event start time
  * @param endTime - Event end time
  * @param hourHeight - Height of one hour in pixels (default: 60)
  * @returns Height in pixels
  */
 export function calculateEventHeight(
-  startTime: Date, 
-  endTime: Date, 
-  hourHeight: number = 60
+  startTime: Date,
+  endTime: Date,
+  hourHeight: number = 60,
 ): number {
-  const durationMs = endTime.getTime() - startTime.getTime();
-  const durationHours = durationMs / (1000 * 60 * 60);
-  return durationHours * hourHeight;
+  const durationMs = endTime.getTime() - startTime.getTime()
+  const durationHours = durationMs / (1000 * 60 * 60)
+  return durationHours * hourHeight
 }

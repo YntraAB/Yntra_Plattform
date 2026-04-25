@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
-import type { WorkspaceSettings, WorkspaceModules } from '@/types';
+import { supabase } from '@/lib/supabase'
+import type { WorkspaceSettings, WorkspaceModules } from '@/types'
 
 export const workspaceService = {
   /**
@@ -10,28 +10,28 @@ export const workspaceService = {
       .from('workspaces')
       .select('*')
       .eq('id', workspaceId)
-      .single();
+      .single()
 
-    if (error) throw new Error(error.message);
-    return data;
+    if (error) throw new Error(error.message)
+    return data
   },
 
   /**
    * Update workspace settings
    */
   async updateSettings(workspaceId: string, settings: Partial<WorkspaceSettings>) {
-    console.log('workspaceService.updateSettings called for WS:', workspaceId, 'with:', settings);
+    console.log('workspaceService.updateSettings called for WS:', workspaceId, 'with:', settings)
     const { data, error } = await supabase
       .from('workspaces')
       .update({ settings })
       .eq('id', workspaceId)
-      .select();
+      .select()
 
     if (error) {
-      console.error('Supabase error updating settings:', error);
-      throw new Error(error.message);
+      console.error('Supabase error updating settings:', error)
+      throw new Error(error.message)
     }
-    console.log('Supabase update response:', data);
+    console.log('Supabase update response:', data)
   },
 
   /**
@@ -41,22 +41,30 @@ export const workspaceService = {
     const { error } = await supabase
       .from('workspaces')
       .update({ modules_active })
-      .eq('id', workspaceId);
+      .eq('id', workspaceId)
 
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(error.message)
+  },
+
+  /**
+   * Update workspace core info (name, logo_url)
+   */
+  async updateWorkspace(
+    workspaceId: string,
+    updates: { name?: string; logo_url?: string | null; brand_color?: string },
+  ) {
+    const { error } = await supabase.from('workspaces').update(updates).eq('id', workspaceId)
+
+    if (error) throw new Error(error.message)
   },
 
   /**
    * Get the first available workspace (for platform admins)
    */
   async getFirstWorkspace() {
-    const { data, error } = await supabase
-      .from('workspaces')
-      .select('id')
-      .limit(1)
-      .single();
+    const { data, error } = await supabase.from('workspaces').select('id').limit(1).single()
 
-    if (error) return null;
-    return data?.id || null;
-  }
-};
+    if (error) return null
+    return data?.id || null
+  },
+}

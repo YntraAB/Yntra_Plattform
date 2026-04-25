@@ -1,30 +1,30 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import React from 'react'
+import { AlertCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 interface InviteErrorProps {
-  error: string;
-  onClose: () => void;
+  error: string
+  onClose: () => void
 }
 
 export const InviteError: React.FC<InviteErrorProps> = ({ error, onClose }) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation()
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="bg-sidebar border border-border rounded-xl w-[400px] p-8 shadow-2xl animate-fade-in text-center">
-        <div className="flex justify-center text-red-500 mb-6">
-          <AlertCircle className="w-12 h-12" />
+    <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="animate-fade-in w-[400px] rounded-xl border border-border bg-sidebar p-8 text-center shadow-2xl">
+        <div className="mb-6 flex justify-center text-red-500">
+          <AlertCircle className="h-12 w-12" />
         </div>
-        <h2 className="text-foreground text-xl font-bold mb-4">{t('auth.invite_error.title')}</h2>
-        <p className="text-muted-foreground text-sm mb-8">{error}</p>
+        <h2 className="mb-4 text-xl font-bold text-foreground">{t('auth.invite_error.title')}</h2>
+        <p className="mb-8 text-sm text-muted-foreground">{error}</p>
         <button
           onClick={onClose}
-          className="w-full bg-primary hover:bg-primary/80 text-white h-12 rounded-lg font-medium transition-colors"
+          className="h-12 w-full rounded-lg bg-primary font-medium text-white transition-colors hover:bg-primary/80"
         >
           {t('auth.invite_error.back_to_login')}
         </button>
       </div>
     </div>
-  );
-};
+  )
+}

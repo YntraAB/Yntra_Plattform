@@ -1,0 +1,13 @@
+dist
+node_modules
+coverage
+.vscode
+.agents
+.git
+public
+*.sql
+*.lock
+bun.lock
+package-lock.json
+playwright-report
+test-results

@@ -1,63 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { supabase } from '@/lib/supabase'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import type { MemberItem } from '../hooks/useDirectoryData';
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
+import type { MemberItem } from '../hooks/useDirectoryData'
 
 interface EditMemberModalProps {
-  member: MemberItem | null;
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: () => void;
+  member: MemberItem | null
+  isOpen: boolean
+  onClose: () => void
+  onSave: () => void
 }
 
-export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, isOpen, onClose, onSave }) => {
-  const { t } = useTranslation();
-  const [loading, setLoading] = useState(false);
-  
+export const EditMemberModal: React.FC<EditMemberModalProps> = ({
+  member,
+  isOpen,
+  onClose,
+  onSave,
+}) => {
+  const { t } = useTranslation()
+  const [loading, setLoading] = useState(false)
+
   // Form states
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [location, setLocation] = useState('');
-  
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [location, setLocation] = useState('')
+
   // Patient specific states
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [ssn, setSsn] = useState('');
-  const [address, setAddress] = useState('');
-  const [notes, setNotes] = useState('');
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [ssn, setSsn] = useState('')
+  const [address, setAddress] = useState('')
+  const [notes, setNotes] = useState('')
 
   useEffect(() => {
     if (member) {
       if (member.role === 'Patient') {
-        const parts = member.name.split(' ');
-        setFirstName(parts[0] || '');
-        setLastName(parts.slice(1).join(' ') || '');
-        setSsn(member.ssn || '');
-        setAddress(member.address || '');
-        setNotes(member.notes || '');
+        const parts = member.name.split(' ')
+        setFirstName(parts[0] || '')
+        setLastName(parts.slice(1).join(' ') || '')
+        setSsn(member.ssn || '')
+        setAddress(member.address || '')
+        setNotes(member.notes || '')
       } else {
-        setName(member.name || '');
-        setPhone(member.phone || '');
-        setLocation(member.location || '');
+        setName(member.name || '')
+        setPhone(member.phone || '')
+        setLocation(member.location || '')
       }
     }
-  }, [member]);
+  }, [member])
 
   const handleSave = async () => {
-    if (!member) return;
-    setLoading(true);
+    if (!member) return
+    setLoading(true)
 
     try {
       if (member.role === 'Patient') {
@@ -68,38 +73,43 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, isOpen
             last_name: lastName,
             personal_number: ssn,
             address,
-            notes
+            notes,
           })
-          .eq('id', member.id);
-        if (error) throw error;
+          .eq('id', member.id)
+        if (error) throw error
       } else {
         const { error } = await supabase
           .from('users')
           .update({
             full_name: name,
             phone,
-            location
+            location,
           })
-          .eq('id', member.id);
-        if (error) throw error;
+          .eq('id', member.id)
+        if (error) throw error
       }
 
-      toast.success(t('settings.success_update'));
-      onSave();
-      onClose();
-    } catch (error: any) {
-      toast.error(error.message);
+      toast.success(t('settings.success_update'))
+      onSave()
+      onClose()
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : t('directory.members.delete_error'))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-foreground">
-            {t('directory.detail.edit_button', { type: member?.role === 'Patient' ? t('directory.detail.patient') : t('directory.detail.staff') })}
+            {t('directory.detail.edit_button', {
+              type:
+                member?.role === 'Patient'
+                  ? t('directory.detail.patient')
+                  : t('directory.detail.staff'),
+            })}
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -107,51 +117,99 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, isOpen
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('common.first_name') || 'Förnamn'}</Label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} className="bg-background border-border text-foreground" />
+                  <Label className="text-muted-foreground">
+                    {t('common.first_name') || 'Förnamn'}
+                  </Label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="border-border bg-background text-foreground"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-muted-foreground">{t('common.last_name') || 'Efternamn'}</Label>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} className="bg-background border-border text-foreground" />
+                  <Label className="text-muted-foreground">
+                    {t('common.last_name') || 'Efternamn'}
+                  </Label>
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="border-border bg-background text-foreground"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('common.ssn') || 'Personnummer'}</Label>
-                <Input value={ssn} onChange={(e) => setSsn(e.target.value)} placeholder="ÅÅÅÅMMDD-XXXX" className="bg-background border-border text-foreground" />
+                <Input
+                  value={ssn}
+                  onChange={(e) => setSsn(e.target.value)}
+                  placeholder="ÅÅÅÅMMDD-XXXX"
+                  className="border-border bg-background text-foreground"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('common.address') || 'Adress'}</Label>
-                <Input value={address} onChange={(e) => setAddress(e.target.value)} className="bg-background border-border text-foreground" />
+                <Input
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="border-border bg-background text-foreground"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('common.notes') || 'Noteringar'}</Label>
-                <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} className="bg-background border-border text-foreground" />
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  className="border-border bg-background text-foreground"
+                />
               </div>
             </>
           ) : (
             <>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('common.name')}</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} className="bg-background border-border text-foreground" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="border-border bg-background text-foreground"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('settings.account.phone')}</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="bg-background border-border text-foreground" />
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="border-border bg-background text-foreground"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-muted-foreground">{t('settings.account.location')}</Label>
-                <Input value={location} onChange={(e) => setLocation(e.target.value)} className="bg-background border-border text-foreground" />
+                <Input
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  className="border-border bg-background text-foreground"
+                />
               </div>
             </>
           )}
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} className="border-border text-foreground hover:bg-muted">{t('common.cancel')}</Button>
-          <Button onClick={handleSave} disabled={loading} className="bg-primary text-primary-foreground hover:bg-primary/90">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="border-border text-foreground hover:bg-muted"
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={loading}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
             {loading ? t('common.saving') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

@@ -1,129 +1,145 @@
-import { memo } from 'react';
-import {
-  Archive,
-  Trash2,
-  Reply,
-  Forward,
-  ChevronLeft
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useTranslation } from 'react-i18next';
-import type { ProcessedMessage } from '../types';
+import { memo } from 'react'
+import { Archive, Trash2, Reply, Forward, ChevronLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useTranslation } from 'react-i18next'
+import type { ProcessedMessage } from '../types'
 
 interface MessageReadPaneProps {
-  activeMessage: ProcessedMessage | null;
-  currentUserId: string | undefined;
-  setActiveMessageId: (id: string | null) => void;
-  handleReply: () => void;
-  handleForward: () => void;
+  activeMessage: ProcessedMessage | null
+  currentUserId: string | undefined
+  setActiveMessageId: (id: string | null) => void
+  handleReply: () => void
+  handleForward: () => void
 }
 
-export const MessageReadPane = memo<MessageReadPaneProps>(({
-  activeMessage,
-  currentUserId,
-  setActiveMessageId,
-  handleReply,
-  handleForward
-}) => {
-  const { t } = useTranslation();
+export const MessageReadPane = memo<MessageReadPaneProps>(
+  ({ activeMessage, currentUserId, setActiveMessageId, handleReply, handleForward }) => {
+    const { t } = useTranslation()
 
-  if (!activeMessage) return null;
+    if (!activeMessage) return null
 
-  return (
-    <div className="flex-1 flex flex-col h-full bg-background relative selection:bg-primary/20 animate-in fade-in slide-in-from-right-4 duration-500">
-      <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-20 shrink-0">
-        <div className="flex items-center gap-4 min-w-0 pr-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setActiveMessageId(null)}
-            aria-label={t('messages.go_back')}
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary rounded-full shrink-0 transition-all"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Button>
+    return (
+      <div className="relative flex h-full flex-1 flex-col bg-background duration-500 animate-in fade-in slide-in-from-right-4 selection:bg-primary/20">
+        <div className="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-border/50 bg-background/50 px-8 backdrop-blur-md">
+          <div className="flex min-w-0 items-center gap-4 pr-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setActiveMessageId(null)}
+              aria-label={t('messages.go_back')}
+              className="shrink-0 rounded-full text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
 
-          <h2 className="text-foreground font-bold truncate text-lg tracking-tight">{activeMessage.subject}</h2>
+            <h2 className="truncate text-lg font-bold tracking-tight text-foreground">
+              {activeMessage.subject}
+            </h2>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('messages.archive')}
+              className="h-9 w-9 rounded-full text-muted-foreground transition-all hover:bg-primary/5 hover:text-primary"
+            >
+              <Archive className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={t('messages.trash')}
+              className="h-9 w-9 rounded-full text-muted-foreground transition-all hover:bg-rose-500/5 hover:text-rose-500"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <Button variant="ghost" size="icon" aria-label={t('messages.archive')} className="text-muted-foreground hover:text-primary hover:bg-primary/5 w-9 h-9 rounded-full transition-all">
-            <Archive className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" aria-label={t('messages.trash')} className="text-muted-foreground hover:text-rose-500 hover:bg-rose-500/5 w-9 h-9 rounded-full transition-all">
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+        <div className="scrollbar-dark flex-1 overflow-y-auto scroll-smooth px-8 py-10 md:px-16 lg:px-32">
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-10 flex items-start justify-between border-b border-border/30 pb-8">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12 border-2 border-primary/20 p-0.5 shadow-lg">
+                  <AvatarImage src={activeMessage.sender.avatar} className="rounded-full" />
+                  <AvatarFallback className="bg-primary/10 text-sm font-bold text-primary">
+                    {activeMessage.sender.name.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <div className="mb-0.5 flex items-center gap-2 text-base font-bold text-foreground">
+                    {activeMessage.sender.name}
+                    <span className="rounded-full border border-border/50 bg-muted px-2 py-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground">
+                      {activeMessage.sender_id === currentUserId
+                        ? t('messages.you')
+                        : t('directory.roles.assistant')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span className="font-medium text-foreground/60">{t('messages.to')}:</span>
+                    <span className="rounded-md bg-primary/5 px-2 py-0.5 font-bold text-primary/80">
+                      {activeMessage.to}
+                    </span>
+                    <span className="mx-1 text-border">|</span>
+                    <span className="font-medium tabular-nums tracking-tight opacity-60">
+                      {activeMessage.date} {activeMessage.timestamp}
+                    </span>
+                  </div>
+                </div>
+              </div>
 
-      <div className="flex-1 overflow-y-auto px-8 md:px-16 lg:px-32 py-10 scrollbar-dark scroll-smooth">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-start justify-between mb-10 pb-8 border-b border-border/30">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-12 h-12 border-2 border-primary/20 p-0.5 shadow-lg">
-                <AvatarImage src={activeMessage.sender.avatar} className="rounded-full" />
-                <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
-                  {activeMessage.sender.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="text-base font-bold text-foreground flex items-center gap-2 mb-0.5">
-                  {activeMessage.sender.name}
-                  <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-widest bg-muted px-2 py-0.5 rounded-full border border-border/50">
-                    {activeMessage.sender_id === currentUserId ? t('messages.you') : t('directory.roles.assistant')}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                  <span className="font-medium text-foreground/60">{t('messages.to')}:</span>
-                  <span className="bg-primary/5 text-primary/80 px-2 py-0.5 rounded-md font-bold">{activeMessage.to}</span>
-                  <span className="text-border mx-1">|</span>
-                  <span className="tabular-nums opacity-60 font-medium tracking-tight">
-                    {activeMessage.date} {activeMessage.timestamp}
-                  </span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 rounded-full px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+                  onClick={handleReply}
+                >
+                  <Reply className="h-4 w-4" />
+                  {t('messages.reply')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2 rounded-full px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
+                  onClick={handleForward}
+                >
+                  <Forward className="h-4 w-4" />
+                  {t('messages.forward')}
+                </Button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-secondary gap-2 px-3 rounded-full font-bold text-[11px] uppercase tracking-wider transition-all" onClick={handleReply}>
-                <Reply className="w-4 h-4" />
-                {t('messages.reply')}
-              </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground hover:bg-secondary gap-2 px-3 rounded-full font-bold text-[11px] uppercase tracking-wider transition-all" onClick={handleForward}>
-                <Forward className="w-4 h-4" />
-                {t('messages.forward')}
-              </Button>
+            <div className="whitespace-pre-wrap text-[15px] font-medium leading-relaxed text-foreground/90">
+              {activeMessage.content}
             </div>
-          </div>
 
-          <div className="text-[15px] text-foreground/90 leading-relaxed whitespace-pre-wrap font-medium">
-            {activeMessage.content}
-          </div>
-
-          <div className="mt-16 pt-10 border-t border-border/30">
-            <div className="flex items-center gap-4">
-              <Button
-                onClick={handleReply}
-                className="bg-primary text-white hover:bg-primary/90 px-8 h-12 rounded-xl font-bold transition-all hover:shadow-xl hover:shadow-primary/20 flex items-center gap-2"
-              >
-                <Reply className="w-4 h-4" />
-                {t('messages.reply')}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleForward}
-                className="border-border hover:bg-secondary px-8 h-12 rounded-xl font-bold transition-all flex items-center gap-2"
-              >
-                <Forward className="w-4 h-4" />
-                {t('messages.forward')}
-              </Button>
+            <div className="mt-16 border-t border-border/30 pt-10">
+              <div className="flex items-center gap-4">
+                <Button
+                  onClick={handleReply}
+                  className="flex h-12 items-center gap-2 rounded-xl bg-primary px-8 font-bold text-white transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/20"
+                >
+                  <Reply className="h-4 w-4" />
+                  {t('messages.reply')}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleForward}
+                  className="flex h-12 items-center gap-2 rounded-xl border-border px-8 font-bold transition-all hover:bg-secondary"
+                >
+                  <Forward className="h-4 w-4" />
+                  {t('messages.forward')}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-});
+    )
+  },
+)
 
-MessageReadPane.displayName = 'MessageReadPane';
+MessageReadPane.displayName = 'MessageReadPane'

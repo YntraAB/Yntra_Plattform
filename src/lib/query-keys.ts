@@ -11,6 +11,7 @@ export const queryKeys = {
   teamNotes: (teamId: string | null) => ['team-notes', teamId] as const,
 
   // Scheduler (to be added as needed)
-  events: (workspaceId: string | null, teamId: string | null) => ['events', workspaceId, teamId] as const,
+  events: (workspaceId: string | null, teamId: string | null) =>
+    ['events', workspaceId, teamId] as const,
   workspaceNotes: (workspaceId: string | null) => ['notes', workspaceId] as const,
-} as const;
+} as const

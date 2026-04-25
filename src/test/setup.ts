@@ -1,9 +1,9 @@
-import "@testing-library/jest-dom";
-import { expect, afterEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
-import * as matchers from "@testing-library/jest-dom/matchers";
+import '@testing-library/jest-dom'
+import { expect, afterEach, vi } from 'vitest'
+import { cleanup } from '@testing-library/react'
+import * as matchers from '@testing-library/jest-dom/matchers'
 
-expect.extend(matchers);
+expect.extend(matchers)
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -14,8 +14,8 @@ vi.mock('react-i18next', () => ({
     type: '3rdParty',
     init: vi.fn(),
   },
-}));
+}))
 
 afterEach(() => {
-  cleanup();
-});
+  cleanup()
+})

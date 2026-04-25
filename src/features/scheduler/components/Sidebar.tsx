@@ -8,7 +8,7 @@
  * =============================================================================
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'
 import {
   Clock,
   FileText,
@@ -19,23 +19,23 @@ import {
   Mail,
   Users,
   CalendarDays,
-  FileCheck
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { useWorkspace } from '@/contexts/WorkspaceContext';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
-import { Badge } from '@/components/ui/badge';
+  FileCheck,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useWorkspace } from '@/contexts/WorkspaceContext'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
+import { Badge } from '@/components/ui/badge'
 
 /**
  * Navigation item structure
  */
 interface NavItem {
-  id: string;
-  label: string;
-  icon: React.ElementType;
-  badge?: number;
-  children?: NavItem[];
+  id: string
+  label: string
+  icon: React.ElementType
+  badge?: number
+  children?: NavItem[]
 }
 
 /**
@@ -43,9 +43,9 @@ interface NavItem {
  */
 interface SidebarProps {
   /** Currently active section ID */
-  activeSection: string;
+  activeSection: string
   /** Callback when a section is selected */
-  onSectionChange: (sectionId: string) => void;
+  onSectionChange: (sectionId: string) => void
 }
 
 /**
@@ -53,12 +53,12 @@ interface SidebarProps {
  * Renders a single navigation item with optional children
  */
 interface SidebarNavItemProps {
-  item: NavItem;
-  activeSection: string;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onSelect: (id: string) => void;
-  depth?: number;
+  item: NavItem
+  activeSection: string
+  isExpanded: boolean
+  onToggle: () => void
+  onSelect: (id: string) => void
+  depth?: number
 }
 
 const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
@@ -69,8 +69,8 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
   onSelect,
   depth = 0,
 }) => {
-  const hasChildren = item.children && item.children.length > 0;
-  const Icon = item.icon;
+  const hasChildren = item.children && item.children.length > 0
+  const Icon = item.icon
 
   return (
     <div>
@@ -78,36 +78,38 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
       <div
         onClick={hasChildren ? onToggle : () => onSelect(item.id)}
         className={cn(
-          'flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer',
-          'text-muted-foreground hover:text-foreground hover:bg-muted',
+          'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2',
+          'text-muted-foreground hover:bg-muted hover:text-foreground',
           'transition-all duration-150',
-          activeSection === item.id && 'text-foreground bg-muted',
-          depth > 0 && 'ml-4'
+          activeSection === item.id && 'bg-muted text-foreground',
+          depth > 0 && 'ml-4',
         )}
       >
         {/* Expand/collapse chevron for items with children */}
         {hasChildren && (
-          <span className="w-4 h-4 flex items-center justify-center">
+          <span className="flex h-4 w-4 items-center justify-center">
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="h-4 w-4" />
             ) : (
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="h-4 w-4" />
             )}
           </span>
         )}
 
         {/* Icon */}
         {!hasChildren && <span className="w-4" />}
-        <Icon className="w-5 h-5" />
+        <Icon className="h-5 w-5" />
 
         {/* Label */}
-        <span className="flex-1 text-sm" data-testid={`sidebar-item-${item.id}`}>{item.label}</span>
+        <span className="flex-1 text-sm" data-testid={`sidebar-item-${item.id}`}>
+          {item.label}
+        </span>
 
         {/* Badge */}
         {item.badge && (
           <Badge
             variant="default"
-            className="h-5 px-1.5 min-w-[20px] justify-center text-[10px] font-bold"
+            className="h-5 min-w-[20px] justify-center px-1.5 text-[10px] font-bold"
           >
             {item.badge}
           </Badge>
@@ -120,174 +122,193 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
           {item.children!.map((child) => (
             <div
               key={child.id}
-              onClick={(e) => { e.stopPropagation(); onSelect(child.id); }}
+              onClick={(e) => {
+                e.stopPropagation()
+                onSelect(child.id)
+              }}
               className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer ml-8',
-                'text-muted-foreground hover:text-foreground hover:bg-muted',
+                'ml-8 flex cursor-pointer items-center gap-3 rounded-md px-3 py-2',
+                'text-muted-foreground hover:bg-muted hover:text-foreground',
                 'transition-all duration-150',
-                activeSection === child.id && 'text-foreground bg-muted'
+                activeSection === child.id && 'bg-muted text-foreground',
               )}
             >
-              <child.icon className="w-4 h-4" />
+              <child.icon className="h-4 w-4" />
               <span className="text-sm">{child.label}</span>
             </div>
           ))}
         </div>
       )}
     </div>
-  );
-};
+  )
+}
 
-import { useUnreadNotes } from '@/hooks/useUnreadNotes';
-import { useTranslation } from 'react-i18next';
-import { TeamSwitcher } from './TeamSwitcher';
-import { GlobalSearch } from '@/components/GlobalSearch';
+import { useUnreadNotes } from '@/hooks/useUnreadNotes'
+import { useTranslation } from 'react-i18next'
+import { TeamSwitcher } from './TeamSwitcher'
+import { GlobalSearch } from '@/components/GlobalSearch'
 
 /**
  * Main Sidebar Component
  * Provides navigation and user profile section
  */
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeSection,
-  onSectionChange,
-}) => {
-  const { modules, workspaceId, setAdminWorkspace } = useWorkspace();
-  const { t } = useTranslation();
-  const { user } = useAuth();
-  const unreadNotes = useUnreadNotes();
+export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange }) => {
+  const { modules, workspaceId, workspaceName, workspaceLogo, setAdminWorkspace } = useWorkspace()
+  const { t } = useTranslation()
+  const { user } = useAuth()
+  const unreadNotes = useUnreadNotes()
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin';
+  const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin'
 
-  const [adminWorkspaces, setAdminWorkspaces] = useState<{ id: string, name: string }[]>([]);
+  const [adminWorkspaces, setAdminWorkspaces] = useState<{ id: string; name: string }[]>([])
   useEffect(() => {
     if (user?.role === 'platform_admin' && adminWorkspaces.length === 0) {
-      supabase.from('workspaces').select('id, name').then(({ data }) => {
-        if (data && data.length > 0) setAdminWorkspaces(data);
-      });
+      supabase
+        .from('workspaces')
+        .select('id, name')
+        .then(({ data }) => {
+          if (data && data.length > 0) setAdminWorkspaces(data)
+        })
     }
-  }, [user?.role, adminWorkspaces.length]);
+  }, [user?.role, adminWorkspaces.length])
 
-  const [unreadMessages, setUnreadMessages] = useState<number>(0);
+  const [unreadMessages, setUnreadMessages] = useState<number>(0)
 
   useEffect(() => {
     async function fetchUnreadCounts() {
-      if (!workspaceId || !user) return;
+      if (!workspaceId || !user) return
       const { count } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('workspace_id', workspaceId)
         .eq('is_read', false)
-        .neq('sender_id', user.id);
+        .neq('sender_id', user.id)
 
-      if (count !== null) setUnreadMessages(count);
+      if (count !== null) setUnreadMessages(count)
     }
-    fetchUnreadCounts();
-  }, [workspaceId, user]);
+    fetchUnreadCounts()
+  }, [workspaceId, user])
 
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set(['time'])
-  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['time']))
 
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
 
   // Keyboard shortcut for search (Ctrl+K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsSearchOpen(true);
+        e.preventDefault()
+        setIsSearchOpen(true)
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const NAVIGATION_ITEMS: NavItem[] = modules.assistance ? [
-    {
-      id: 'time',
-      label: t('sidebar.time_management'),
-      icon: Clock,
-      children: [
-        { id: 'timereports', label: t('sidebar.time_reports'), icon: FileCheck },
-        { id: 'schedule', label: t('sidebar.schedule'), icon: CalendarDays },
-      ],
-    },
-    {
-      id: 'work-notes',
-      label: t('sidebar.work_notes'),
-      icon: FileText,
-      badge: unreadNotes.total > 0 ? unreadNotes.total : undefined,
-    },
-    {
-      id: 'inbox',
-      label: t('sidebar.inbox'),
-      icon: Mail,
-      badge: unreadMessages > 0 ? unreadMessages : undefined,
-    },
-    {
-      id: 'directory',
-      label: t('sidebar.teams'),
-      icon: Users,
-    },
-    {
-      id: 'medication',
-      label: t('sidebar.medication'),
-      icon: Bell,
     }
-  ] : [];
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const NAVIGATION_ITEMS: NavItem[] = modules.assistance
+    ? [
+        {
+          id: 'time',
+          label: t('sidebar.time_management'),
+          icon: Clock,
+          children: [
+            { id: 'timereports', label: t('sidebar.time_reports'), icon: FileCheck },
+            { id: 'schedule', label: t('sidebar.schedule'), icon: CalendarDays },
+          ],
+        },
+        {
+          id: 'notes',
+          label: t('sidebar.notes'),
+          icon: FileText,
+          badge: unreadNotes.total > 0 ? unreadNotes.total : undefined,
+        },
+        {
+          id: 'inbox',
+          label: t('sidebar.inbox'),
+          icon: Mail,
+          badge: unreadMessages > 0 ? unreadMessages : undefined,
+        },
+        {
+          id: 'directory',
+          label: t('sidebar.teams'),
+          icon: Users,
+        },
+        {
+          id: 'medication',
+          label: t('sidebar.medication'),
+          icon: Bell,
+        },
+      ]
+    : []
 
   /**
    * Toggle section expansion
    */
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => {
-      const next = new Set(prev);
+      const next = new Set(prev)
       if (next.has(sectionId)) {
-        next.delete(sectionId);
+        next.delete(sectionId)
       } else {
-        next.add(sectionId);
+        next.add(sectionId)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   return (
-    <aside className="w-64 h-full bg-sidebar border-r border-border flex flex-col">
+    <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
       <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
       {/* Header / Logo Area */}
-      <div className="p-4 border-b border-border">
+      <div className="border-b border-border p-4">
         <div className="flex items-center gap-3">
-          {/* Volt Logo */}
-          <svg
-            width="28"
-            height="28"
-            viewBox="0 0 48 48"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="transform -rotate-12"
-          >
-            <path
-              d="M28 4L12 24H22L18 44L36 20H24L28 4Z"
-              fill="#8B5CF6"
-              stroke="#8B5CF6"
-              strokeWidth="2"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <div>
-            <h2 className="text-foreground font-semibold text-sm">Volt Scheduler</h2>
+          {/* Workspace Logo */}
+          {workspaceLogo ? (
+            <div className="group/logo relative">
+              <img
+                src={workspaceLogo}
+                alt={workspaceName}
+                className="h-8 w-8 rounded-lg border border-border/50 object-contain shadow-sm transition-transform group-hover/logo:scale-110"
+              />
+            </div>
+          ) : (
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 48 48"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="-rotate-12 transform"
+            >
+              <path
+                d="M28 4L12 24H22L18 44L36 20H24L28 4Z"
+                fill="#8B5CF6"
+                stroke="#8B5CF6"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-sm font-bold leading-tight text-foreground">
+              {workspaceName || 'Yntra Platform'}
+            </h2>
             {user?.role === 'platform_admin' ? (
               <select
-                className="mt-0.5 bg-transparent border-none text-xs text-muted-foreground outline-none cursor-pointer p-0 appearance-none underline decoration-dashed underline-offset-4 pointer-events-auto w-full max-w-[120px] truncate"
+                className="pointer-events-auto mt-0.5 w-full max-w-[120px] cursor-pointer appearance-none truncate border-none bg-transparent p-0 text-xs text-muted-foreground underline decoration-dashed underline-offset-4 outline-none"
                 value={workspaceId || ''}
                 onChange={(e) => setAdminWorkspace(e.target.value)}
               >
-                {adminWorkspaces.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
+                {adminWorkspaces.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
               </select>
             ) : (
-              <p className="text-muted-foreground text-xs">EE24</p>
+              <p className="text-xs text-muted-foreground">EE24</p>
             )}
           </div>
         </div>
@@ -297,16 +318,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="px-3 py-3">
         <button
           onClick={() => setIsSearchOpen(true)}
-          className="
-            flex items-center w-full h-9 px-3 gap-2 rounded-md
-            bg-secondary border border-border
-            text-muted-foreground transition-all duration-200
-            hover:bg-secondary/80 hover:border-primary/30
-          "
+          className="flex h-9 w-full items-center gap-2 rounded-md border border-border bg-secondary px-3 text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-secondary/80"
         >
-          <Search className="w-4 h-4" />
+          <Search className="h-4 w-4" />
           <span className="text-sm font-medium">{t('common.search')}</span>
-          <span className="ml-auto text-[10px] bg-background/50 border border-border px-1.5 py-0.5 rounded text-muted-foreground opacity-60">
+          <span className="ml-auto rounded border border-border bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-60">
             Ctrl+K
           </span>
         </button>
@@ -316,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isAdmin && <TeamSwitcher />}
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto scrollbar-dark">
+      <nav className="scrollbar-dark flex-1 space-y-1 overflow-y-auto px-3 py-2">
         {NAVIGATION_ITEMS.map((item) => (
           <SidebarNavItem
             key={item.id}
@@ -330,10 +346,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       {/* Filter Section */}
-      <div className="px-3 py-3 border-t border-border">
+      <div className="border-t border-border px-3 py-3">
         {modules.assistance && (
           <>
-            <h3 className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-3 px-3">
+            <h3 className="mb-3 px-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
               {t('sidebar.show')}
             </h3>
             <div className="space-y-2">
@@ -346,25 +362,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
               ].map((filter) => (
                 <label
                   key={filter.id}
-                  className="flex items-center gap-3 px-3 py-1.5 cursor-pointer hover:bg-secondary rounded-md transition-colors"
+                  className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-1.5 transition-colors hover:bg-secondary"
                 >
                   <input
                     type="checkbox"
                     defaultChecked
-                    className="w-4 h-4 rounded border-border bg-secondary text-primary focus:ring-primary"
+                    className="h-4 w-4 rounded border-border bg-secondary text-primary focus:ring-primary"
                   />
-                  <span className={`w-2.5 h-2.5 rounded-full ${filter.color}`} />
-                  <span className="text-muted-foreground text-sm">{filter.label}</span>
+                  <span className={`h-2.5 w-2.5 rounded-full ${filter.color}`} />
+                  <span className="text-sm text-muted-foreground">{filter.label}</span>
                 </label>
               ))}
             </div>
           </>
         )}
       </div>
-
-
     </aside>
-  );
-};
+  )
+}
 
-export default Sidebar;
+export default Sidebar

@@ -1,15 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { User } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/supabase';
+import React, { useState, useEffect } from 'react'
+import { User } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
 
 interface InviteManagerModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedTeam: string | null;
-  selectedWorkspace: string | null;
-  workspaceId: string | null;
+  isOpen: boolean
+  onClose: () => void
+  selectedTeam: string | null
+  selectedWorkspace: string | null
+  workspaceId: string | null
+}
+
+interface WorkspaceUser {
+  id: string
+  full_name: string | null
+  email: string
 }
 
 export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
@@ -17,74 +23,88 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
   onClose,
   selectedTeam,
   selectedWorkspace,
-  workspaceId
+  workspaceId,
 }) => {
-  const { t } = useTranslation();
-  const [inviteTab, setInviteTab] = useState<'existing' | 'new'>('existing');
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [selectedExistingUserId, setSelectedExistingUserId] = useState('');
-  const [workspaceUsers, setWorkspaceUsers] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation()
+  const [inviteTab, setInviteTab] = useState<'existing' | 'new'>('existing')
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [selectedExistingUserId, setSelectedExistingUserId] = useState('')
+  const [workspaceUsers, setWorkspaceUsers] = useState<WorkspaceUser[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       const fetchWorkspaceUsers = async () => {
-        const targetWS = selectedWorkspace || workspaceId;
-        const { data: usersData } = await supabase.from('users').select('*').eq('workspace_id', targetWS);
-        const { data: teamMembersData } = await supabase.from('team_members').select('user_id').eq('team_id', selectedTeam);
+        const targetWS = selectedWorkspace || workspaceId
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('*')
+          .eq('workspace_id', targetWS)
+        const { data: teamMembersData } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .eq('team_id', selectedTeam)
 
-        const existingMemberIds = (teamMembersData || []).map(tm => tm.user_id);
-        const availableUsers = (usersData || []).filter(u => !existingMemberIds.includes(u.id));
-        setWorkspaceUsers(availableUsers);
-      };
-      fetchWorkspaceUsers();
+        const existingMemberIds = (teamMembersData || []).map((tm) => tm.user_id)
+        const availableUsers = (usersData || []).filter((u) => !existingMemberIds.includes(u.id))
+        setWorkspaceUsers(availableUsers)
+      }
+      fetchWorkspaceUsers()
     }
-  }, [isOpen, selectedWorkspace, workspaceId, selectedTeam]);
+  }, [isOpen, selectedWorkspace, workspaceId, selectedTeam])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const handleInviteExisting = async () => {
-    const { error } = await supabase.from('team_members').insert([{ team_id: selectedTeam, user_id: selectedExistingUserId }]);
-    if (error) alert(t('directory.members.delete_error') + " " + error.message);
+    const { error } = await supabase
+      .from('team_members')
+      .insert([{ team_id: selectedTeam, user_id: selectedExistingUserId }])
+    if (error) alert(t('directory.members.delete_error') + ' ' + error.message)
     else {
-      alert(t('directory.invite.existing_success'));
-      onClose();
-      setSelectedExistingUserId('');
+      alert(t('directory.invite.existing_success'))
+      onClose()
+      setSelectedExistingUserId('')
     }
-  };
+  }
 
   const handleInviteNew = async () => {
-    setIsLoading(true);
+    setIsLoading(true)
     const { data, error } = await supabase.functions.invoke('invite_user', {
-      body: { email: inviteEmail, role: 'assistant', workspaceId: selectedWorkspace || workspaceId, teamId: selectedTeam }
-    });
-    setIsLoading(false);
-    if (error) alert(t('directory.members.delete_error') + " " + error.message);
-    else if (data && data.success === false) alert(t('directory.members.delete_error') + " " + data.error);
+      body: {
+        email: inviteEmail,
+        role: 'assistant',
+        workspaceId: selectedWorkspace || workspaceId,
+        teamId: selectedTeam,
+      },
+    })
+    setIsLoading(false)
+    if (error) alert(t('directory.members.delete_error') + ' ' + error.message)
+    else if (data && data.success === false)
+      alert(t('directory.members.delete_error') + ' ' + data.error)
     else {
-      alert(t('directory.invite.new_success'));
-      onClose();
-      setInviteEmail('');
+      alert(t('directory.invite.new_success'))
+      onClose()
+      setInviteEmail('')
     }
-  };
+  }
 
   return (
-    <div className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center">
-      <div className="bg-sidebar border border-border rounded-xl w-[450px] p-0 shadow-2xl overflow-hidden flex flex-col">
-        <div className="p-6 pb-2 border-b border-border">
-          <h3 className="text-foreground text-lg font-medium mb-4 flex items-center gap-2">
-            <User className="w-5 h-5 text-primary" /> {t('directory.invite.title')}
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="flex w-[450px] flex-col overflow-hidden rounded-xl border border-border bg-sidebar p-0 shadow-2xl">
+        <div className="border-b border-border p-6 pb-2">
+          <h3 className="mb-4 flex items-center gap-2 text-lg font-medium text-foreground">
+            <User className="h-5 w-5 text-primary" /> {t('directory.invite.title')}
           </h3>
 
-          <div className="flex bg-muted rounded-lg p-1 mb-4">
+          <div className="mb-4 flex rounded-lg bg-muted p-1">
             <button
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'existing' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-colors ${inviteTab === 'existing' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setInviteTab('existing')}
             >
               {t('directory.invite.tab_existing')}
             </button>
             <button
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'new' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition-colors ${inviteTab === 'new' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setInviteTab('new')}
             >
               {t('directory.invite.tab_new')}
@@ -92,26 +112,34 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
           </div>
         </div>
 
-        <div className="p-6 flex-1 max-h-[350px] overflow-y-auto scrollbar-dark">
+        <div className="scrollbar-dark max-h-[350px] flex-1 overflow-y-auto p-6">
           {inviteTab === 'existing' ? (
             <div className="space-y-4">
               <p className="text-xs text-muted-foreground">{t('directory.invite.existing_desc')}</p>
               <div className="space-y-2">
                 {workspaceUsers.length === 0 ? (
-                  <div className="text-sm text-center py-4 text-muted-foreground">{t('directory.invite.no_users')}</div>
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    {t('directory.invite.no_users')}
+                  </div>
                 ) : (
-                  workspaceUsers.map(u => (
+                  workspaceUsers.map((u) => (
                     <div
                       key={u.id}
                       onClick={() => setSelectedExistingUserId(u.id)}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors ${selectedExistingUserId === u.id ? 'bg-primary/10 border-primary/50' : 'bg-muted border-border hover:border-border'}`}
+                      className={`flex cursor-pointer items-center justify-between rounded-lg border p-3 transition-colors ${selectedExistingUserId === u.id ? 'border-primary/50 bg-primary/10' : 'border-border bg-muted hover:border-border'}`}
                     >
                       <div>
-                        <div className="text-foreground text-sm font-medium">{u.full_name || t('directory.invite.anonymous')}</div>
-                        <div className="text-muted-foreground text-xs">{u.email}</div>
+                        <div className="text-sm font-medium text-foreground">
+                          {u.full_name || t('directory.invite.anonymous')}
+                        </div>
+                        <div className="text-xs text-muted-foreground">{u.email}</div>
                       </div>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedExistingUserId === u.id ? 'border-primary bg-primary' : 'border-muted-foreground/30'}`}>
-                        {selectedExistingUserId === u.id && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
+                      <div
+                        className={`flex h-4 w-4 items-center justify-center rounded-full border ${selectedExistingUserId === u.id ? 'border-primary bg-primary' : 'border-muted-foreground/30'}`}
+                      >
+                        {selectedExistingUserId === u.id && (
+                          <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                        )}
                       </div>
                     </div>
                   ))
@@ -120,22 +148,39 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-xs text-muted-foreground mb-1">{t('directory.invite.new_desc')}</p>
+              <p className="mb-1 text-xs text-muted-foreground">{t('directory.invite.new_desc')}</p>
               <div>
-                <label className="text-xs text-muted-foreground mb-1.5 block">{t('directory.invite.email_label')}</label>
-                <input type="email" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} className="w-full bg-muted border border-border text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:border-primary" placeholder={t('directory.invite.email_placeholder')} />
+                <label className="mb-1.5 block text-xs text-muted-foreground">
+                  {t('directory.invite.email_label')}
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full rounded-md border border-border bg-muted px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
+                  placeholder={t('directory.invite.email_placeholder')}
+                />
               </div>
             </div>
           )}
         </div>
 
-        <div className="p-5 border-t border-border bg-background flex justify-end gap-3">
-          <Button variant="ghost" onClick={() => { onClose(); setSelectedExistingUserId(''); }} className="text-muted-foreground hover:text-foreground text-xs h-9">{t('directory.hub.cancel')}</Button>
+        <div className="flex justify-end gap-3 border-t border-border bg-background p-5">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              onClose()
+              setSelectedExistingUserId('')
+            }}
+            className="h-9 text-xs text-muted-foreground hover:text-foreground"
+          >
+            {t('directory.hub.cancel')}
+          </Button>
           {inviteTab === 'existing' ? (
             <Button
               onClick={handleInviteExisting}
               disabled={!selectedExistingUserId}
-              className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
+              className="h-9 bg-primary text-xs text-white hover:bg-primary/80 dark:bg-[#0F1115] dark:hover:bg-[#1A1D24]"
             >
               {t('directory.invite.title')}
             </Button>
@@ -143,7 +188,7 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
             <Button
               onClick={handleInviteNew}
               disabled={isLoading || !inviteEmail}
-              className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white text-xs h-9"
+              className="h-9 bg-primary text-xs text-white hover:bg-primary/80 dark:bg-[#0F1115] dark:hover:bg-[#1A1D24]"
             >
               {isLoading ? t('directory.invite.sending') : t('directory.invite.send_button')}
             </Button>
@@ -151,5 +196,5 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

@@ -38,13 +38,19 @@
     "last_name": "Efternamn",
     "ssn": "Personnummer",
     "address": "Adress",
-    "notes": "Noteringar"
+    "notes": "Noteringar",
+    "next": "Nästa",
+    "back": "Bakåt",
+    "add": "Lägg till",
+    "fill_required_fields": "Vänligen fyll i alla obligatoriska fält",
+    "create": "Skapa",
+    "years_old": "år"
   },
   "sidebar": {
     "time_management": "Tidshantering",
     "time_reports": "Tidsrapporter",
     "schedule": "Schema",
-    "work_notes": "Anteckningar",
+    "notes": "Anteckningar",
     "inbox": "Inkorg",
     "teams": "Laget",
     "medication": "Medicinering",
@@ -114,7 +120,8 @@
     "views": {
       "day": "Dag",
       "week": "Vecka",
-      "month": "Månad"
+      "month": "Månad",
+      "agenda": "Agenda"
     }
   },
   "settings": {
@@ -145,7 +152,17 @@
     "theme_dark": "Mörk",
     "theme_system": "System",
     "font_scale": "Textstorlek",
-    "success_update": "Inställningarna har uppdaterats",
+    "success_update": "Inställningarna har sparats",
+    "workspace": {
+      "title": "Arbetsyteinställningar",
+      "desc": "Hantera din organisations konfiguration och preferenser.",
+      "organization": "Organisationsidentitet",
+      "organization_desc": "Hantera hur din organisation representeras på plattformen.",
+      "org_name": "Organisationsnamn",
+      "org_logo": "Organisationslogotyp",
+      "org_logo_desc": "Ladda upp en anpassad logotyp för din arbetsyta.",
+      "crop_logo": "Beskär organisationslogotyp"
+    },
     "desc": "Hantera din arbetsyta och personliga inställningar.",
     "localization_desc": "Språk och regionala inställningar.",
     "choose_theme": "Välj tema",
@@ -159,21 +176,7 @@
       "general": "Allmänt",
       "account": "Profil",
       "scheduler": "Schema",
-      "modules": "Moduler",
       "notifications": "Notiser"
-    },
-    "modules": {
-      "school_title": "Skolmodul",
-      "school_desc": "Lärplattform & elevhantering",
-      "assistance_title": "Assistansmodul",
-      "assistance_desc": "Vårdomsorg & assistans",
-      "beta": "BETA",
-      "school_feature_1": "Närvarohantering och schema för elever.",
-      "school_feature_2": "Betygskataloger och studieplaner.",
-      "school_feature_3": "Utvecklingssamtal och rapportering.",
-      "assistance_feature_1": "Brukarregister och digital journalföring.",
-      "assistance_feature_2": "Hantera sovande jour och medicinsignering.",
-      "assistance_feature_3": "Beredskapsrapporter och avvikelsehantering."
     },
     "notifications": {
       "title": "E-postnotiser",
@@ -193,6 +196,8 @@
       "appearance_desc": "Anpassa din personliga upplevelse av plattformen.",
       "accent_color": "Accentfärg",
       "accent_info": "Denna färg används för knappar, länkar och markeringar.",
+      "custom_color_title": "Välj en anpassad ton",
+      "custom_color_desc": "Välj vilken färg som helst för att matcha ditt personliga varumärke eller projektstämning.",
       "security_title": "Säkerhet & Loggin",
       "security_desc": "Tvåfaktorsautentisering och sessionshantering kommer snart.",
       "phone": "Telefonnummer",
@@ -200,7 +205,29 @@
       "privacy": "Integritetsinställningar",
       "visibility_everyone": "Alla",
       "visibility_organization": "Organisationen",
-      "visibility_none": "Privat"
+      "visibility_none": "Privat",
+      "mfa": {
+        "title": "Tvåfaktorsautentisering",
+        "desc": "Skydda ditt konto med ett extra lager säkerhet.",
+        "enabled": "Tvåfaktorsautentisering är aktiverat.",
+        "disabled": "Tvåfaktorsautentisering är för närvarande inaktiverat.",
+        "enable_button": "Aktivera 2FA",
+        "disable_button": "Inaktivera 2FA",
+        "setup_title": "Konfigurera autentiseringsapp",
+        "setup_desc": "Skanna QR-koden med din autentiseringsapp (t.ex. Google Authenticator eller Authy).",
+        "verify_title": "Verifiera kod",
+        "verify_desc": "Ange den 6-siffriga koden från din app för att slutföra installationen.",
+        "verify_button": "Verifiera och aktivera",
+        "unenroll_confirm_title": "Inaktivera 2FA?",
+        "unenroll_confirm_desc": "Detta kommer att göra ditt konto mindre säkert. Är du säker på att du vill inaktivera tvåfaktorsautentisering?",
+        "success_enabled": "Tvåfaktorsautentisering har aktiverats.",
+        "success_disabled": "Tvåfaktorsautentisering har inaktiverats.",
+        "error_enroll": "Kunde inte starta 2FA-registrering.",
+        "error_verify": "Ogiltig kod. Vänligen försök igen.",
+        "error_unenroll": "Kunde inte inaktivera 2FA.",
+        "show_secret": "Kan du inte skanna? Visa hemlig nyckel",
+        "hide_secret": "Dölj hemlig nyckel"
+      }
     },
     "scheduler": {
       "display": "Kalendervy",
@@ -235,6 +262,7 @@
       "manage_roles": "Hantera Roller",
       "create_button": "Nytt Team",
       "create_client_button": "Ny Brukare",
+      "add_admin_button": "Lägg till Admin",
       "all_members_subtitle": "Inkluderar personal utan team-tillhörighet",
       "led_by": "Leds av:",
       "assistants_count": "Ass.",
@@ -245,7 +273,10 @@
     "members": {
       "org_title": "Personal i Organisationen",
       "team_title": "Personal i Teamet",
-      "invite_button": "Bjud in",
+      "invite_button": "Bjud in personal",
+      "location_label": "Plats/Rum",
+      "address_label": "Adress",
+      "avatar_label": "Avatar URL",
       "name_unspecified": "Namn ej angivet",
       "default_assistant_role": "Standard Assistent",
       "update_role_error": "Kunde inte uppdatera roll:",
@@ -317,6 +348,11 @@
       "name_placeholder": "T.ex. Nattpatrullen",
       "success": "Team skapat!",
       "submit": "Skapa"
+    },
+    "admin_invite": {
+      "title": "Bjud in Organisering-administratör",
+      "desc": "Administratörer kan hantera flera team och redigera organisationsinställningar.",
+      "success": "Administratör inbjuden!"
     },
     "client_manager": {
       "title": "Lägg till Brukare",
@@ -393,7 +429,10 @@
       "at_time": "kl",
       "history_button": "Historik",
       "audit_log_title": "Redigeringslogg",
-      "edited_by": "Redigerad av"
+      "edited_by": "Redigerad av",
+      "changes_recorded": "ändringar loggade",
+      "metadata_change": "Metadata eller mindre ändring utförd",
+      "diff_label": "Diff"
     },
     "compose": {
       "title": "Skriv för",
@@ -401,6 +440,7 @@
       "save_button": "Spara Anteckning",
       "subject_label": "Rubrik",
       "subject_placeholder": "Ex. Eftermiddagspasset eller Incident",
+      "content_label": "Innehåll",
       "content_placeholder": "Vad hände under passet? Skriv dina detaljerade anteckningar här..."
     }
   },
@@ -448,7 +488,7 @@
   },
   "auth": {
     "login": {
-      "title": "Välkommen till Volt",
+      "title": "Välkommen till Yntra",
       "subtitle": "Logga in med din organisations godkända identitetsleverantör.",
       "sign_in": "Logga in",
       "google_label": "Fortsätt med Google",

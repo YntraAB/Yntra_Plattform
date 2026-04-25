@@ -1,12 +1,12 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const RESEND_API_KEY = (Deno as any).env.get("RESEND_API_KEY")
+const RESEND_API_KEY = (Deno as any).env.get('RESEND_API_KEY')
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SUPABASE_URL = (Deno as any).env.get("SUPABASE_INTERNAL_URL") // Or SUPABASE_URL
+const SUPABASE_URL = (Deno as any).env.get('SUPABASE_INTERNAL_URL') // Or SUPABASE_URL
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SUPABASE_SERVICE_ROLE_KEY = (Deno as any).env.get("SUPABASE_SERVICE_ROLE_KEY")
+const SUPABASE_SERVICE_ROLE_KEY = (Deno as any).env.get('SUPABASE_SERVICE_ROLE_KEY')
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,62 +19,79 @@ serve(async (req: Request) => {
   }
 
   try {
-    const supabase = createClient(
-      SUPABASE_URL!,
-      SUPABASE_SERVICE_ROLE_KEY!
-    )
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!)
 
     const payload = await req.json()
     const { table, type, record } = payload
 
     if (type !== 'INSERT' && type !== 'UPDATE') {
-      return new Response(JSON.stringify({ message: 'Ignore' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ message: 'Ignore' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const notifications: { email: string, subject: string, body: string }[] = []
+    const notifications: { email: string; subject: string; body: string }[] = []
 
     if (table === 'messages' && type === 'INSERT') {
       const msg = record
       if (msg.receiver_id) {
         // Individual message
-        const { data: user } = await supabase.from('users').select('email, full_name, notifications_on, notification_type').eq('id', msg.receiver_id).single()
+        const { data: user } = await supabase
+          .from('users')
+          .select('email, full_name, notifications_on, notification_type')
+          .eq('id', msg.receiver_id)
+          .single()
         if (user?.notifications_on) {
           notifications.push({
             email: user.email,
             subject: `Nytt meddelande: ${msg.subject || 'Ingen rubrik'}`,
-            body: user.notification_type === 'alert_only'
-              ? `Du har fått ett nytt meddelande i Inkorg från ${msg.sender_id || 'System'}.`
-              : `Nytt meddelande från ${msg.sender_id}:\n\n${msg.body}`
+            body:
+              user.notification_type === 'alert_only'
+                ? `Du har fått ett nytt meddelande i Inkorg från ${msg.sender_id || 'System'}.`
+                : `Nytt meddelande från ${msg.sender_id}:\n\n${msg.body}`,
           })
         }
       } else if (msg.target_team_id) {
         // Team message
-        const { data: members } = await supabase.from('team_members').select('user_id').eq('team_id', msg.target_team_id)
+        const { data: members } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .eq('team_id', msg.target_team_id)
         if (members) {
           const userIds = members.map((m: { user_id: string }) => m.user_id)
-          const { data: users } = await supabase.from('users').select('email, notifications_on, notification_type').in('id', userIds)
-          users?.forEach((u: { email: string, notifications_on: boolean, notification_type: string }) => {
-            if (u.notifications_on) {
-              notifications.push({
-                email: u.email,
-                subject: `Team-meddelande: ${msg.subject || 'Ingen rubrik'}`,
-                body: u.notification_type === 'alert_only'
-                  ? `Ditt team har fått ett nytt meddelande i Inkorg.`
-                  : `Nytt team-meddelande:\n\n${msg.body}`
-              })
-            }
-          })
+          const { data: users } = await supabase
+            .from('users')
+            .select('email, notifications_on, notification_type')
+            .in('id', userIds)
+          users?.forEach(
+            (u: { email: string; notifications_on: boolean; notification_type: string }) => {
+              if (u.notifications_on) {
+                notifications.push({
+                  email: u.email,
+                  subject: `Team-meddelande: ${msg.subject || 'Ingen rubrik'}`,
+                  body:
+                    u.notification_type === 'alert_only'
+                      ? `Ditt team har fått ett nytt meddelande i Inkorg.`
+                      : `Nytt team-meddelande:\n\n${msg.body}`,
+                })
+              }
+            },
+          )
         }
       }
     } else if (table === 'time_reports' && type === 'UPDATE') {
       const report = record
       if (report.status === 'approved') {
-        const { data: user } = await supabase.from('users').select('email, notifications_on, notification_type').eq('id', report.user_id).single()
+        const { data: user } = await supabase
+          .from('users')
+          .select('email, notifications_on, notification_type')
+          .eq('id', report.user_id)
+          .single()
         if (user?.notifications_on) {
           notifications.push({
             email: user.email,
             subject: `Din tidsrapport har blivit godkänd`,
-            body: `Hej!\n\nDin tidsrapport för ${report.date} (${report.hours}h) har blivit godkänd av din chef.`
+            body: `Hej!\n\nDin tidsrapport för ${report.date} (${report.hours}h) har blivit godkänd av din chef.`,
           })
         }
       }
@@ -85,7 +102,7 @@ serve(async (req: Request) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${RESEND_API_KEY}`,
+          Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
           from: 'Yntra <notifications@yntra.se>', // Replace with your verified domain

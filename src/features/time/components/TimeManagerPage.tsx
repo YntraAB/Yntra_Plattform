@@ -1,9 +1,9 @@
-import React from 'react';
-import { useTimeManager } from '../hooks/useTimeManager';
-import { PlatformOverview } from './PlatformOverview';
-import { TeamOverview } from './TeamOverview';
-import { AssistantTeams } from './AssistantTeams';
-import { ShiftSystem } from './ShiftSystem';
+import React from 'react'
+import { useTimeManager } from '../hooks/useTimeManager'
+import { PlatformOverview } from './PlatformOverview'
+import { TeamOverview } from './TeamOverview'
+import { AssistantTeams } from './AssistantTeams'
+import { ShiftSystem } from './ShiftSystem'
 
 export const TimeManagerPage: React.FC = () => {
   const {
@@ -32,17 +32,14 @@ export const TimeManagerPage: React.FC = () => {
     openEmployeeShifts,
     openTeamShifts,
     handleApprove,
-    handleDelete
-  } = useTimeManager();
+    handleDelete,
+  } = useTimeManager()
 
   return (
-    <div className="h-full flex flex-col bg-background relative">
-      <div className="flex-1 flex flex-col w-full h-full">
+    <div className="relative flex h-full flex-col bg-background">
+      <div className="flex h-full w-full flex-1 flex-col">
         {currentLevel === 'platform_overview' && (
-          <PlatformOverview
-            dbWorkspaces={dbWorkspaces}
-            shifts={shifts}
-          />
+          <PlatformOverview dbWorkspaces={dbWorkspaces} shifts={shifts} />
         )}
         {currentLevel === 'team_overview' && (
           <TeamOverview
@@ -84,7 +81,7 @@ export const TimeManagerPage: React.FC = () => {
         )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default TimeManagerPage;
+export default TimeManagerPage

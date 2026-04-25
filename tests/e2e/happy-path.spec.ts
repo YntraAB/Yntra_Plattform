@@ -1,10 +1,10 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test'
 
 test.describe('Happy Path Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Log all requests for debugging
-    page.on('request', request => console.log('>>', request.method(), request.url()));
-    page.on('response', response => console.log('<<', response.status(), response.url()));
+    page.on('request', (request) => console.log('>>', request.method(), request.url()))
+    page.on('response', (response) => console.log('<<', response.status(), response.url()))
 
     // Mock Supabase Auth Session
     await page.route('**/auth/v1/session*', async (route) => {
@@ -20,11 +20,11 @@ test.describe('Happy Path Flow', () => {
             id: 'test-user-uuid',
             email: 'test@example.com',
             user_metadata: { role: 'admin' },
-            app_metadata: { provider: 'google' }
-          }
-        })
-      });
-    });
+            app_metadata: { provider: 'google' },
+          },
+        }),
+      })
+    })
 
     // Mock Supabase User Data call
     await page.route('**/rest/v1/users*', async (route) => {
@@ -36,10 +36,10 @@ test.describe('Happy Path Flow', () => {
           full_name: 'Test Admin',
           role: 'admin',
           email: 'test@example.com',
-          workspace_id: 'ws-1'
-        })
-      });
-    });
+          workspace_id: 'ws-1',
+        }),
+      })
+    })
 
     // Mock Supabase Workspace Data call
     await page.route('**/rest/v1/workspaces*', async (route) => {
@@ -50,28 +50,28 @@ test.describe('Happy Path Flow', () => {
           id: 'ws-1',
           name: 'Test Workspace',
           modules_active: { assistance: true, school: true },
-          settings: { language: 'en' }
-        })
-      });
-    });
+          settings: { language: 'en' },
+        }),
+      })
+    })
 
     // Mock Team Members (Unread Notes/Permissions)
     await page.route('**/rest/v1/team_members*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ team_id: 'team-1', notes_last_read_at: new Date().toISOString() }])
-      });
-    });
+        body: JSON.stringify([{ team_id: 'team-1', notes_last_read_at: new Date().toISOString() }]),
+      })
+    })
 
     // Mock Teams
     await page.route('**/rest/v1/teams*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([{ id: 'team-1', name: 'Test Team', workspace_id: 'ws-1' }])
-      });
-    });
+        body: JSON.stringify([{ id: 'team-1', name: 'Test Team', workspace_id: 'ws-1' }]),
+      })
+    })
 
     // Mock Messages (Unread count)
     await page.route('**/rest/v1/messages*', async (route) => {
@@ -79,33 +79,33 @@ test.describe('Happy Path Flow', () => {
       if (route.request().method() === 'HEAD') {
         await route.fulfill({
           status: 200,
-          headers: { 'content-range': '0-0/0' }
-        });
+          headers: { 'content-range': '0-0/0' },
+        })
       } else {
         await route.fulfill({
           status: 200,
           contentType: 'application/json',
-          body: JSON.stringify([])
-        });
+          body: JSON.stringify([]),
+        })
       }
-    });
+    })
 
-    // Mock Work Notes
-    await page.route('**/rest/v1/work_notes*', async (route) => {
+    // Mock Notes
+    await page.route('**/rest/v1/notes*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify([])
-      });
-    });
+        body: JSON.stringify([]),
+      })
+    })
 
     // Navigate to the app
-    await page.goto('/');
-  });
+    await page.goto('/')
+  })
 
   test('should show login page initially', async ({ page }) => {
-    await expect(page.getByTestId('volt-logo')).toBeVisible();
-  });
+    await expect(page.getByTestId('yntra-logo')).toBeVisible()
+  })
 
   test('should navigate to schedule and inbox after login simulation', async ({ page }) => {
     // Manually set the session to bypass social login redirect
@@ -121,32 +121,32 @@ test.describe('Happy Path Flow', () => {
           user_metadata: { role: 'admin' },
           app_metadata: { provider: 'google' },
           aud: 'authenticated',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         },
-        expires_at: Math.floor(Date.now() / 1000) + 3600
-      };
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      }
       // We set both the common key and the project-specific key to be safe
-      localStorage.setItem('sb-ileffmdueouhbooesjnv-auth-token', JSON.stringify(session));
-      localStorage.setItem('supabase.auth.token', JSON.stringify(session));
-    });
-    
-    await page.reload();
+      localStorage.setItem('sb-ileffmdueouhbooesjnv-auth-token', JSON.stringify(session))
+      localStorage.setItem('supabase.auth.token', JSON.stringify(session))
+    })
+
+    await page.reload()
 
     // Give it a bit more time to process the session
-    await page.waitForURL(/.*schedule/, { timeout: 10000 });
-    
+    await page.waitForURL(/.*schedule/, { timeout: 10000 })
+
     // Verify we are on the schedule page
-    await expect(page).toHaveURL(/.*schedule/);
-    
+    await expect(page).toHaveURL(/.*schedule/)
+
     // Debug: What's on the page?
-    const body = await page.innerHTML('body');
-    console.log('Page Body Snapshot:', body.substring(0, 500));
+    const body = await page.innerHTML('body')
+    console.log('Page Body Snapshot:', body.substring(0, 500))
 
     // Check if user name is displayed in the header
-    await expect(page.getByText('Test Admin')).toBeVisible();
+    await expect(page.getByText('Test Admin')).toBeVisible()
 
     // Navigate to Inbox
-    await page.getByTestId('sidebar-item-inbox').click();
-    await expect(page).toHaveURL(/.*inbox/);
-  });
-});
+    await page.getByTestId('sidebar-item-inbox').click()
+    await expect(page).toHaveURL(/.*inbox/)
+  })
+})

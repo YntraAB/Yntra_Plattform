@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS messages (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create work notes
-CREATE TABLE IF NOT EXISTS work_notes (
+-- Create notes
+CREATE TABLE IF NOT EXISTS notes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
   team_id UUID REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
@@ -471,7 +471,7 @@ ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE workspace_roles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE work_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE time_reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE client_medications ENABLE ROW LEVEL SECURITY;
@@ -511,13 +511,18 @@ DROP POLICY IF EXISTS "Users can send messages in their workspace" ON messages;
 DROP POLICY IF EXISTS "Users can update messages they can access" ON messages;
 DROP POLICY IF EXISTS "Workspace admins can delete workspace messages" ON messages;
 
-DROP POLICY IF EXISTS "Workspace members can read work notes" ON work_notes;
-DROP POLICY IF EXISTS "Authors and note managers can manage work notes" ON work_notes;
+DROP POLICY IF EXISTS "Workspace members can read notes" ON notes;
+DROP POLICY IF EXISTS "Authors and note managers can manage notes" ON notes;
 
 DROP POLICY IF EXISTS "Users can read relevant time reports" ON time_reports;
 DROP POLICY IF EXISTS "Users can create their own time reports" ON time_reports;
 DROP POLICY IF EXISTS "Users and approvers can update relevant time reports" ON time_reports;
 DROP POLICY IF EXISTS "Users and approvers can delete relevant time reports" ON time_reports;
+DROP POLICY IF EXISTS "Workspace members can read clients" ON clients;
+DROP POLICY IF EXISTS "Admins can manage clients" ON clients;
+DROP POLICY IF EXISTS "Workspace members can read client medications" ON client_medications;
+DROP POLICY IF EXISTS "Workspace members can read client journals" ON client_journals;
+DROP POLICY IF EXISTS "Workspace members can create client journals" ON client_journals;
 
 -- Workspaces
 CREATE POLICY "Workspace members can read workspaces"
@@ -733,9 +738,9 @@ CREATE POLICY "Workspace admins can delete workspace messages"
     OR private.is_workspace_admin(workspace_id)
   );
 
--- Work notes
-CREATE POLICY "Workspace members can read work notes"
-  ON work_notes
+-- Notes
+CREATE POLICY "Workspace members can read notes"
+  ON notes
   FOR SELECT
   TO authenticated
   USING (
@@ -743,8 +748,8 @@ CREATE POLICY "Workspace members can read work notes"
     AND private.current_user_role() != 'client'
   );
 
-CREATE POLICY "Authors and note managers can manage work notes"
-  ON work_notes
+CREATE POLICY "Authors and note managers can manage notes"
+  ON notes
   FOR ALL
   TO authenticated
   USING (

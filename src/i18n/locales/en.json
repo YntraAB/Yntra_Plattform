@@ -38,13 +38,19 @@
     "last_name": "Last Name",
     "ssn": "SSN/Personal Number",
     "address": "Address",
-    "notes": "Notes"
+    "notes": "Notes",
+    "next": "Next",
+    "back": "Back",
+    "add": "Add",
+    "fill_required_fields": "Please fill in all required fields",
+    "create": "Create",
+    "years_old": "years old"
   },
   "sidebar": {
     "time_management": "Time Management",
     "time_reports": "Time Reports",
     "schedule": "Schedule",
-    "work_notes": "Work Notes",
+    "notes": "Notes",
     "inbox": "Inbox",
     "teams": "Teams",
     "medication": "Medication",
@@ -58,7 +64,7 @@
       "schedule": "Schedule",
       "inbox": "Inbox",
       "directory": "Teams",
-      "notes": "Work Notes",
+      "notes": "Notes",
       "assistance": "Medication",
       "time": "Time Manager",
       "timereports": "Time Reports"
@@ -114,7 +120,8 @@
     "views": {
       "day": "Day",
       "week": "Week",
-      "month": "Month"
+      "month": "Month",
+      "agenda": "Agenda"
     }
   },
   "settings": {
@@ -146,6 +153,16 @@
     "theme_system": "System",
     "font_scale": "Font Scale",
     "success_update": "Settings updated successfully",
+    "workspace": {
+      "title": "Workspace Settings",
+      "desc": "Manage your organization's configuration and preferences.",
+      "organization": "Organization Identity",
+      "organization_desc": "Manage how your organization is represented across the platform.",
+      "org_name": "Organization Name",
+      "org_logo": "Organization Logo",
+      "org_logo_desc": "Upload a custom logo for your workspace.",
+      "crop_logo": "Crop Organization Logo"
+    },
     "desc": "Manage your workspace and personal preferences.",
     "localization_desc": "Language and regional settings.",
     "choose_theme": "Choose Theme",
@@ -159,21 +176,7 @@
       "general": "General",
       "account": "Profile",
       "scheduler": "Scheduler",
-      "modules": "Modules",
       "notifications": "Notifications"
-    },
-    "modules": {
-      "school_title": "School Module",
-      "school_desc": "Learning platform & student management",
-      "assistance_title": "Assistance Module",
-      "assistance_desc": "Care & assistance services",
-      "beta": "BETA",
-      "school_feature_1": "Attendance management and student scheduling.",
-      "school_feature_2": "Gradebooks and study plans.",
-      "school_feature_3": "Progress reviews and reporting.",
-      "assistance_feature_1": "User registry and digital journaling.",
-      "assistance_feature_2": "Manage sleeping shifts and medication signing.",
-      "assistance_feature_3": "On-call reports and incident management."
     },
     "notifications": {
       "title": "Email Notifications",
@@ -193,6 +196,8 @@
       "appearance_desc": "Customize your personal experience of the platform.",
       "accent_color": "Accent Color",
       "accent_info": "This color is used for buttons, links, and highlights.",
+      "custom_color_title": "Pick a Custom Tone",
+      "custom_color_desc": "Select any color to match your personal brand or project mood.",
       "security_title": "Security & Login",
       "security_desc": "Two-factor authentication and session management coming soon.",
       "phone": "Phone Number",
@@ -200,7 +205,29 @@
       "privacy": "Privacy Settings",
       "visibility_everyone": "Everyone",
       "visibility_organization": "Organization",
-      "visibility_none": "Private"
+      "visibility_none": "Private",
+      "mfa": {
+        "title": "Two-Factor Authentication",
+        "desc": "Protect your account with an extra layer of security.",
+        "enabled": "Two-factor authentication is enabled.",
+        "disabled": "Two-factor authentication is currently disabled.",
+        "enable_button": "Enable 2FA",
+        "disable_button": "Disable 2FA",
+        "setup_title": "Setup Authenticator App",
+        "setup_desc": "Scan the QR code with your authenticator app (like Google Authenticator or Authy).",
+        "verify_title": "Verify Code",
+        "verify_desc": "Enter the 6-digit code from your app to complete the setup.",
+        "verify_button": "Verify and Enable",
+        "unenroll_confirm_title": "Disable 2FA?",
+        "unenroll_confirm_desc": "This will make your account less secure. Are you sure you want to disable two-factor authentication?",
+        "success_enabled": "Two-factor authentication enabled successfully.",
+        "success_disabled": "Two-factor authentication disabled.",
+        "error_enroll": "Failed to start 2FA enrollment.",
+        "error_verify": "Invalid code. Please try again.",
+        "error_unenroll": "Failed to disable 2FA.",
+        "show_secret": "Can't scan? Show secret key",
+        "hide_secret": "Hide secret key"
+      }
     },
     "scheduler": {
       "display": "Calendar View",
@@ -235,6 +262,7 @@
       "manage_roles": "Manage Roles",
       "create_button": "New Team",
       "create_client_button": "New Client",
+      "add_admin_button": "Add Admin",
       "all_members_subtitle": "Includes staff without team affiliation",
       "led_by": "Led by:",
       "assistants_count": "Asst.",
@@ -244,8 +272,11 @@
     },
     "members": {
       "org_title": "Staff in Organization",
-      "team_title": "Staff in Team",
-      "invite_button": "Invite",
+      "team_title": "Team Personnel",
+      "invite_button": "Invite Personnel",
+      "location_label": "Location/Room",
+      "address_label": "Address",
+      "avatar_label": "Avatar URL",
       "name_unspecified": "Name not specified",
       "default_assistant_role": "Standard Assistant",
       "update_role_error": "Could not update role:",
@@ -318,6 +349,11 @@
       "success": "Team created!",
       "submit": "Create"
     },
+    "admin_invite": {
+      "title": "Invite Organization Admin",
+      "desc": "Admins can manage multiple teams and edit organization-wide settings.",
+      "success": "Admin invited successfully!"
+    },
     "client_manager": {
       "title": "Add Client",
       "team_label": "Link to Team *",
@@ -355,7 +391,7 @@
   "notes": {
     "levels": {
       "workspaces": "Organizations",
-      "notes": "Work Notes"
+      "notes": "Notes"
     },
     "general": {
       "unknown_agent": "Unknown Agent",
@@ -393,7 +429,10 @@
       "at_time": "at",
       "history_button": "History",
       "audit_log_title": "Redaction Log",
-      "edited_by": "Edited by"
+      "edited_by": "Edited by",
+      "changes_recorded": "changes recorded",
+      "metadata_change": "Metadata or minor change performed",
+      "diff_label": "Diff"
     },
     "compose": {
       "title": "Write for",
@@ -401,6 +440,7 @@
       "save_button": "Save Note",
       "subject_label": "Subject",
       "subject_placeholder": "e.g. Afternoon shift or Incident",
+      "content_label": "Content",
       "content_placeholder": "What happened during the shift? Write your detailed notes here..."
     }
   },
@@ -448,7 +488,7 @@
   },
   "auth": {
     "login": {
-      "title": "Welcome to Volt",
+      "title": "Welcome to Yntra",
       "subtitle": "Sign in with your organization-approved identity provider.",
       "sign_in": "Sign In",
       "google_label": "Continue with Google",

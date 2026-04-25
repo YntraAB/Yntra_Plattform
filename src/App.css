@@ -1,12 +1,3 @@
-/**
- * =============================================================================
- * APP-SPECIFIC STYLES
- * =============================================================================
- * Additional styles specific to the Volt Scheduler application.
- * These complement the global styles in index.css.
- * =============================================================================
- */
-
 /* Main app container - ensures full viewport coverage */
 .app-container {
   width: 100vw;
@@ -32,7 +23,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -48,9 +39,10 @@
   right: 0;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, 
-    hsl(220, 12%, 14%) 0%, 
-    hsl(220, 12%, 18%) 50%, 
+  background: linear-gradient(
+    90deg,
+    hsl(220, 12%, 14%) 0%,
+    hsl(220, 12%, 18%) 50%,
     hsl(220, 12%, 14%) 100%
   );
 }
@@ -89,6 +81,7 @@
     opacity: 0;
     transform: scale(0.95) translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -205,13 +198,14 @@
   inset: 0;
   padding: 1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, 
-    hsl(250, 85%, 65%) 0%, 
+  background: linear-gradient(
+    135deg,
+    hsl(250, 85%, 65%) 0%,
     hsl(270, 85%, 60%) 50%,
     hsl(250, 85%, 65%) 100%
   );
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -240,7 +234,9 @@
   white-space: nowrap;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s, visibility 0.2s;
+  transition:
+    opacity 0.2s,
+    visibility 0.2s;
   border: 1px solid hsl(220, 12%, 20%);
   z-index: 1000;
 }
