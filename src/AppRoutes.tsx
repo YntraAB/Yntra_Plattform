@@ -20,6 +20,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { BreadcrumbProvider, useBreadcrumbContext } from '@/contexts/BreadcrumbContext';
+import { ErrorBoundary, RouteErrorBoundary } from './components/layout/ErrorBoundary';
 
 const CalendarPage = lazy(() => import('@/features/scheduler/components/CalendarPage').then(module => ({ default: module.CalendarPage })));
 const WorkNotesPage = lazy(() => import('@/features/notes/components/WorkNotesPage').then(module => ({ default: module.WorkNotesPage })));
@@ -54,11 +55,19 @@ const RoleGuard: React.FC<{ children: React.ReactNode, allowedRoles: string[] }>
 
 const AppLayoutWrapper: React.FC = () => {
   const { user } = useAuth();
-  if (user?.role === 'client') return <ClientLayout />;
+  if (user?.role === 'client') {
+    return (
+      <ErrorBoundary>
+        <ClientLayout />
+      </ErrorBoundary>
+    );
+  }
   return (
-    <BreadcrumbProvider>
-      <Layout />
-    </BreadcrumbProvider>
+    <ErrorBoundary>
+      <BreadcrumbProvider>
+        <Layout />
+      </BreadcrumbProvider>
+    </ErrorBoundary>
   );
 };
 
@@ -174,7 +183,7 @@ export const Layout: React.FC = () => {
               </div>
               {isProfileOpen && (
                 <div className="absolute top-12 right-0 w-48 bg-sidebar border border-border rounded-xl shadow-2xl py-2 z-50">
-                  {(user?.role === 'admin' || user?.role === 'platform_admin') && (
+                  {user?.role !== 'client' && (
                     <>
                       <button
                         onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}
@@ -212,52 +221,62 @@ export const routes = [
   {
     path: "/",
     element: <AppLayoutWrapper />,
+    errorElement: <RouteErrorBoundary />,
     handle: { breadcrumb: (t: any) => t('common.home', 'Home') },
     children: [
       { index: true, element: <RootRedirect /> },
       {
         path: "home",
         element: <RoleGuard allowedRoles={['client']}><ClientHomePage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('common.home', 'Hem') }
       },
       {
         path: "schedule",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><CalendarPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.schedule') }
       },
       {
         path: "inbox",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant', 'client']}><MessagesPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.inbox') }
       },
       {
         path: "directory",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><DirectoryPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.directory') }
       },
       {
         path: "work-notes",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><WorkNotesPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.notes') }
       },
       {
         path: "medication",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><ClientOverviewPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.assistance', 'Assistance') }
       },
       {
         path: "settings",
-        element: <RoleGuard allowedRoles={['platform_admin', 'admin']}><SettingsPage /></RoleGuard>,
+        element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><SettingsPage /></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('common.settings') }
       },
       {
         path: "time",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.time') }
       },
       {
         path: "timereports",
         element: <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}><div className="flex-1 min-w-0 overflow-y-auto"><TimeManagerPage /></div></RoleGuard>,
+        errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: any) => t('sidebar.sections.timereports') }
       },
     ]

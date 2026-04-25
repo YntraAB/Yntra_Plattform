@@ -20,8 +20,125 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
+import { cva } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 import { MessageSkeleton } from './MessageSkeleton';
 import type { ProcessedMessage } from '../types';
+
+const messageRowVariants = cva(
+  "group flex items-center px-6 py-3.5 border-b border-border/40 hover:bg-secondary/40 cursor-pointer transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both",
+  {
+    variants: {
+      selected: {
+        true: "bg-secondary/20",
+        false: "",
+      },
+    },
+    defaultVariants: {
+      selected: false,
+    },
+  }
+);
+
+const checkboxVariants = cva(
+  "w-[18px] h-[18px] rounded-[5px] border transition-all duration-300 flex items-center justify-center",
+  {
+    variants: {
+      selected: {
+        true: "border-primary bg-primary",
+        false: "border-border/60 group-hover:border-primary/50",
+      },
+    },
+    defaultVariants: {
+      selected: false,
+    },
+  }
+);
+
+const senderVariants = cva(
+  "w-56 shrink-0 truncate pr-4 transition-colors",
+  {
+    variants: {
+      unread: {
+        true: "text-foreground font-bold",
+        false: "text-muted-foreground group-hover:text-foreground/80",
+      },
+    },
+    defaultVariants: {
+      unread: false,
+    },
+  }
+);
+
+const subjectVariants = cva(
+  "truncate transition-colors",
+  {
+    variants: {
+      unread: {
+        true: "text-foreground font-bold",
+        false: "text-foreground/90",
+      },
+    },
+    defaultVariants: {
+      unread: false,
+    },
+  }
+);
+
+const timestampVariants = cva(
+  "text-[11px] font-bold tracking-tighter uppercase tabular-nums transition-colors",
+  {
+    variants: {
+      unread: {
+        true: "text-primary",
+        false: "text-muted-foreground/50",
+      },
+    },
+    defaultVariants: {
+      unread: false,
+    },
+  }
+);
+
+const listHeaderVariants = cva(
+  "h-16 px-8 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-20"
+);
+
+const fabVariants = cva(
+  "rounded-full h-14 pl-5 pr-7 bg-foreground text-background hover:bg-foreground/90 shadow-[0_20px_50px_rgba(0,0,0,0.3)] font-bold flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95 group overflow-hidden"
+);
+
+const containerVariants = cva(
+  "flex-1 flex flex-col h-full bg-background relative selection:bg-primary/20"
+);
+
+const actionIconVariants = cva(
+  "w-[18px] h-[18px] transition-colors cursor-pointer",
+  {
+    variants: {
+      intent: {
+        archive: "hover:text-primary",
+        trash: "hover:text-rose-500",
+        clock: "hover:text-foreground",
+      }
+    }
+  }
+);
+
+const paginationButtonVariants = cva(
+  "w-8 h-8 rounded-full transition-all",
+  {
+    variants: {
+      enabled: {
+        true: "hover:text-foreground hover:bg-secondary",
+        false: "opacity-30",
+      }
+    },
+    defaultVariants: {
+      enabled: true,
+    }
+  }
+);
 
 interface MessagesListPaneProps {
   messages: ProcessedMessage[];
@@ -31,7 +148,7 @@ interface MessagesListPaneProps {
   searchQuery: string;
   setSearchQuery: (val: string) => void;
   currentPage: number;
-  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
+  setCurrentPage: (updater: number | ((prev: number) => number)) => void;
   totalPages: number;
   handleSelectMessage: (id: string) => void;
   handleCompose: () => void;
@@ -87,9 +204,9 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
   }, [selectedMsgs, setSelectedMsgs]);
 
   return (
-    <div className="flex-1 flex flex-col h-full bg-background relative selection:bg-primary/20">
+    <div className={cn(containerVariants())}>
       {/* Top Header Controls */}
-      <div className="h-16 px-8 flex items-center justify-between border-b border-border/50 bg-background/50 backdrop-blur-md sticky top-0 z-20">
+      <div className={cn(listHeaderVariants())}>
         <div className="flex items-center gap-4">
           <div
             className={`w-8 shrink-0 flex items-center justify-center cursor-pointer group transition-all duration-200 ${isAllSelected ? 'scale-110' : ''}`}
@@ -157,7 +274,7 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
               variant="ghost"
               size="icon"
               aria-label={t('pagination.previous')}
-              className={`w-8 h-8 rounded-full transition-all ${currentPage > 1 ? 'hover:text-foreground hover:bg-secondary' : 'opacity-30'}`}
+              className={cn(paginationButtonVariants({ enabled: currentPage > 1 }))}
               disabled={currentPage <= 1 || isLoading}
               onClick={() => setCurrentPage(prev => prev - 1)}
             >
@@ -168,7 +285,7 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
               variant="ghost"
               size="icon"
               aria-label={t('pagination.next')}
-              className={`w-8 h-8 rounded-full transition-all ${currentPage < totalPages ? 'hover:text-foreground hover:bg-secondary' : 'opacity-30'}`}
+              className={cn(paginationButtonVariants({ enabled: currentPage < totalPages }))}
               disabled={currentPage >= totalPages || isLoading}
               onClick={() => setCurrentPage(prev => prev + 1)}
             >
@@ -197,7 +314,7 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
                   <div
                     key={msg.id}
                     onClick={() => handleSelectMessage(msg.id)}
-                    className={`group flex items-center px-6 py-3.5 border-b border-border/40 hover:bg-secondary/40 cursor-pointer transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 fill-mode-both`}
+                    className={cn(messageRowVariants({ selected: isSelected }))}
                     style={{ animationDelay: `${idx * 30}ms` }}
                     tabIndex={0}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSelectMessage(msg.id) }}
@@ -212,12 +329,12 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
                       tabIndex={0}
                       onKeyDown={(e) => { if (e.key === 'Enter') toggleSelect(msg.id, e as any) }}
                     >
-                      <div className={`w-[18px] h-[18px] rounded-[5px] border transition-all duration-300 ${isSelected ? 'border-primary bg-primary' : 'border-border/60 group-hover:border-primary/50'}`}>
+                      <div className={cn(checkboxVariants({ selected: isSelected }))}>
                         {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
                       </div>
                     </div>
 
-                    <div className={`w-56 shrink-0 truncate pr-4 transition-colors ${msg.unread ? 'text-foreground font-bold' : 'text-muted-foreground group-hover:text-foreground/80'}`}>
+                    <div className={cn(senderVariants({ unread: !!msg.unread }))}>
                       <div className="flex items-center gap-2">
                         {msg.sender.name}
                         {msg.unread && <span className="w-1.5 h-1.5 rounded-full bg-primary" />}
@@ -231,7 +348,7 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
 
                     <div className="flex-1 flex items-center truncate min-w-0 pr-6 gap-x-2">
                       {msg.folderId === 'sent' && <span className="text-[10px] font-black uppercase tracking-tighter text-primary/60 bg-primary/5 px-1.5 py-0.5 rounded shrink-0">{t('messages.to')} {msg.to}</span>}
-                      <span className={`${msg.unread ? 'text-foreground font-bold' : 'text-foreground/90'} truncate`}>
+                      <span className={cn(subjectVariants({ unread: !!msg.unread }))}>
                         {msg.subject}
                       </span>
                       <span className="text-muted-foreground/60 truncate italic font-light">
@@ -241,11 +358,11 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
 
                     <div className="w-48 shrink-0 flex items-center justify-end">
                       <div className="opacity-0 group-hover:opacity-100 flex items-center gap-3.5 mr-6 text-muted-foreground/60 transition-all duration-300 translate-x-2 group-hover:translate-x-0">
-                        <Archive className="w-[18px] h-[18px] hover:text-primary transition-colors cursor-pointer" />
-                        <Trash2 className="w-[18px] h-[18px] hover:text-rose-500 transition-colors cursor-pointer" />
-                        <Clock className="w-[18px] h-[18px] hover:text-foreground transition-colors cursor-pointer" />
+                        <Archive className={cn(actionIconVariants({ intent: 'archive' }))} />
+                        <Trash2 className={cn(actionIconVariants({ intent: 'trash' }))} />
+                        <Clock className={cn(actionIconVariants({ intent: 'clock' }))} />
                       </div>
-                      <span className={`text-[11px] font-bold tracking-tighter uppercase tabular-nums ${msg.unread ? 'text-primary' : 'text-muted-foreground/50'}`}>
+                      <span className={cn(timestampVariants({ unread: !!msg.unread }))}>
                         {msg.date === t('common.today') ? msg.timestamp : msg.date}
                       </span>
                     </div>
@@ -263,7 +380,7 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
           onClick={handleCompose}
           size="lg"
           aria-label={t('messages.new_message')}
-          className="rounded-full h-14 pl-5 pr-7 bg-foreground text-background hover:bg-foreground/90 shadow-[0_20px_50px_rgba(0,0,0,0.3)] font-bold flex items-center gap-2.5 transition-all hover:scale-105 active:scale-95 group overflow-hidden"
+          className={cn(fabVariants())}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 5v14M5 12h14" />

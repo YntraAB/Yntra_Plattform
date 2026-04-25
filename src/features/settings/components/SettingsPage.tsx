@@ -11,14 +11,18 @@ import { AccountSettings } from './AccountSettings';
 import { SchedulerSettings } from './SchedulerSettings';
 
 import { useSearchParams } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 
 export const SettingsPage: React.FC = () => {
   const { workspaceName, isLoading } = useWorkspace();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [isSaving, setIsSaving] = useState(false);
 
-  const activeTab = searchParams.get('tab') || 'general';
+  const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin';
+  const defaultTab = isAdmin ? 'general' : 'account';
+  const activeTab = searchParams.get('tab') || defaultTab;
 
   const handleTabChange = (val: string) => {
     setSearchParams({ tab: val });
@@ -45,10 +49,10 @@ export const SettingsPage: React.FC = () => {
             ) : (
               <>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                  {workspaceName || t('settings.title')}
+                  {isAdmin ? (workspaceName || t('settings.title')) : t('settings.account.profile')}
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">
-                  {t('settings.desc')}
+                  {isAdmin ? t('settings.desc') : t('settings.account.profile_desc')}
                 </p>
               </>
             )}
@@ -70,24 +74,30 @@ export const SettingsPage: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="general" value={activeTab} onValueChange={handleTabChange} className="w-full">
+      <Tabs defaultValue={defaultTab} value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="flex w-full mb-8 p-1 bg-muted/50 rounded-xl overflow-x-auto no-scrollbar">
-          <TabsTrigger value="general" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Globe className="w-4 h-4 mr-2" />
-            <span>{t('settings.tabs.general')}</span>
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="general" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Globe className="w-4 h-4 mr-2" />
+              <span>{t('settings.tabs.general')}</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="account" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <UserIcon className="w-4 h-4 mr-2" />
             <span>{t('settings.tabs.account')}</span>
           </TabsTrigger>
-          <TabsTrigger value="scheduler" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <Calendar className="w-4 h-4 mr-2" />
-            <span>{t('settings.tabs.scheduler')}</span>
-          </TabsTrigger>
-          <TabsTrigger value="modules" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-            <LayoutGrid className="w-4 h-4 mr-2" />
-            <span>{t('settings.tabs.modules')}</span>
-          </TabsTrigger>
+          {isAdmin && (
+            <TabsTrigger value="scheduler" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <Calendar className="w-4 h-4 mr-2" />
+              <span>{t('settings.tabs.scheduler')}</span>
+            </TabsTrigger>
+          )}
+          {isAdmin && (
+            <TabsTrigger value="modules" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <LayoutGrid className="w-4 h-4 mr-2" />
+              <span>{t('settings.tabs.modules')}</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger value="notifications" className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Mail className="w-4 h-4 mr-2" />
             <span>{t('settings.tabs.notifications')}</span>
@@ -111,21 +121,27 @@ export const SettingsPage: React.FC = () => {
           </div>
         ) : (
           <>
-            <TabsContent value="general" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
-              <GeneralSettings setIsSaving={setIsSaving} />
-            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="general" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                <GeneralSettings setIsSaving={setIsSaving} />
+              </TabsContent>
+            )}
 
             <TabsContent value="account" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
               <AccountSettings setIsSaving={setIsSaving} />
             </TabsContent>
 
-            <TabsContent value="scheduler" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
-              <SchedulerSettings setIsSaving={setIsSaving} />
-            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="scheduler" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                <SchedulerSettings setIsSaving={setIsSaving} />
+              </TabsContent>
+            )}
 
-            <TabsContent value="modules" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
-              <ModulesSettings setIsSaving={setIsSaving} />
-            </TabsContent>
+            {isAdmin && (
+              <TabsContent value="modules" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
+                <ModulesSettings setIsSaving={setIsSaving} />
+              </TabsContent>
+            )}
 
             <TabsContent value="notifications" className="w-full space-y-6 focus-visible:outline-none focus-visible:ring-0">
               <NotificationsSettings setIsSaving={setIsSaving} />

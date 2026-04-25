@@ -40,7 +40,7 @@ export const MessagesPage: React.FC = () => {
   const { data: users = [] } = useWorkspaceUsers(workspaceId || null);
 
   const { data: processedMessages = [], isLoading: isLoadingMessages } = useMessages(workspaceId || undefined, {
-    select: (data) => transformMessages(data, teams, user, t)
+    select: React.useCallback((data: any) => transformMessages(data, teams, user, t), [teams, user, t])
   });
 
   const markAsReadMutation = useMarkMessageAsRead(workspaceId || undefined);
@@ -214,7 +214,7 @@ export const MessagesPage: React.FC = () => {
 
   const itemsPerPage = 10;
   const totalPages = Math.max(1, Math.ceil(filteredMessages.length / itemsPerPage));
-  const currentMessages = filteredMessages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentMessages = React.useMemo(() => filteredMessages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [filteredMessages, currentPage]);
 
   React.useEffect(() => {
     setCurrentPage(1);

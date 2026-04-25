@@ -117,6 +117,39 @@ CREATE TABLE IF NOT EXISTS time_reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create clients
+CREATE TABLE IF NOT EXISTS clients (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  workspace_id UUID REFERENCES workspaces(id) ON DELETE CASCADE NOT NULL,
+  team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  personal_number TEXT,
+  care_level TEXT,
+  message_settings JSONB DEFAULT '{"allowed_contacts": "contact_person", "contact_person_email": null}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create client medications
+CREATE TABLE IF NOT EXISTS client_medications (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  dosage TEXT,
+  frequency TEXT,
+  instructions TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create client journals
+CREATE TABLE IF NOT EXISTS client_journals (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  client_id UUID REFERENCES clients(id) ON DELETE CASCADE NOT NULL,
+  author_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Notification trigger logic
 CREATE OR REPLACE FUNCTION public.handle_new_notification()
 RETURNS TRIGGER AS $$
@@ -514,7 +547,10 @@ CREATE POLICY "Users can read workspace members and themselves"
   USING (
     id = auth.uid()
     OR private.is_platform_admin()
-    OR private.is_workspace_member(workspace_id)
+    OR (
+      private.is_workspace_member(workspace_id)
+      AND private.current_user_role() != 'client'
+    )
   );
 
 CREATE POLICY "Users can update themselves"
@@ -609,7 +645,10 @@ CREATE POLICY "Workspace members can read events"
   ON events
   FOR SELECT
   TO authenticated
-  USING (private.is_workspace_member(workspace_id));
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_role() != 'client'
+  );
 
 CREATE POLICY "Workspace admins can manage events"
   ON events
@@ -699,7 +738,10 @@ CREATE POLICY "Workspace members can read work notes"
   ON work_notes
   FOR SELECT
   TO authenticated
-  USING (private.is_workspace_member(workspace_id));
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_role() != 'client'
+  );
 
 CREATE POLICY "Authors and note managers can manage work notes"
   ON work_notes
@@ -771,4 +813,62 @@ CREATE POLICY "Users and approvers can delete relevant time reports"
     OR user_id = auth.uid()
     OR private.is_workspace_admin(workspace_id)
     OR (team_id IS NOT NULL AND private.can_manage_team(team_id, 'can_approve_time_reports'))
+  );
+
+-- Clients
+CREATE POLICY "Workspace members can read clients"
+  ON clients
+  FOR SELECT
+  TO authenticated
+  USING (
+    private.is_workspace_member(workspace_id)
+    AND private.current_user_role() IN ('platform_admin', 'admin', 'user', 'assistant')
+  );
+
+CREATE POLICY "Admins can manage clients"
+  ON clients
+  FOR ALL
+  TO authenticated
+  USING (private.is_workspace_admin(workspace_id))
+  WITH CHECK (private.is_workspace_admin(workspace_id));
+
+-- Client medications
+CREATE POLICY "Workspace members can read client medications"
+  ON client_medications
+  FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM clients c
+      WHERE c.id = client_medications.client_id
+      AND private.is_workspace_member(c.workspace_id)
+      AND private.current_user_role() IN ('platform_admin', 'admin', 'user', 'assistant')
+    )
+  );
+
+-- Client journals
+CREATE POLICY "Workspace members can read client journals"
+  ON client_journals
+  FOR SELECT
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM clients c
+      WHERE c.id = client_journals.client_id
+      AND private.is_workspace_member(c.workspace_id)
+      AND private.current_user_role() IN ('platform_admin', 'admin', 'user', 'assistant')
+    )
+  );
+
+CREATE POLICY "Workspace members can create client journals"
+  ON client_journals
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM clients c
+      WHERE c.id = client_journals.client_id
+      AND private.is_workspace_member(c.workspace_id)
+      AND private.current_user_role() IN ('platform_admin', 'admin', 'user', 'assistant')
+    )
   );
