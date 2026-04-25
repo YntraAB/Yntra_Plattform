@@ -101,7 +101,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
         <Icon className="w-5 h-5" />
 
         {/* Label */}
-        <span className="flex-1 text-sm">{item.label}</span>
+        <span className="flex-1 text-sm" data-testid={`sidebar-item-${item.id}`}>{item.label}</span>
 
         {/* Badge */}
         {item.badge && (

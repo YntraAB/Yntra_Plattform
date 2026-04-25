@@ -33,7 +33,7 @@ const VoltLogo: React.FC = () => (
         </linearGradient>
       </defs>
     </svg>
-    <span className="ml-2 text-2xl font-bold text-foreground">Volt</span>
+    <span className="ml-2 text-2xl font-bold text-foreground" data-testid="volt-logo">Volt</span>
   </div>
 );
 
