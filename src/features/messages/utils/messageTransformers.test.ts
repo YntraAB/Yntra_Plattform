@@ -8,10 +8,9 @@ describe('messageTransformers', () => {
   const mockUser: User = {
     id: 'user-1',
     email: 'user@example.com',
+    name: 'Test User',
     full_name: 'Test User',
-    role: 'staff',
-    team_id: 'team-1',
-    created_at: new Date().toISOString()
+    role: 'staff'
   };
 
   const mockTeams = [
@@ -21,14 +20,15 @@ describe('messageTransformers', () => {
 
   const mockRawMessage: Message = {
     id: 'msg-1',
+    workspace_id: 'ws-1',
     sender_id: 'user-2',
     receiver_id: 'user-1',
     subject: 'Hello',
     body: 'How are you?',
     created_at: '2024-03-20T10:00:00Z',
     is_read: false,
-    sender: { id: 'user-2', full_name: 'Sender Name', email: 'sender@example.com' },
-    receiver: { id: 'user-1', full_name: 'Test User', email: 'user@example.com' }
+    sender: { id: 'user-2', name: 'Sender Name', full_name: 'Sender Name', email: 'sender@example.com', role: 'user' },
+    receiver: { id: 'user-1', name: 'Test User', full_name: 'Test User', email: 'user@example.com', role: 'staff' }
   };
 
   it('transforms a basic direct message correctly', () => {
@@ -43,12 +43,12 @@ describe('messageTransformers', () => {
   });
 
   it('transforms a sent message correctly', () => {
-    const sentMessage = {
+    const sentMessage: Message = {
       ...mockRawMessage,
       sender_id: 'user-1',
       receiver_id: 'user-2',
       sender: mockUser,
-      receiver: { id: 'user-2', full_name: 'Recipient Name' }
+      receiver: { id: 'user-2', name: 'Recipient Name', full_name: 'Recipient Name', email: 'recipient@example.com', role: 'user' }
     };
 
     const results = transformMessages([sentMessage], mockTeams, mockUser, mockT as any);
@@ -71,7 +71,7 @@ describe('messageTransformers', () => {
   });
 
   it('handles missing subject and body', () => {
-    const emptyMessage = {
+    const emptyMessage: Message = {
       ...mockRawMessage,
       subject: null,
       body: null

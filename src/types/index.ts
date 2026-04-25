@@ -13,6 +13,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  full_name?: string;
   avatar?: string;
   phone?: string;
   location?: string;
@@ -155,8 +156,8 @@ export interface Message {
   sender_id: string;
   receiver_id?: string | null;
   target_team_id?: string | null;
-  subject: string;
-  body: string;
+  subject: string | null;
+  body: string | null;
   is_read: boolean;
   created_at: string;
   sender?: User;

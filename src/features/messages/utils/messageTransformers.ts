@@ -38,7 +38,7 @@ export const transformMessages = (
       isTeamMessage: !!m.target_team_id,
       subject: m.subject || t('messages.no_header'),
       snippet: m.body ? m.body.substring(0, 40) + '...' : '',
-      content: m.body,
+      content: m.body || '',
       timestamp: new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       date: new Date(m.created_at).toLocaleDateString(),
       unread: !m.is_read

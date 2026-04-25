@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Sidebar } from './Sidebar';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,10 +22,10 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 vi.mock('@/contexts/WorkspaceContext', () => ({
-  useWorkspace: () => ({ 
-    modules: { assistance: true }, 
-    workspaceId: 'ws-1', 
-    setAdminWorkspace: vi.fn() 
+  useWorkspace: () => ({
+    modules: { assistance: true },
+    workspaceId: 'ws-1',
+    setAdminWorkspace: vi.fn()
   })
 }));
 
@@ -60,7 +60,7 @@ const renderSidebar = (activeSection = 'schedule', onSectionChange = vi.fn()) =>
 describe('Sidebar Component', () => {
   it('renders navigation items correctly', () => {
     renderSidebar();
-    
+
     // Check if key navigation items are present
     // We use data-testid that I added earlier
     expect(screen.getByTestId('sidebar-item-inbox')).toBeInTheDocument();
@@ -69,7 +69,7 @@ describe('Sidebar Component', () => {
 
   it('displays unread badges when applicable', () => {
     renderSidebar();
-    
+
     // The mock returns 5 unread notes
     expect(screen.getByText('5')).toBeInTheDocument();
   });
@@ -77,10 +77,10 @@ describe('Sidebar Component', () => {
   it('calls onSectionChange when a menu item is clicked', () => {
     const onSectionChange = vi.fn();
     renderSidebar('schedule', onSectionChange);
-    
+
     const inboxItem = screen.getByTestId('sidebar-item-inbox');
     fireEvent.click(inboxItem);
-    
+
     expect(onSectionChange).toHaveBeenCalledWith('inbox');
   });
 
