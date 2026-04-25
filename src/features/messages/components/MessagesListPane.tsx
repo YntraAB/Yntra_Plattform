@@ -12,6 +12,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
 import { MessageSkeleton } from './MessageSkeleton';
 import type { ProcessedMessage } from '../types';
@@ -126,28 +133,24 @@ export const MessagesListPane = memo<MessagesListPaneProps>(({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               aria-label={t('messages.search_placeholder')}
-              className="pl-9 bg-muted/50 border border-border/50 text-foreground h-9 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-muted transition-all"
+              className="pl-9 bg-muted/50 border border-border/50 text-foreground h-9 rounded-lg text-xs focus-visible:ring-1 focus-visible:ring-primary focus-visible:bg-muted transition-all"
             />
           </div>
 
-          <div className="flex items-center gap-1 text-xs text-muted-foreground relative group">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              aria-label={t('messages.filter')}
-              className="bg-muted/80 border border-border/50 text-foreground font-semibold hover:bg-secondary cursor-pointer rounded-lg pl-3 pr-8 py-1.5 appearance-none focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
-              style={{ WebkitAppearance: 'none' }}
-            >
-              <option value="inbox" className="bg-card text-foreground py-2">{t('messages.inbox')}</option>
-              <option value="unread" className="bg-card text-foreground py-2">{t('messages.unread')}</option>
-              <option value="sent" className="bg-card text-foreground py-2">{t('messages.sent')}</option>
-              <option value="archive" className="bg-card text-foreground py-2">{t('messages.archive')}</option>
-              <option value="trash" className="bg-card text-rose-400 py-2">{t('messages.trash')}</option>
-            </select>
-            <div className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground group-hover:text-foreground transition-colors">
-              <ChevronLeft className="w-3.5 h-3.5 -rotate-90" />
-            </div>
-          </div>
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger size="sm" className="w-[110px] bg-muted/80 border-border/50 text-foreground font-semibold h-9 rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="inbox">{t('messages.inbox')}</SelectItem>
+              <SelectItem value="unread">{t('messages.unread')}</SelectItem>
+              <SelectItem value="sent">{t('messages.sent')}</SelectItem>
+              <SelectItem value="archive">{t('messages.archive')}</SelectItem>
+              <SelectItem value="trash" className="text-rose-400 focus:text-rose-400">
+                {t('messages.trash')}
+              </SelectItem>
+            </SelectContent>
+          </Select>
 
           <div className="flex items-center gap-3 text-muted-foreground">
             <Button

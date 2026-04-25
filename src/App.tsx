@@ -2,12 +2,7 @@
  * This is the root component.
  * It manages the application state, routing between login and scheduler views,
  * and provides the overall application structure.
- * 
-/**
- * This is the root component.
- * It manages the application state, routing between login and scheduler views,
- * and provides the overall application structure.
- * 
+ *
  * The app follows a modular architecture with clear separation of concerns:
  * - Authentication (login/logout)
  * - Scheduling system (calendar, events, navigation)
@@ -53,7 +48,7 @@ function App() {
     const hash = window.location.hash;
 
     if (hash.includes('error=')) {
-      setUrlError(t('auth.invite_error.message', 'Inbjudningslänken är ogiltig, har gått ut, eller så har kontot tagits bort av en administratör.'));
+      setUrlError(t('auth.invite_error.message'));
       window.location.hash = '';
     }
     else if (hash.includes('type=invite') || hash.includes('type=recovery')) {
@@ -105,7 +100,7 @@ function App() {
           </div>
         </div>
         <p className="text-sm font-medium text-muted-foreground animate-pulse">
-          {t('auth.securing_connection', 'Säkrar anslutningen...')}
+          {t('auth.securing_connection')}
         </p>
       </div>
     );

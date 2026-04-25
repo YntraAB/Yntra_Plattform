@@ -33,6 +33,7 @@ import { ClientLayout } from './features/client-portal/components/ClientLayout';
 const ClientHomePage = lazy(() => import('./features/client-portal/components/ClientHomePage').then(module => ({ default: module.ClientHomePage })));
 
 const RoleGuard: React.FC<{ children: React.ReactNode, allowedRoles: string[] }> = ({ children, allowedRoles }) => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const location = useLocation();
   if (!user) return <Navigate to="/" replace />;
@@ -148,7 +149,7 @@ export const Layout: React.FC = () => {
                 value={user?.role || ''}
                 onValueChange={(val) => simulateRole(val)}
               >
-                <SelectTrigger className="h-8 w-[120px] bg-secondary/50 border-border rounded-full text-[11px] font-bold shadow-none focus:ring-0 focus:ring-offset-0 animate-in fade-in zoom-in duration-300">
+                <SelectTrigger className="h-8 w-[120px] bg-secondary/50 border-border rounded-lg text-[11px] font-bold shadow-none focus:ring-0 focus:ring-offset-0 animate-in fade-in zoom-in duration-300">
                   <SelectValue placeholder={t('auth.role_simulator.placeholder')} />
                 </SelectTrigger>
                 <SelectContent align="end" className="bg-sidebar border-border">
@@ -161,34 +162,34 @@ export const Layout: React.FC = () => {
               </Select>
             )}
             <div className="flex items-center gap-3 relative" ref={profileRef}>
-            <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 pl-3 py-1 cursor-pointer hover:bg-secondary rounded-md transition-colors">
-              <div className="text-right hidden md:block">
-                <div className="text-foreground text-sm font-medium leading-tight">{userName}</div>
-                <div className="text-primary text-[10px] font-bold uppercase tracking-wider">{user?.role === 'platform_admin' ? t('auth.role_simulator.platform_admin') : (user?.role || t('auth.role_simulator.admin'))}</div>
+              <div onClick={() => setIsProfileOpen(!isProfileOpen)} className="flex items-center gap-3 pl-3 py-1 cursor-pointer hover:bg-secondary rounded-md transition-colors">
+                <div className="text-right hidden md:block">
+                  <div className="text-foreground text-sm font-medium leading-tight">{userName}</div>
+                  <div className="text-primary text-[10px] font-bold uppercase tracking-wider">{user?.role === 'platform_admin' ? t('auth.role_simulator.platform_admin') : (user?.role || t('auth.role_simulator.admin'))}</div>
+                </div>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-inner">
+                  <span className="text-foreground text-sm font-bold">{userName.charAt(0).toUpperCase()}</span>
+                </div>
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               </div>
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-inner">
-                <span className="text-foreground text-sm font-bold">{userName.charAt(0).toUpperCase()}</span>
-              </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </div>
-            {isProfileOpen && (
-              <div className="absolute top-12 right-0 w-48 bg-sidebar border border-border rounded-xl shadow-2xl py-2 z-50">
-                {(user?.role === 'admin' || user?.role === 'platform_admin') && (
-                  <>
-                    <button
-                      onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}
-                      className="w-full flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
-                      <Settings className="w-4 h-4" /> {t('common.settings')}
-                    </button>
-                    <div className="my-1 border-t border-border"></div>
-                  </>
-                )}
-                <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
-                  <LogOut className="w-4 h-4" /> {t('common.logout')}
-                </button>
-              </div>
-            )}
+              {isProfileOpen && (
+                <div className="absolute top-12 right-0 w-48 bg-sidebar border border-border rounded-xl shadow-2xl py-2 z-50">
+                  {(user?.role === 'admin' || user?.role === 'platform_admin') && (
+                    <>
+                      <button
+                        onClick={() => { setIsProfileOpen(false); navigate('/settings'); }}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                      >
+                        <Settings className="w-4 h-4" /> {t('common.settings')}
+                      </button>
+                      <div className="my-1 border-t border-border"></div>
+                    </>
+                  )}
+                  <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors">
+                    <LogOut className="w-4 h-4" /> {t('common.logout')}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>

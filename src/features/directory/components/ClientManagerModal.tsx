@@ -1,9 +1,23 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { X, UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
+import { useTranslation } from 'react-i18next';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ClientManagerModalProps {
   isOpen: boolean;
@@ -13,6 +27,7 @@ interface ClientManagerModalProps {
 }
 
 export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({ isOpen, onClose, workspaceId, teams }) => {
+  const { t } = useTranslation();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [personalNumber, setPersonalNumber] = useState('');
@@ -44,8 +59,8 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({ isOpen, 
 
     setIsSubmitting(true);
     try {
-      const finalEmail = (messageSetting === 'contact_person' || (messageSetting === 'open' && hasContactPerson)) 
-        ? contactPersonEmail 
+      const finalEmail = (messageSetting === 'contact_person' || (messageSetting === 'open' && hasContactPerson))
+        ? contactPersonEmail
         : null;
 
       const { error } = await supabase.from('clients').insert({
@@ -54,129 +69,142 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({ isOpen, 
         last_name: lastName,
         personal_number: personalNumber,
         team_id: teamId || null,
-        message_settings: { 
+        message_settings: {
           allowed_contacts: messageSetting,
-          contact_person_email: finalEmail 
+          contact_person_email: finalEmail
         }
       });
 
       if (error) throw error;
-      
-      toast.success('Brukare tillagd!');
+
+      toast.success(t('directory.client_manager.success'));
       onClose();
     } catch (err: any) {
-      toast.error(err.message || 'Kunde inte lägga till brukare');
+      toast.error(err.message || t('directory.client_manager.error'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-      <div className="bg-sidebar border border-border shadow-2xl rounded-xl w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-4">
-        <div className="h-14 px-6 border-b border-border flex items-center justify-between">
-          <h2 className="text-foreground font-medium flex items-center gap-2">
-             <UserPlus className="w-5 h-5 text-primary" /> Lägg till Brukare
-          </h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-secondary">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden bg-sidebar border-border">
+        <DialogHeader className="h-14 px-6 border-b border-border flex flex-row items-center justify-between space-y-0">
+          <DialogTitle className="text-foreground font-medium flex items-center gap-2">
+            <UserPlus className="w-5 h-5 text-primary" /> {t('directory.client_manager.title')}
+          </DialogTitle>
+        </DialogHeader>
+
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-               <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Förnamn *</label>
-                  <input required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
-               </div>
-               <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Efternamn *</label>
-                  <input required value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
-               </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('common.first_name')} *</label>
+                <input required value={firstName} onChange={e => setFirstName(e.target.value)} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('common.last_name')} *</label>
+                <input required value={lastName} onChange={e => setLastName(e.target.value)} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
+              </div>
             </div>
             <div>
-               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Personnummer</label>
-               <input value={personalNumber} onChange={e => setPersonalNumber(e.target.value)} placeholder="ÅÅÅÅMMDD-XXXX" className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('common.ssn')}</label>
+              <input value={personalNumber} onChange={e => setPersonalNumber(e.target.value)} placeholder="ÅÅÅÅMMDD-XXXX" className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" />
             </div>
             <div>
-               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Koppla till Team/Arbetslag *</label>
-               <select required value={teamId} onChange={e => setTeamId(e.target.value)} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none">
-                  <option value="">-- Välj Team --</option>
-                  {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-               </select>
-               <p className="text-[11px] text-muted-foreground mt-1">Obligatoriskt. Knyter brukaren till rätt arbetsgrupp.</p>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('directory.client_manager.team_label')}</label>
+              <Select required value={teamId} onValueChange={setTeamId}>
+                <SelectTrigger className="w-full bg-background border border-border rounded-lg h-9 text-sm focus:ring-1 focus:ring-primary outline-none shadow-none">
+                  <SelectValue placeholder={t('directory.client_manager.team_placeholder')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {teams.map(t => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('directory.client_manager.team_info')}</p>
             </div>
             <div>
-               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kommunikationsnivå</label>
-               <select value={messageSetting} onChange={e => {
-                  setMessageSetting(e.target.value);
-                  if (e.target.value === 'admin_only') {
-                     setHasContactPerson(false);
-                     setContactPersonEmail('');
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('directory.client_manager.comm_level_label')}</label>
+              <Select
+                value={messageSetting}
+                onValueChange={(val) => {
+                  setMessageSetting(val);
+                  if (val === 'admin_only') {
+                    setHasContactPerson(false);
+                    setContactPersonEmail('');
                   }
-               }} className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none">
-                  <option value="admin_only">Endast Administrativ Kontakt</option>
-                  <option value="contact_person">Via Kontaktperson (+ Admins)</option>
-                  <option value="open">Öppen Kommunikation (Teamet + Brukaren)</option>
-               </select>
-               <p className="text-[11px] text-muted-foreground mt-1">Styr vilka som kan skicka meddelanden till/från brukaren.</p>
+                }}
+              >
+                <SelectTrigger className="w-full bg-background border border-border rounded-lg h-9 text-sm focus:ring-1 focus:ring-primary outline-none shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin_only">{t('directory.client_manager.comm_admin_only')}</SelectItem>
+                  <SelectItem value="contact_person">{t('directory.client_manager.comm_contact')}</SelectItem>
+                  <SelectItem value="open">{t('directory.client_manager.comm_open')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('directory.client_manager.comm_info')}</p>
             </div>
 
             {messageSetting === 'open' && (
               <div className="flex items-center gap-2 mt-2">
-                <input 
-                  type="checkbox" 
-                  id="hasContactPersonCheck" 
-                  checked={hasContactPerson} 
+                <input
+                  type="checkbox"
+                  id="hasContactPersonCheck"
+                  checked={hasContactPerson}
                   onChange={(e) => setHasContactPerson(e.target.checked)}
                   className="rounded border-border w-4 h-4 cursor-pointer"
                 />
                 <label htmlFor="hasContactPersonCheck" className="text-[13px] text-muted-foreground cursor-pointer">
-                  Lägg även till en specifik kontaktperson (Frivilligt)
+                  {t('directory.client_manager.contact_person_label')}
                 </label>
               </div>
             )}
 
             {(messageSetting === 'contact_person' || (messageSetting === 'open' && hasContactPerson)) && (
               <div className="relative mt-2 animate-in fade-in slide-in-from-top-1">
-                 <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Kontaktpersons E-post</label>
-                 <input 
-                    value={contactPersonEmail} 
-                    onChange={e => { setContactPersonEmail(e.target.value); setShowSuggestions(true); }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                    placeholder="t.ex. anna@exempel.se" 
-                    className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none" 
-                 />
-                 {showSuggestions && filteredUsers.length > 0 && (
-                   <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md z-10 max-h-40 overflow-y-auto">
-                     {filteredUsers.map(u => (
-                       <div 
-                         key={u.id} 
-                         onClick={() => handleSelectUser(u.email)}
-                         className="px-3 py-2 text-sm text-foreground hover:bg-muted cursor-pointer flex flex-col"
-                       >
-                         <span className="font-medium">{u.name}</span>
-                         <span className="text-muted-foreground text-xs">{u.email}</span>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-                 <p className="text-[11px] text-muted-foreground mt-1">Sök på namn eller skriv in e-post. Om användaren finns i Yntra kan brukaren kontakta denne direkt.</p>
+                <label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('directory.client_manager.contact_email_label')}</label>
+                <input
+                  value={contactPersonEmail}
+                  onChange={e => { setContactPersonEmail(e.target.value); setShowSuggestions(true); }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  placeholder={t('directory.client_manager.contact_email_placeholder')}
+                  className="w-full bg-background border border-border rounded-lg h-9 px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                />
+                {showSuggestions && filteredUsers.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-md z-10 max-h-40 overflow-y-auto">
+                    {filteredUsers.map(u => (
+                      <div
+                        key={u.id}
+                        onClick={() => handleSelectUser(u.email)}
+                        className="px-3 py-2 text-sm text-foreground hover:bg-muted cursor-pointer flex flex-col"
+                      >
+                        <span className="font-medium">{u.name}</span>
+                        <span className="text-muted-foreground text-xs">{u.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground mt-1">{t('directory.client_manager.contact_info')}</p>
               </div>
             )}
           </div>
-          
+
           <div className="mt-8 flex items-center justify-end gap-3">
-            <Button type="button" variant="ghost" onClick={onClose} className="h-9 hover:bg-secondary">Avbryt</Button>
+            <Button type="button" variant="ghost" onClick={onClose} className="h-9 hover:bg-secondary">{t('common.cancel')}</Button>
             <Button type="submit" disabled={isSubmitting} className="h-9 bg-primary text-primary-foreground hover:bg-primary/90">
               {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-              Spara Brukare
+              {t('directory.client_manager.save_button')}
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

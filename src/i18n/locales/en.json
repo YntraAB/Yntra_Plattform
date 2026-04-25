@@ -1,5 +1,6 @@
 {
   "common": {
+    "home": "Home",
     "loading": "Loading workspace...",
     "search": "Search...",
     "today": "Today",
@@ -31,7 +32,13 @@
     "email": "Email",
     "saved": "All changes saved",
     "last_active": "Last active",
-    "user": "User"
+    "user": "User",
+    "unknown_agent": "Unknown Agent",
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "ssn": "SSN/Personal Number",
+    "address": "Address",
+    "notes": "Notes"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -67,6 +74,7 @@
     "full_team_shifts": "Full team shifts",
     "only_my_shifts": "Only my shifts",
     "upcoming_events": "Upcoming Events",
+    "no_upcoming_events": "No upcoming events",
     "location_locked": "Assistance Module Required",
     "location_locked_desc": "The entire platform is strictly linked to the Assistance Module. Your organization does not have this module enabled, which means the workspace is locked.",
     "go_to_settings": "Go to Settings",
@@ -78,6 +86,8 @@
     "assigned_to": "Assigned to",
     "location_placeholder": "Location (optional)...",
     "description_placeholder": "Event details...",
+    "client_optional": "Client (Optional)",
+    "no_specific_client": "No specific client",
     "categories": {
       "assistance_time": "Assistance time",
       "on_call": "On-call / Standby",
@@ -113,7 +123,16 @@
     "personal": "Personal Preferences",
     "localization": "Localization",
     "language": "Language",
+    "languages": {
+      "en": "English",
+      "sv": "Svenska"
+    },
     "timezone": "Timezone",
+    "timezones": {
+      "stockholm": "Stockholm (GMT+1)",
+      "utc": "UTC (Universal Time)",
+      "new_york": "New York (GMT-5)"
+    },
     "week_start": "Week Start",
     "scheduler_density": "Scheduler Density",
     "density_compact": "Compact",
@@ -214,7 +233,8 @@
     "teams": {
       "title": "Organization Teams",
       "manage_roles": "Manage Roles",
-      "create_button": "Create Team",
+      "create_button": "New Team",
+      "create_client_button": "New Client",
       "all_members_subtitle": "Includes staff without team affiliation",
       "led_by": "Led by:",
       "assistants_count": "Asst.",
@@ -297,6 +317,24 @@
       "name_placeholder": "e.g. Night Shift",
       "success": "Team created!",
       "submit": "Create"
+    },
+    "client_manager": {
+      "title": "Add Client",
+      "team_label": "Link to Team *",
+      "team_placeholder": "-- Select Team --",
+      "team_info": "Required. Links the client to the correct working group.",
+      "comm_level_label": "Communication Level",
+      "comm_admin_only": "Administrative Contact Only",
+      "comm_contact": "Via Contact Person (+ Admins)",
+      "comm_open": "Open Communication (Team + Client)",
+      "comm_info": "Controls who can send messages to/from the client.",
+      "contact_person_label": "Also add a specific contact person (Optional)",
+      "contact_email_label": "Contact Person Email",
+      "contact_email_placeholder": "e.g. anna@example.com",
+      "contact_info": "Search by name or enter email. If the user exists in Yntra, the client can contact them directly.",
+      "save_button": "Save Client",
+      "success": "Client added successfully!",
+      "error": "Could not add client"
     },
     "invite": {
       "title": "Add to Team",
@@ -452,6 +490,38 @@
     "access_denied": {
       "title": "Access Denied",
       "message": "Your role \"{{role}}\" does not have permission to view this page."
+    }
+  },
+  "client_portal": {
+    "title": "Client Portal",
+    "account": "Account",
+    "sections": {
+      "start": "Start"
+    }
+  },
+  "timereports": {
+    "current_reports": "Current time reports",
+    "previous_months": "Previous months",
+    "filter_status": "Filter status",
+    "all_reports": "All Reports",
+    "pending": "Pending",
+    "approved": "Approved",
+    "approve_count": "Approve ({{count}})",
+    "search_placeholder": "Search reports...",
+    "no_reports_title": "No time reports",
+    "no_reports_desc": "We found no time reports matching your criteria.",
+    "no_history_title": "No history",
+    "no_history_desc": "There are no previously approved reports for this selection.",
+    "attested": "ATTESTED",
+    "work_time": "Work Time",
+    "ob_bonus": "OB Bonus",
+    "absence": "Absence",
+    "salary_before_tax": "Salary before tax",
+    "client": "Client",
+    "delete_alert": {
+      "title": "Are you absolutely sure?",
+      "description": "You are about to delete {{count}} time reports. This action cannot be undone and the reports will be permanently removed from the system.",
+      "confirm": "Yes, delete reports"
     }
   }
 }

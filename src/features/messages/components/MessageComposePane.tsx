@@ -2,6 +2,13 @@ import { memo, useEffect, useRef } from 'react';
 import { Send, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useTranslation } from 'react-i18next';
 import type { ComposeData } from '../types';
 import type { User } from '@/types';
@@ -88,31 +95,40 @@ export const MessageComposePane = memo<MessageComposePaneProps>(({
             <div className="flex items-center gap-4 border-b border-border/30 pb-4 group focus-within:border-primary/50 transition-colors">
               <label className="text-[11px] font-black uppercase tracking-widest text-muted-foreground/60 w-16">{t('messages.to')}</label>
               <div className="flex items-center flex-1 gap-2">
-                <select
+                <Select
                   value={composeData.targetType}
-                  onChange={(e) => setComposeData({ ...composeData, targetType: e.target.value as 'user' | 'team', targetId: '' })}
-                  className="bg-muted/50 text-foreground text-xs font-bold px-3 py-1.5 rounded-lg border border-border/50 focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all cursor-pointer hover:bg-muted"
+                  onValueChange={(val) => setComposeData({ ...composeData, targetType: val as 'user' | 'team', targetId: '' })}
                 >
-                  <option value="user" className="bg-card text-foreground">{t('messages.person')}</option>
-                  <option value="team" className="bg-card text-foreground">{t('messages.team')}</option>
-                </select>
+                  <SelectTrigger size="sm" className="w-[100px] bg-muted/50 border-border/50 text-xs font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">{t('messages.person')}</SelectItem>
+                    <SelectItem value="team">{t('messages.team')}</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <div className="h-4 w-[1px] bg-border/50 mx-1" />
-                <select
+
+                <Select
                   value={composeData.targetId}
-                  onChange={(e) => setComposeData({ ...composeData, targetId: e.target.value })}
-                  className="flex-1 bg-transparent border-none text-foreground text-sm font-bold focus:outline-none placeholder:text-muted-foreground cursor-pointer"
+                  onValueChange={(val) => setComposeData({ ...composeData, targetId: val })}
                 >
-                  <option value="" disabled className="bg-card text-foreground">{t('messages.recipient_placeholder')}</option>
-                  {composeData.targetType === 'user' ? (
-                    users.filter(u => u.id !== currentUserId).map(u => (
-                      <option key={u.id} value={u.id} className="bg-card text-foreground">{u.name || u.email}</option>
-                    ))
-                  ) : (
-                    teams.map(t => (
-                      <option key={t.id} value={t.id} className="bg-card text-foreground">{t.name}</option>
-                    ))
-                  )}
-                </select>
+                  <SelectTrigger className="flex-1 bg-transparent border-none text-sm font-bold shadow-none focus-visible:ring-0">
+                    <SelectValue placeholder={t('messages.recipient_placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {composeData.targetType === 'user' ? (
+                      users.filter(u => u.id !== currentUserId).map(u => (
+                        <SelectItem key={u.id} value={u.id}>{u.name || u.email}</SelectItem>
+                      ))
+                    ) : (
+                      teams.map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

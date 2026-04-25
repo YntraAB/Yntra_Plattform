@@ -8,6 +8,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { EventModal } from './EventModal';
 import { AddEventModal } from './AddEventModal';
 import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { CalendarEvent } from '@/types';
 
 export const CalendarPage: React.FC = () => {
@@ -88,15 +95,16 @@ export const CalendarPage: React.FC = () => {
               {t('scheduler.active_schedule')}
             </h3>
             <div className="space-y-2">
-              <select
-                value={selectedTeamId}
-                onChange={(e) => setSelectedTeamId(e.target.value)}
-                className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
-              >
-                {dbTeams.map(team => (
-                  <option key={team.id} value={team.id}>{team.name}</option>
-                ))}
-              </select>
+              <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
+                <SelectTrigger className="w-full bg-muted border-border text-foreground text-sm rounded-lg h-[38px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {dbTeams.map(team => (
+                    <SelectItem key={team.id} value={team.id}>{team.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         ) : null}
@@ -109,25 +117,26 @@ export const CalendarPage: React.FC = () => {
             {isLoading ? (
               <div className="w-full bg-muted border border-border rounded-lg h-[38px] animate-pulse" />
             ) : (
-              <select
-                value={selectedAssigneeId}
-                onChange={(e) => setSelectedAssigneeId(e.target.value)}
-                className="w-full bg-muted border border-border text-foreground text-sm rounded-lg p-2 focus:ring-1 focus:ring-primary outline-none"
-              >
-                {isAdmin ? (
-                  <>
-                    <option value="all">{t('scheduler.all_assistants')}</option>
-                    {dbUsers.map(u => (
-                      <option key={u.id} value={u.id}>{u.full_name || u.email || 'Okänd Agent'}</option>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    <option value="all">{t('scheduler.all_assistants')}</option>
-                    <option value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</option>
-                  </>
-                )}
-              </select>
+              <Select value={selectedAssigneeId} onValueChange={setSelectedAssigneeId}>
+                <SelectTrigger className="w-full bg-muted border-border text-foreground text-sm rounded-lg h-[38px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {isAdmin ? (
+                    <>
+                      <SelectItem value="all">{t('scheduler.all_assistants')}</SelectItem>
+                      {dbUsers.map(u => (
+                        <SelectItem key={u.id} value={u.id}>{u.full_name || u.email || t('common.unknown_agent')}</SelectItem>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="all">{t('scheduler.all_assistants')}</SelectItem>
+                      <SelectItem value={user?.id || 'all'}>{t('scheduler.only_my_shifts')}</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             )}
           </div>
         </div>
@@ -143,7 +152,7 @@ export const CalendarPage: React.FC = () => {
               ))
             ) : filteredEvents.length === 0 ? (
               <div className="text-sm text-muted-foreground italic p-2 border border-dashed border-border rounded-lg text-center">
-                Inga kommande händelser
+                {t('scheduler.no_upcoming_events')}
               </div>
             ) : (
               filteredEvents.slice(0, 3).map((event) => (

@@ -64,8 +64,8 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="sv">Svenska</SelectItem>
+                  <SelectItem value="en">{t('settings.languages.en')}</SelectItem>
+                  <SelectItem value="sv">{t('settings.languages.sv')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -80,9 +80,9 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Europe/Stockholm">Stockholm (GMT+1)</SelectItem>
-                  <SelectItem value="UTC">UTC (Universal Time)</SelectItem>
-                  <SelectItem value="America/New_York">New York (GMT-5)</SelectItem>
+                  <SelectItem value="Europe/Stockholm">{t('settings.timezones.stockholm')}</SelectItem>
+                  <SelectItem value="UTC">{t('settings.timezones.utc')}</SelectItem>
+                  <SelectItem value="America/New_York">{t('settings.timezones.new_york')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

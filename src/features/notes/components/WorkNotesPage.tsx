@@ -196,7 +196,7 @@ export const WorkNotesPage: React.FC = () => {
                 placeholder={t('notes.teams.search_placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-muted border-none text-foreground h-8 rounded-full text-xs focus-visible:ring-1 focus-visible:ring-primary"
+                className="pl-9 bg-muted border-none text-foreground h-8 rounded-lg text-xs focus-visible:ring-1 focus-visible:ring-primary"
               />
             </div>
           </div>

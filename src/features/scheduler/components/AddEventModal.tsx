@@ -19,6 +19,13 @@ import {
 } from '@/components/ui/collapsible';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ChevronDown } from 'lucide-react';
 
 interface AddEventModalProps {
@@ -65,9 +72,9 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
 
   useEffect(() => {
     if (workspaceId) {
-       supabase.from('clients').select('id, first_name, last_name').eq('workspace_id', workspaceId).then(({ data }) => {
-          if (data) setClients(data.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
-       });
+      supabase.from('clients').select('id, first_name, last_name').eq('workspace_id', workspaceId).then(({ data }) => {
+        if (data) setClients(data.map(c => ({ id: c.id, name: `${c.first_name} ${c.last_name}` })));
+      });
     }
   }, [workspaceId]);
 
@@ -132,18 +139,21 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
           {/* Category moved to top */}
           <div className="space-y-2.5">
             <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('common.category')}</label>
-            <select
-              required
+            <Select
               value={category}
-              onChange={(e) => setCategory(e.target.value as EventCategory)}
-              className="w-full bg-muted/50 border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+              onValueChange={(val) => setCategory(val as EventCategory)}
             >
-              {(['assistance_time', 'on_call', 'travel_time', 'introduction', 'meeting', 'administrative_hours', 'training', 'escort_service', 'respite_care', 'unauthorized_absence', 'involuntary_leave', 'other_time', 'customer_staff_note', 'severance_pay', 'other'] as const).map((cat) => (
-                <option key={cat} value={cat}>
-                  {t(`scheduler.categories.${cat}`, { defaultValue: cat })}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full bg-muted/50 border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(['assistance_time', 'on_call', 'travel_time', 'introduction', 'meeting', 'administrative_hours', 'training', 'escort_service', 'respite_care', 'unauthorized_absence', 'involuntary_leave', 'other_time', 'customer_staff_note', 'severance_pay', 'other'] as const).map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {t(`scheduler.categories.${cat}`, { defaultValue: cat })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="flex flex-wrap gap-2 pt-1">
               {(['assistance_time', 'on_call', 'administrative_hours', 'meeting', 'other'] as const).map((cat) => (
@@ -165,39 +175,47 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('common.team')}</label>
-              <select
-                required
+              <Select
                 value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+                onValueChange={setTeamId}
               >
-                <option value="" disabled>{t('scheduler.select_team')}</option>
-                {dbTeams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+                <SelectTrigger className="w-full bg-muted/50 border-border">
+                  <SelectValue placeholder={t('scheduler.select_team')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {dbTeams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('scheduler.staff')}</label>
-              <select
-                required
+              <Select
                 value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-                className="w-full bg-muted/50 border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+                onValueChange={setAssigneeId}
               >
-                <option value="" disabled>{t('scheduler.select_staff')}</option>
-                {dbUsers.map(u => <option key={u.id} value={u.id}>{u.full_name || u.name}</option>)}
-              </select>
+                <SelectTrigger className="w-full bg-muted/50 border-border">
+                  <SelectValue placeholder={t('scheduler.select_staff')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {dbUsers.map(u => <SelectItem key={u.id} value={u.id}>{u.full_name || u.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             {clients.length > 0 && (
               <div className="space-y-1.5 col-span-2 mt-2">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Brukare (Frivilligt)</label>
-                <select
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t('scheduler.client_optional')}</label>
+                <Select
                   value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  className="w-full bg-muted/50 border border-border rounded-lg px-2 py-2 text-sm text-foreground focus:ring-1 focus:ring-primary outline-none"
+                  onValueChange={setClientId}
                 >
-                  <option value="">Ingen specifik brukare</option>
-                  {clients.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                  <SelectTrigger className="w-full bg-muted/50 border-border">
+                    <SelectValue placeholder={t('scheduler.no_specific_client')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{t('scheduler.no_specific_client')}</SelectItem>
+                    {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             )}
           </div>
@@ -374,7 +392,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({ selectedDate, even
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full bg-muted/50 border border-border rounded-lg px-3 py-2 text-foreground focus:ring-1 focus:ring-primary outline-none min-h-[100px] resize-none"
-              placeholder={t('scheduler.description_placeholder') || 'Mer detaljer...'}
+              placeholder={t('scheduler.description_placeholder')}
             />
           </div>
         </form>

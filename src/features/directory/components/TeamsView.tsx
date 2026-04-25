@@ -38,10 +38,10 @@ export const TeamsView: React.FC<TeamsViewProps> = ({
                 {t('directory.teams.manage_roles')}
               </Button>
               <Button size="sm" className="bg-primary dark:bg-[#0F1115] hover:bg-primary/80 dark:hover:bg-[#1A1D24] text-white h-8 text-xs" onClick={onOpenTeamManager}>
-                <Plus className="w-3.5 h-3.5 mr-1.5" /> Nytt Team
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> {t('directory.teams.create_button')}
               </Button>
               <Button size="sm" className="bg-secondary text-foreground hover:bg-muted border border-border h-8 text-xs" onClick={onOpenClientManager}>
-                <UserPlus className="w-3.5 h-3.5 mr-1.5 text-primary" /> Ny Brukare
+                <UserPlus className="w-3.5 h-3.5 mr-1.5 text-primary" /> {t('directory.teams.create_client_button')}
               </Button>
             </>
           )}

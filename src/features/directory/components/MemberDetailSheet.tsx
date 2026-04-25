@@ -18,12 +18,14 @@ interface MemberDetailSheetProps {
   member: MemberItem | null;
   onClose: () => void;
   userRole: string;
+  onEdit: (member: MemberItem) => void;
 }
 
 export const MemberDetailSheet: React.FC<MemberDetailSheetProps> = ({
   member,
   onClose,
-  userRole
+  userRole,
+  onEdit
 }) => {
   const { t } = useTranslation();
   const { user: viewer } = useAuth();
@@ -154,19 +156,26 @@ export const MemberDetailSheet: React.FC<MemberDetailSheetProps> = ({
         </div>
 
         {/* Action Footer */}
-        <div className="p-4 border-t border-border bg-muted/30 flex gap-2">
-          {isPatient && (
-            <Button size="sm" className="flex-1 bg-violet-600 hover:bg-violet-700 text-foreground h-9 text-xs">
-              <FileText className="w-3.5 h-3.5 mr-2" />
-              {t('directory.detail.journal_button')}
-            </Button>
-          )}
-          {(userRole === 'platform_admin' || userRole === 'admin') && (
-            <Button size="sm" variant="outline" className={`flex-1 bg-transparent border-border text-foreground hover:bg-muted h-9 text-xs border border-border ${!isPatient && "w-full"}`}>
-              {t('directory.detail.edit_button', { type: isPatient ? t('directory.detail.patient') : t('directory.detail.staff') })}
-            </Button>
-          )}
-        </div>
+        {(isPatient || userRole === 'platform_admin' || userRole === 'admin') && (
+          <div className="p-4 border-t border-border bg-muted/30 flex gap-2">
+            {isPatient && (
+              <Button size="sm" className="flex-1 bg-violet-600 hover:bg-violet-700 text-foreground h-9 text-xs">
+                <FileText className="w-3.5 h-3.5 mr-2" />
+                {t('directory.detail.journal_button')}
+              </Button>
+            )}
+            {(userRole === 'platform_admin' || userRole === 'admin') && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => member && onEdit(member)}
+                className={`flex-1 bg-transparent border-border text-foreground hover:bg-muted h-9 text-xs border border-border ${!isPatient && "w-full"}`}
+              >
+                {t('directory.detail.edit_button', { type: isPatient ? t('directory.detail.patient') : t('directory.detail.staff') })}
+              </Button>
+            )}
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );

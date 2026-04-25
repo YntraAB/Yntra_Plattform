@@ -78,13 +78,13 @@ export const InviteManagerModal: React.FC<InviteManagerModalProps> = ({
 
           <div className="flex bg-muted rounded-lg p-1 mb-4">
             <button
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'existing' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'existing' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setInviteTab('existing')}
             >
               {t('directory.invite.tab_existing')}
             </button>
             <button
-              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'new' ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`flex-1 py-1.5 text-xs font-medium rounded-md transition-colors ${inviteTab === 'new' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
               onClick={() => setInviteTab('new')}
             >
               {t('directory.invite.tab_new')}

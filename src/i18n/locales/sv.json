@@ -1,5 +1,6 @@
 {
   "common": {
+    "home": "Hem",
     "loading": "Laddar arbetsyta...",
     "search": "Sök...",
     "today": "Idag",
@@ -31,7 +32,13 @@
     "email": "E-post",
     "saved": "Alla ändringar sparade",
     "last_active": "Senast aktiv",
-    "user": "Användare"
+    "user": "Användare",
+    "unknown_agent": "Okänd Agent",
+    "first_name": "Förnamn",
+    "last_name": "Efternamn",
+    "ssn": "Personnummer",
+    "address": "Adress",
+    "notes": "Noteringar"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -67,6 +74,7 @@
     "full_team_shifts": "Hela Teamets pass",
     "only_my_shifts": "Bara mina pass",
     "upcoming_events": "Kommande händelser",
+    "no_upcoming_events": "Inga kommande händelser",
     "location_locked": "Assistansmodul krävs",
     "location_locked_desc": "Hela plattformen är nu strikt kopplad till Assistansmodulen. Din organisation har inte denna modul aktiverad, vilket innebär att arbetsytan är låst.",
     "go_to_settings": "Gå till Inställningar",
@@ -78,6 +86,8 @@
     "assigned_to": "Tilldelad",
     "location_placeholder": "Plats (valfritt)...",
     "description_placeholder": "Detaljer om händelsen...",
+    "client_optional": "Brukare (Frivilligt)",
+    "no_specific_client": "Ingen specifik brukare",
     "categories": {
       "assistance_time": "Assistanstid",
       "on_call": "Beredskap",
@@ -113,7 +123,16 @@
     "personal": "Personliga inställningar",
     "localization": "Lokalisering",
     "language": "Språk",
+    "languages": {
+      "en": "English",
+      "sv": "Svenska"
+    },
     "timezone": "Tidszon",
+    "timezones": {
+      "stockholm": "Stockholm (GMT+1)",
+      "utc": "UTC (Universal Time)",
+      "new_york": "New York (GMT-5)"
+    },
     "week_start": "Veckostart",
     "scheduler_density": "Schema-densitet",
     "density_compact": "Kompakt",
@@ -214,7 +233,8 @@
     "teams": {
       "title": "Organisationens Teams",
       "manage_roles": "Hantera Roller",
-      "create_button": "Skapa Team",
+      "create_button": "Nytt Team",
+      "create_client_button": "Ny Brukare",
       "all_members_subtitle": "Inkluderar personal utan team-tillhörighet",
       "led_by": "Leds av:",
       "assistants_count": "Ass.",
@@ -297,6 +317,24 @@
       "name_placeholder": "T.ex. Nattpatrullen",
       "success": "Team skapat!",
       "submit": "Skapa"
+    },
+    "client_manager": {
+      "title": "Lägg till Brukare",
+      "team_label": "Koppla till Team/Arbetslag *",
+      "team_placeholder": "-- Välj Team --",
+      "team_info": "Obligatoriskt. Knyter brukaren till rätt arbetsgrupp.",
+      "comm_level_label": "Kommunikationsnivå",
+      "comm_admin_only": "Endast Administrativ Kontakt",
+      "comm_contact": "Via Kontaktperson (+ Admins)",
+      "comm_open": "Öppen Kommunikation (Teamet + Brukaren)",
+      "comm_info": "Styr vilka som kan skicka meddelanden till/från brukaren.",
+      "contact_person_label": "Lägg även till en specifik kontaktperson (Frivilligt)",
+      "contact_email_label": "Kontaktpersons E-post",
+      "contact_email_placeholder": "t.ex. anna@exempel.se",
+      "contact_info": "Sök på namn eller skriv in e-post. Om användaren finns i Yntra kan brukaren kontakta denne direkt.",
+      "save_button": "Spara Brukare",
+      "success": "Brukare tillagd!",
+      "error": "Kunde inte lägga till brukare"
     },
     "invite": {
       "title": "Lägg till i Team",
@@ -452,6 +490,38 @@
     "access_denied": {
       "title": "Åtkomst nekad",
       "message": "Din roll \"{{role}}\" har inte behörighet att se denna sida."
+    }
+  },
+  "client_portal": {
+    "title": "Trygghetsportalen",
+    "account": "Konto",
+    "sections": {
+      "start": "Start"
+    }
+  },
+  "timereports": {
+    "current_reports": "Aktuella tidsrapporter",
+    "previous_months": "Tidigare månader",
+    "filter_status": "Filtrera status",
+    "all_reports": "Alla Rapporter",
+    "pending": "Väntar",
+    "approved": "Godkända",
+    "approve_count": "Godkänn ({{count}})",
+    "search_placeholder": "Sök rapporter...",
+    "no_reports_title": "Inga tidsrapporter",
+    "no_reports_desc": "Vi hittade inga tidsrapporter som matchar dina kriterier.",
+    "no_history_title": "Ingen historik",
+    "no_history_desc": "Det finns inga tidigare godkända rapporter för detta urval.",
+    "attested": "ATTESTERAD",
+    "work_time": "Arbetstid",
+    "ob_bonus": "OB-Tillägg",
+    "absence": "Frånvaro",
+    "salary_before_tax": "Lön före skatt",
+    "client": "Brukare",
+    "delete_alert": {
+      "title": "Är du helt säker?",
+      "description": "Du håller på att radera {{count}} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.",
+      "confirm": "Ja, radera rapporter"
     }
   }
 }

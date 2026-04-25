@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Check, ChevronLeft, ChevronRight, Search, Trash2,
   FileCheck, Calendar, CheckCircle2
@@ -52,6 +53,7 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
   setSearchQuery, setCurrentPage, setSelectedShifts, setIsDeleteAlertOpen,
   handleApprove, handleDelete
 }) => {
+  const { t } = useTranslation();
   let contextShifts = shifts;
   if (selectedContext.type === 'employee') {
     contextShifts = shifts.filter(s => s.employeeId === selectedContext.id);
@@ -107,8 +109,8 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
         {history.length === 0 ? (
           <EmptyState
             icon={Calendar}
-            title="Ingen historik"
-            description="Det finns inga tidigare godkända rapporter för detta urval."
+            title={t('timereports.no_history_title')}
+            description={t('timereports.no_history_desc')}
           />
         ) : (
           history.map(h => (
@@ -119,27 +121,35 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
               <div className="w-56 shrink-0 pr-4">
                 <div className="text-foreground font-semibold text-[15px]">{h.month}</div>
                 <div className="text-[11px] text-emerald-400 font-bold uppercase tracking-widest mt-1 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> ATTESTERAD
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {t('timereports.attested')}
                 </div>
               </div>
 
               <div className="flex-1 min-w-0 pr-4 flex items-center gap-10">
                 <div className="flex flex-col gap-1">
-                  <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">Arbetstid</div>
+                  <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">
+                    {t('timereports.work_time')}
+                  </div>
                   <div className="text-foreground font-mono font-bold text-[14px]">{h.hours}h</div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">OB-Tillägg</div>
+                  <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest">
+                    {t('timereports.ob_bonus')}
+                  </div>
                   <div className="text-foreground font-mono font-bold text-[14px]">{h.ob}h</div>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <div className="text-rose-400/40 text-[10px] uppercase font-bold tracking-widest">Frånvaro</div>
+                  <div className="text-rose-400/40 text-[10px] uppercase font-bold tracking-widest">
+                    {t('timereports.absence')}
+                  </div>
                   <div className="text-foreground font-mono font-bold text-[14px]">{h.absence > 0 ? `${h.absence}h` : '-'}</div>
                 </div>
               </div>
 
               <div className="w-48 shrink-0 flex flex-col items-end justify-center pr-6">
-                <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest mb-0.5">Lön före skatt</div>
+                <div className="text-muted-foreground/50 text-[10px] uppercase font-bold tracking-widest mb-0.5">
+                  {t('timereports.salary_before_tax')}
+                </div>
                 <span className="text-[16px] font-bold text-foreground">{h.salary}</span>
               </div>
 
@@ -160,13 +170,13 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
           onClick={() => setListMode('current')}
           className={`h-full border-b-2 text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${listMode === 'current' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground/70'}`}
         >
-          Aktuella tidsrapporter
+          {t('timereports.current_reports')}
         </button>
         <button
           onClick={() => setListMode('history')}
           className={`h-full border-b-2 text-sm font-semibold transition-all duration-200 flex items-center gap-2 ${listMode === 'history' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground/70'}`}
         >
-          Tidigare månader
+          {t('timereports.previous_months')}
         </button>
       </div>
 
@@ -185,12 +195,12 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
               <div className="flex items-center gap-3">
                 <Select value={filterType} onValueChange={setFilterType}>
                   <SelectTrigger className="w-[160px] h-9 bg-muted/30 border-none font-semibold text-xs focus:ring-1 focus:ring-primary/20">
-                    <SelectValue placeholder="Filtrera status" />
+                    <SelectValue placeholder={t('timereports.filter_status')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Alla Rapporter</SelectItem>
-                    <SelectItem value="pending_attest">Väntar ({filteredShifts.filter(s => s.status === 'pending_attest').length})</SelectItem>
-                    <SelectItem value="approved">Godkända ({filteredShifts.filter(s => s.status === 'approved').length})</SelectItem>
+                    <SelectItem value="all">{t('timereports.all_reports')}</SelectItem>
+                    <SelectItem value="pending_attest">{t('timereports.pending')} ({filteredShifts.filter(s => s.status === 'pending_attest').length})</SelectItem>
+                    <SelectItem value="approved">{t('timereports.approved')} ({filteredShifts.filter(s => s.status === 'approved').length})</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -199,7 +209,7 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
                 <div className="flex items-center gap-2 border-l border-border/50 ml-2 pl-5 animate-in fade-in slide-in-from-left-2 duration-300">
                   {hasApprovePermission && (
                     <Button onClick={handleApprove} size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold h-8 text-xs px-4 shadow-lg shadow-emerald-500/20">
-                      <FileCheck className="w-3.5 h-3.5 mr-2" /> Godkänn ({selectedShifts.length})
+                      <FileCheck className="w-3.5 h-3.5 mr-2" /> {t('timereports.approve_count', { count: selectedShifts.length })}
                     </Button>
                   )}
                   <Button
@@ -218,7 +228,7 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
               <div className="relative w-56 hidden sm:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                 <Input
-                  placeholder="Sök rapporter..."
+                  placeholder={t('timereports.search_placeholder')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9 bg-muted/40 border-none text-foreground h-9 rounded-lg text-xs font-medium focus-visible:ring-1 focus-visible:ring-primary/30"
@@ -240,8 +250,8 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
             {filteredShifts.length === 0 ? (
               <EmptyState
                 icon={Calendar}
-                title="Inga tidsrapporter"
-                description="Vi hittade inga tidsrapporter som matchar dina kriterier."
+                title={t('timereports.no_reports_title')}
+                description={t('timereports.no_reports_desc')}
               />
             ) : (
               currentShifts.map((shift) => {
@@ -262,7 +272,7 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
                         {selectedContext.type === 'team' ? shift.employee : shift.team}
                       </div>
                       <div className="text-[11px] text-muted-foreground/70 font-medium uppercase tracking-widest mt-0.5">
-                        {selectedContext.type === 'team' ? shift.role : 'Brukare'}
+                        {selectedContext.type === 'team' ? shift.role : t('timereports.client')}
                       </div>
                     </div>
 
@@ -294,15 +304,15 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Är du helt säker?</AlertDialogTitle>
+            <AlertDialogTitle>{t('timereports.delete_alert.title')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Du håller på att radera {selectedShifts.length} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.
+              {t('timereports.delete_alert.description', { count: selectedShifts.length })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Avbryt</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-rose-500 hover:bg-rose-600 text-white font-bold">
-              Ja, radera rapporter
+              {t('timereports.delete_alert.confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

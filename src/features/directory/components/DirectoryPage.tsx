@@ -10,6 +10,7 @@ import { RoleManagerModal } from './RoleManagerModal';
 import { TeamManagerModal } from './TeamManagerModal';
 import { InviteManagerModal } from './InviteManagerModal';
 import { ClientManagerModal } from './ClientManagerModal';
+import { EditMemberModal } from './EditMemberModal';
 import { useBreadcrumbContext } from '@/contexts/BreadcrumbContext';
 import { useEffect } from 'react';
 
@@ -28,6 +29,7 @@ export const DirectoryPage: React.FC = () => {
     dbWorkspaceRoles,
     handleSelectWorkspace,
     handleSelectTeam,
+    loadDirectory,
     workspaceId
   } = useDirectoryData();
 
@@ -36,6 +38,8 @@ export const DirectoryPage: React.FC = () => {
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false);
   const [isInviteManagerOpen, setIsInviteManagerOpen] = useState(false);
   const [isClientManagerOpen, setIsClientManagerOpen] = useState(false);
+  const [isEditMemberOpen, setIsEditMemberOpen] = useState(false);
+  const [memberToEdit, setMemberToEdit] = useState<MemberItem | null>(null);
 
   const { setDynamicBreadcrumbs } = useBreadcrumbContext();
 
@@ -103,6 +107,10 @@ export const DirectoryPage: React.FC = () => {
         member={currentLevel === 'members' ? (selectedEntity as MemberItem | null) : null}
         onClose={() => setSelectedEntity(null)}
         userRole={userRole}
+        onEdit={(m) => {
+          setMemberToEdit(m);
+          setIsEditMemberOpen(true);
+        }}
       />
 
       <DevHubModal
@@ -138,6 +146,18 @@ export const DirectoryPage: React.FC = () => {
         onClose={() => setIsClientManagerOpen(false)}
         workspaceId={workspaceId}
         teams={dbTeams}
+      />
+
+      <EditMemberModal
+        isOpen={isEditMemberOpen}
+        onClose={() => {
+          setIsEditMemberOpen(false);
+          setMemberToEdit(null);
+        }}
+        member={memberToEdit}
+        onSave={() => {
+          loadDirectory();
+        }}
       />
     </div>
   );
