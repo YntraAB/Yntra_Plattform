@@ -1,8 +1,8 @@
-import React, { useMemo, useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useWorkspace } from '@/contexts/WorkspaceContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useTranslation } from 'react-i18next';
-import { useMessages, useMarkMessageAsRead, useSendMessage, useDeleteMessages } from '@/hooks/queries/useMessages';
+import { useMessagesPaginated, useMarkMessageAsRead, useSendMessage, useDeleteMessages } from '@/hooks/queries/useMessages';
 import { useWorkspaceTeams, useWorkspaceUsers } from '@/hooks/queries/useWorkspaceData';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -39,9 +39,53 @@ export const MessagesPage: React.FC = () => {
   const { data: teams = [] } = useWorkspaceTeams(workspaceId || null);
   const { data: users = [] } = useWorkspaceUsers(workspaceId || null);
 
-  const { data: processedMessages = [], isLoading: isLoadingMessages } = useMessages(workspaceId || undefined, {
-    select: React.useCallback((data: any) => transformMessages(data, teams, user, t), [teams, user, t])
+  const {
+    filterType, setFilterType,
+    activeMessageId, setActiveMessageId,
+    searchQuery, setSearchQuery,
+    currentPage, setCurrentPage,
+    selectedMsgs, setSelectedMsgs,
+    isComposing, setIsComposing,
+    composeData, setComposeData
+  } = useMessagesState([]);
+
+  const { selectedTeamId } = useWorkspace();
+  const itemsPerPage = 10;
+  const from = (currentPage - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
+
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState(searchQuery);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const { data: paginatedData, isLoading: isLoadingMessages } = useMessagesPaginated({
+    workspaceId,
+    from,
+    to,
+    searchQuery: debouncedSearchQuery,
+    filterType: filterType as any,
+    userId: user?.id,
+    teamId: selectedTeamId
+  }, {
+    select: useCallback((data: any) => ({
+      messages: transformMessages(data.messages, teams, user, t),
+      count: data.count
+    }), [teams, user, t]),
+    enabled: !!workspaceId && !!user
   });
+
+  const processedMessages = paginatedData?.messages || [];
+  const totalCount = paginatedData?.count || 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
+
+  const activeMessage = useMemo(() => {
+    return processedMessages.find(m => m.id === activeMessageId) || null;
+  }, [processedMessages, activeMessageId]);
 
   const markAsReadMutation = useMarkMessageAsRead(workspaceId || undefined);
   const sendMessageMutation = useSendMessage(workspaceId || undefined);
@@ -91,7 +135,7 @@ export const MessagesPage: React.FC = () => {
     fetchRelations();
   }, [user]);
 
-  const availableUsers = React.useMemo(() => {
+  const availableUsers = useMemo(() => {
      // Admin / Platform Admin can contact everyone
      if (user?.role === 'admin' || user?.role === 'platform_admin') return users;
      
@@ -137,7 +181,7 @@ export const MessagesPage: React.FC = () => {
      return [];
   }, [users, user, clientData, teamMembers, accessibleColleagues, allClients, currentUserTeams]);
 
-  const availableTeams = React.useMemo(() => {
+  const availableTeams = useMemo(() => {
      // Admin / Platform Admin can contact all teams
      if (user?.role === 'admin' || user?.role === 'platform_admin') return teams;
      
@@ -161,17 +205,6 @@ export const MessagesPage: React.FC = () => {
   }, [teams, user, clientData, currentUserTeams]);
 
 
-  const {
-    filterType, setFilterType,
-    activeMessageId, setActiveMessageId,
-    searchQuery, setSearchQuery,
-    currentPage, setCurrentPage,
-    selectedMsgs, setSelectedMsgs,
-    isComposing, setIsComposing,
-    composeData, setComposeData,
-    activeMessage
-  } = useMessagesState(processedMessages);
-
   // Handle deep-linking from search params
   React.useEffect(() => {
     const messageId = searchParams.get('messageId');
@@ -187,34 +220,7 @@ export const MessagesPage: React.FC = () => {
     }
   }, [searchParams, processedMessages.length, setIsComposing, setActiveMessageId, processedMessages, markAsReadMutation]);
 
-  const { selectedTeamId } = useWorkspace();
-
-  const filteredMessages = useMemo(() => {
-    return processedMessages.filter(m => {
-      if (selectedTeamId) {
-        // If viewing a specific team, show messages to that team OR personal inbox/sent items?
-        // Let's stick to only showing items related to that team if filter is active.
-        if (m.target_team_id !== selectedTeamId) return false;
-      }
-
-      const searchMatch = m.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.sender.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-      if (!searchMatch) return false;
-
-      if (filterType === 'inbox') return m.folderId === 'inbox';
-      if (filterType === 'unread') return m.folderId === 'inbox' && m.unread === true;
-      if (filterType === 'sent') return m.folderId === 'sent';
-      if (filterType === 'archive') return m.folderId === 'archive';
-      if (filterType === 'trash') return m.folderId === 'trash';
-
-      return false;
-    });
-  }, [processedMessages, filterType, searchQuery, selectedTeamId]);
-
-  const itemsPerPage = 10;
-  const totalPages = Math.max(1, Math.ceil(filteredMessages.length / itemsPerPage));
-  const currentMessages = React.useMemo(() => filteredMessages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage), [filteredMessages, currentPage]);
+  const currentMessages = processedMessages;
 
   React.useEffect(() => {
     setCurrentPage(1);
