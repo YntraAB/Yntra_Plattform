@@ -624,7 +624,14 @@
       "work_injury": "Work injury",
       "incident": "Incident",
       "deviation": "Deviation in assistance assignment",
-      "whistleblower": "Whistleblower"
+      "whistleblower": "Whistleblower",
+      "leave_request": "Leave Request"
+    },
+    "leave_types": {
+      "vacation": "Vacation",
+      "sick_leave": "Sick Leave",
+      "care_of_child": "Care of Child (VAB)",
+      "other": "Other"
     },
     "form": {
       "subject": "Subject",

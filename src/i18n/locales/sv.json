@@ -624,7 +624,14 @@
       "work_injury": "Anmälan om arbetsskada",
       "incident": "Anmälan om tillbud",
       "deviation": "Avvikelse i assistansuppdraget",
-      "whistleblower": "Visselblåsare"
+      "whistleblower": "Visselblåsare",
+      "leave_request": "Ledighetsansökan"
+    },
+    "leave_types": {
+      "vacation": "Semester",
+      "sick_leave": "Sjukfrånvaro",
+      "care_of_child": "Vård av barn (VAB)",
+      "other": "Övrigt"
     },
     "form": {
       "subject": "Ämne",

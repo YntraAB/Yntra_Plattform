@@ -15,6 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { CalendarClock } from 'lucide-react'
+import { TimeOffRequestModal } from './TimeOffRequestModal'
 import type { CalendarEvent } from '@/types'
 
 export const CalendarPage: React.FC = () => {
@@ -22,6 +25,7 @@ export const CalendarPage: React.FC = () => {
   const { user } = useAuth()
   const { t } = useTranslation()
   const [isAddModalOpen, setIsAddModalOpen] = React.useState(false)
+  const [isTimeOffModalOpen, setIsTimeOffModalOpen] = React.useState(false)
   const [editingEvent, setEditingEvent] = React.useState<CalendarEvent | null>(null)
   const isSv = settings.language === 'sv'
   const activeRole = user?.role || 'assistant'
@@ -155,6 +159,17 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="mt-6 border-b border-border pb-6">
+          <Button
+            variant="outline"
+            className="w-full justify-start gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 hover:text-primary transition-all"
+            onClick={() => setIsTimeOffModalOpen(true)}
+          >
+            <CalendarClock className="h-4 w-4 text-primary" />
+            {t('reporting.types.leave_request')}
+          </Button>
+        </div>
+
         <div className="mt-6">
           <h3 className="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             {t('common.upcoming')}
@@ -237,6 +252,11 @@ export const CalendarPage: React.FC = () => {
           }}
         />
       )}
+
+      <TimeOffRequestModal
+        isOpen={isTimeOffModalOpen}
+        onClose={() => setIsTimeOffModalOpen(false)}
+      />
     </div>
   )
 }
