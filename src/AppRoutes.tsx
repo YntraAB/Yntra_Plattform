@@ -38,9 +38,9 @@ const CalendarPage = lazy(() =>
     default: module.CalendarPage,
   })),
 )
-const WorkNotesPage = lazy(() =>
-  import('@/features/notes/components/WorkNotesPage').then((module) => ({
-    default: module.WorkNotesPage,
+const NotesPage = lazy(() =>
+  import('@/features/notes/components/NotesPage').then((module) => ({
+    default: module.NotesPage,
   })),
 )
 const ClientOverviewPage = lazy(() =>
@@ -347,7 +347,7 @@ export const routes = [
         path: 'notes',
         element: (
           <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <WorkNotesPage />
+            <NotesPage />
           </RoleGuard>
         ),
         errorElement: <RouteErrorBoundary />,
