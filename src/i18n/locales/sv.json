@@ -44,7 +44,10 @@
     "add": "Lägg till",
     "fill_required_fields": "Vänligen fyll i alla obligatoriska fält",
     "create": "Skapa",
-    "years_old": "år"
+    "years_old": "år",
+    "filter": "Filtrera",
+    "refresh": "Uppdatera",
+    "actions": "Åtgärd"
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -67,7 +70,8 @@
       "notes": "Anteckningar",
       "assistance": "Medicinering",
       "time": "Tidshantering",
-      "timereports": "Tidsrapporter"
+      "timereports": "Tidsrapporter",
+      "reporting": "Rapportering"
     }
   },
   "scheduler": {
@@ -153,6 +157,12 @@
     "theme_system": "System",
     "font_scale": "Textstorlek",
     "success_update": "Inställningarna har sparats",
+    "organization_identity": "Organisationsidentitet",
+    "identity_desc": "Hantera hur din organisation representeras på plattformen.",
+    "organization_name": "Organisationsnamn",
+    "workspace_logo": "Arbetsytans logotyp",
+    "upload_new_logo": "Ladda upp ny logotyp",
+    "localization_time": "Lokalisering & Tid",
     "workspace": {
       "title": "Arbetsyteinställningar",
       "desc": "Hantera din organisations konfiguration och preferenser.",
@@ -161,7 +171,10 @@
       "org_name": "Organisationsnamn",
       "org_logo": "Organisationslogotyp",
       "org_logo_desc": "Ladda upp en anpassad logotyp för din arbetsyta.",
-      "crop_logo": "Beskär organisationslogotyp"
+      "crop_logo": "Beskär organisationslogotyp",
+      "logo_preview": "Förhandsvisning av logotyp",
+      "brand_color": "Organisationens varumärkesfärg",
+      "brand_color_desc": "Denna färg kommer att vara standard för alla teammedlemmar."
     },
     "desc": "Hantera din arbetsyta och personliga inställningar.",
     "localization_desc": "Språk och regionala inställningar.",
@@ -176,7 +189,43 @@
       "general": "Allmänt",
       "account": "Profil",
       "scheduler": "Schema",
-      "notifications": "Notiser"
+      "notifications": "Notiser",
+      "blocks": "Moduler"
+    },
+    "blocks": {
+      "title": "Arbetsytans Moduler",
+      "desc": "Aktivera eller inaktivera funktionella block för din organisation.",
+      "disabled_title": "Modul inaktiverad",
+      "disabled_message": "Detta funktionella block är för närvarande inaktiverat för din arbetsyta. Kontakta din administratör för att aktivera det.",
+      "messaging": {
+        "name": "Meddelanden",
+        "desc": "Intern kommunikation och chatt"
+      },
+      "scheduling": {
+        "name": "Schemaläggning",
+        "desc": "Team- och brukarschemaläggning"
+      },
+      "notes": {
+        "name": "Dagliga anteckningar",
+        "desc": "Operativ loggning och rapporter"
+      },
+      "time": {
+        "name": "Tidsrapportering",
+        "desc": "Tidsregistrering och attestering"
+      },
+      "assistance": {
+        "name": "Assistans",
+        "desc": "Vård och brukarhantering"
+      },
+      "directory": {
+        "name": "Register",
+        "desc": "Hantera team, användare och roller"
+      },
+      "categories": {
+        "functional": "Funktionell"
+      },
+      "dependencies": "Beroenden",
+      "dependency_error": "Detta block kräver följande moduler: {{names}}"
     },
     "notifications": {
       "title": "E-postnotiser",
@@ -195,7 +244,7 @@
       "appearance": "Personligt utseende",
       "appearance_desc": "Anpassa din personliga upplevelse av plattformen.",
       "accent_color": "Accentfärg",
-      "accent_info": "Denna färg används för knappar, länkar och markeringar.",
+      "accent_info": "Denna färg används för knattar, länkar och markeringar.",
       "custom_color_title": "Välj en anpassad ton",
       "custom_color_desc": "Välj vilken färg som helst för att matcha ditt personliga varumärke eller projektstämning.",
       "security_title": "Säkerhet & Loggin",
@@ -563,5 +612,56 @@
       "description": "Du håller på att radera {{count}} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.",
       "confirm": "Ja, radera rapporter"
     }
+  },
+  "reporting": {
+    "title": "Rapportering",
+    "tabs": {
+      "send": "Skicka rapport",
+      "my_reports": "Mina rapporter"
+    },
+    "types": {
+      "complaint": "Anmälan av synpunkter och klagomål",
+      "work_injury": "Anmälan om arbetsskada",
+      "incident": "Anmälan om tillbud",
+      "deviation": "Avvikelse i assistansuppdraget",
+      "whistleblower": "Visselblåsare"
+    },
+    "form": {
+      "subject": "Ämne",
+      "description": "Beskrivning / Detaljer",
+      "select_type": "Välj typ...",
+      "description_help": "Välj en kategori och fyll i detaljerna för din rapport.",
+      "date_of_incident": "Datum för händelse",
+      "is_anonymous": "Skicka anonymt",
+      "submit": "Skicka rapport",
+      "success": "Rapporten har skickats",
+      "error": "Kunde inte skicka rapporten"
+    },
+    "list": {
+      "type": "Typ",
+      "reporter": "Inskickad av",
+      "description": "Här ser du alla rapporter du har skickat in.",
+      "status": "Status",
+      "date": "Datum",
+      "empty": "Du har inte skickat några rapporter än"
+    },
+    "status": {
+      "pending": "Väntar",
+      "reviewed": "Granskad",
+      "resolved": "Löst"
+    },
+    "stats": {
+      "total": "Totalt antal rapporter"
+    },
+    "notifications": {
+      "admin_subject": "Ny rapport: {{type}}",
+      "admin_body": "En ny rapport har skickats in.\n\nTyp: {{type}}\nÄmne: {{subject}}\n\nLäs mer under Rapportering i menyn."
+    },
+    "admin": {
+      "manage_status": "Hantera status (Admin)",
+      "select_status": "Välj status..."
+    },
+    "status_updated": "Status har uppdaterats",
+    "status_error": "Kunde inte uppdatera status"
   }
 }

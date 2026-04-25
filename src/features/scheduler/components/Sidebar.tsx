@@ -1,31 +1,22 @@
 /**
- * =============================================================================
- * SIDEBAR COMPONENT
- * =============================================================================
  * This component provides the main navigation sidebar for the scheduler.
  * It's inspired by IDE layouts (like VS Code) with collapsible sections,
  * icons, and a clean hierarchical structure.
- * =============================================================================
  */
 
 import React, { useState, useEffect } from 'react'
 import {
-  Clock,
-  FileText,
   ChevronDown,
   ChevronRight,
   Search,
-  Bell,
-  Mail,
-  Users,
-  CalendarDays,
-  FileCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
+import { BLOCK_REGISTRY, ICON_MAP } from '@/lib/blocks/registry'
+import type { UserRole } from '@/lib/blocks/registry'
 
 /**
  * Navigation item structure
@@ -206,41 +197,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const NAVIGATION_ITEMS: NavItem[] = modules.assistance
-    ? [
-        {
-          id: 'time',
-          label: t('sidebar.time_management'),
-          icon: Clock,
-          children: [
-            { id: 'timereports', label: t('sidebar.time_reports'), icon: FileCheck },
-            { id: 'schedule', label: t('sidebar.schedule'), icon: CalendarDays },
-          ],
-        },
-        {
-          id: 'notes',
-          label: t('sidebar.notes'),
-          icon: FileText,
-          badge: unreadNotes.total > 0 ? unreadNotes.total : undefined,
-        },
-        {
-          id: 'inbox',
-          label: t('sidebar.inbox'),
-          icon: Mail,
-          badge: unreadMessages > 0 ? unreadMessages : undefined,
-        },
-        {
-          id: 'directory',
-          label: t('sidebar.teams'),
-          icon: Users,
-        },
-        {
-          id: 'medication',
-          label: t('sidebar.medication'),
-          icon: Bell,
-        },
-      ]
-    : []
+  const NAVIGATION_ITEMS: NavItem[] = Object.values(BLOCK_REGISTRY).flatMap((block) => {
+    if (!(modules as any)[block.id]) return []
+
+    return block.navigation
+      .filter((item) => {
+        if (!item.allowedRoles) return true
+        return item.allowedRoles.includes(user?.role as UserRole)
+      })
+      .map((item) => {
+        let badge: number | undefined = undefined
+        if (item.badgeKey === 'unread_messages') badge = unreadMessages > 0 ? unreadMessages : undefined
+        if (item.badgeKey === 'unread_notes') badge = unreadNotes.total > 0 ? unreadNotes.total : undefined
+
+        return {
+          id: item.id,
+          label: t(item.labelKey),
+          icon: ICON_MAP[item.icon],
+          badge,
+          children: item.children
+            ?.filter((child) => !child.requiredBlockId || (modules as any)[child.requiredBlockId])
+            .map((child) => ({
+              id: child.id,
+              label: t(child.labelKey),
+              icon: ICON_MAP[child.icon],
+            })),
+        }
+      })
+  })
 
   /**
    * Toggle section expansion

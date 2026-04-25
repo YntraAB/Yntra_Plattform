@@ -154,6 +154,18 @@ export function useWorkspaceInfo(workspaceId: string | null) {
     [workspaceId, queryClient, queryKey],
   )
 
+  const updateBlockSettings = useCallback(
+    async (block_settings: Record<string, any>) => {
+      if (!workspaceId) {
+        console.error('Cannot update block settings: No workspace ID')
+        return
+      }
+      await workspaceService.updateBlockSettings(workspaceId, block_settings)
+      queryClient.invalidateQueries({ queryKey })
+    },
+    [workspaceId, queryClient, queryKey],
+  )
+
   const updateWorkspace = useCallback(
     async (updates: { name?: string; logo_url?: string | null; brand_color?: string }) => {
       if (!workspaceId) {
@@ -171,9 +183,10 @@ export function useWorkspaceInfo(workspaceId: string | null) {
       ...query,
       updateSettings,
       updateModules,
+      updateBlockSettings,
       updateWorkspace,
     }),
-    [query, updateSettings, updateModules, updateWorkspace],
+    [query, updateSettings, updateModules, updateBlockSettings, updateWorkspace],
   )
 }
 

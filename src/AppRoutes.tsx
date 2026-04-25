@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, Suspense, lazy } from 'react'
 import { Navigate, useLocation, Outlet, useNavigate, useMatches } from 'react-router-dom'
 import { Sidebar } from './features/scheduler/components/Sidebar'
-import { LogOut, Settings, ChevronDown, Loader2 } from 'lucide-react'
+import { LogOut, Settings, ChevronDown, Loader2, LayoutGrid } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,6 +21,9 @@ import {
 } from '@/components/ui/breadcrumb'
 import { BreadcrumbProvider, useBreadcrumbContext } from '@/contexts/BreadcrumbContext'
 import { ErrorBoundary, RouteErrorBoundary } from './components/layout/ErrorBoundary'
+import { useWorkspace } from '@/contexts/WorkspaceContext'
+import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
+import type { WorkspaceModules } from '@/types'
 import type { TFunction } from 'i18next'
 
 interface BreadcrumbHandle {
@@ -33,36 +36,6 @@ interface BreadcrumbMatch {
   data: unknown
 }
 
-const CalendarPage = lazy(() =>
-  import('@/features/scheduler/components/CalendarPage').then((module) => ({
-    default: module.CalendarPage,
-  })),
-)
-const NotesPage = lazy(() =>
-  import('@/features/notes/components/NotesPage').then((module) => ({
-    default: module.NotesPage,
-  })),
-)
-const ClientOverviewPage = lazy(() =>
-  import('@/features/assistance/components/ClientOverviewPage').then((module) => ({
-    default: module.ClientOverviewPage,
-  })),
-)
-const DirectoryPage = lazy(() =>
-  import('@/features/directory/components/DirectoryPage').then((module) => ({
-    default: module.DirectoryPage,
-  })),
-)
-const MessagesPage = lazy(() =>
-  import('@/features/messages/components/MessagesPage').then((module) => ({
-    default: module.MessagesPage,
-  })),
-)
-const TimeManagerPage = lazy(() =>
-  import('@/features/time/components/TimeManagerPage').then((module) => ({
-    default: module.TimeManagerPage,
-  })),
-)
 const SettingsPage = lazy(() =>
   import('@/features/settings/components/SettingsPage').then((module) => ({
     default: module.SettingsPage,
@@ -99,6 +72,34 @@ const RoleGuard: React.FC<{ children: React.ReactNode; allowedRoles: string[] }>
       )
     }
     return <Navigate to={fallback} replace />
+  }
+  return <>{children}</>
+}
+
+const BlockGuard: React.FC<{
+  children: React.ReactNode
+  blockId: keyof WorkspaceModules
+}> = ({ children, blockId }) => {
+  const { modules } = useWorkspace()
+  const { t } = useTranslation()
+
+  if (!modules[blockId]) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center bg-background p-8 text-center">
+        <div className="mb-6 rounded-2xl bg-muted/50 p-6">
+          <LayoutGrid className="mx-auto h-12 w-12 text-muted-foreground/30" />
+        </div>
+        <h2 className="mb-2 text-2xl font-bold tracking-tight text-foreground">
+          {t('settings.blocks.disabled_title', 'Feature Block Disabled')}
+        </h2>
+        <p className="max-w-md text-muted-foreground">
+          {t(
+            'settings.blocks.disabled_message',
+            'This functional block is currently deactivated for your workspace. Please contact your administrator to enable it.',
+          )}
+        </p>
+      </div>
+    )
   }
   return <>{children}</>
 }
@@ -314,56 +315,6 @@ export const routes = [
         handle: { breadcrumb: (t: TFunction) => t('common.home') },
       },
       {
-        path: 'schedule',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <CalendarPage />
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.schedule') },
-      },
-      {
-        path: 'inbox',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant', 'client']}>
-            <MessagesPage />
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.inbox') },
-      },
-      {
-        path: 'directory',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant', 'client']}>
-            <DirectoryPage />
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.directory') },
-      },
-      {
-        path: 'notes',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <NotesPage />
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.notes') },
-      },
-      {
-        path: 'medication',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <ClientOverviewPage />
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.assistance') },
-      },
-      {
         path: 'settings',
         element: (
           <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
@@ -373,30 +324,20 @@ export const routes = [
         errorElement: <RouteErrorBoundary />,
         handle: { breadcrumb: (t: TFunction) => t('common.settings') },
       },
-      {
-        path: 'time',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <div className="min-w-0 flex-1 overflow-y-auto">
-              <TimeManagerPage />
-            </div>
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.time') },
-      },
-      {
-        path: 'timereports',
-        element: (
-          <RoleGuard allowedRoles={['platform_admin', 'admin', 'user', 'assistant']}>
-            <div className="min-w-0 flex-1 overflow-y-auto">
-              <TimeManagerPage />
-            </div>
-          </RoleGuard>
-        ),
-        errorElement: <RouteErrorBoundary />,
-        handle: { breadcrumb: (t: TFunction) => t('sidebar.sections.timereports') },
-      },
+      ...Object.values(BLOCK_REGISTRY).flatMap((block) =>
+        block.routes.map((route) => ({
+          path: route.path,
+          element: (
+            <RoleGuard allowedRoles={route.allowedRoles}>
+              <BlockGuard blockId={block.id as keyof WorkspaceModules}>
+                <route.component />
+              </BlockGuard>
+            </RoleGuard>
+          ),
+          errorElement: <RouteErrorBoundary />,
+          handle: { breadcrumb: (t: TFunction) => t(route.breadcrumbKey) },
+        })),
+      ),
     ],
   },
 ]

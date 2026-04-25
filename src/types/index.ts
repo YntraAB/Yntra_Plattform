@@ -9,6 +9,8 @@ export interface UserPrivacySettings {
   location: 'everyone' | 'organization' | 'none'
 }
 
+export type UserRole = 'platform_admin' | 'admin' | 'user' | 'assistant' | 'client'
+
 export interface User {
   id: string
   email: string
@@ -18,7 +20,7 @@ export interface User {
   phone?: string
   location?: string
   privacy_settings?: UserPrivacySettings
-  role: string | 'platform_admin' | 'admin' | 'user' | 'assistant' | 'client'
+  role: UserRole
   permissions?: Record<string, unknown>
   workspaceId?: string
   client_id?: string | null
@@ -123,8 +125,14 @@ export interface MiniCalendarDay {
 }
 
 export interface WorkspaceModules {
-  school: boolean
+  school?: boolean
   assistance: boolean
+  messaging: boolean
+  scheduling: boolean
+  notes: boolean
+  time: boolean
+  directory: boolean
+  reporting: boolean
 }
 
 export interface Workspace {
@@ -133,6 +141,7 @@ export interface Workspace {
   logo_url: string | null
   brand_color: string
   modules_active: WorkspaceModules
+  block_settings: Record<string, any>
   settings: WorkspaceSettings
   created_at: string
 }

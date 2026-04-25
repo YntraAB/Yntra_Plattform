@@ -12,11 +12,13 @@ interface WorkspaceState {
   workspaceLogo: string | null
   brandColor: string
   modules: WorkspaceModules
+  blockSettings: Record<string, any>
   settings: WorkspaceSettings
   preferences: UserPreferences
   isLoading: boolean
   selectedTeamId: string | null
   updateModules: (newModules: Partial<WorkspaceModules>) => Promise<boolean>
+  updateBlockSettings: (newSettings: Record<string, any>) => Promise<boolean>
   updateSettings: (newSettings: Partial<WorkspaceSettings>) => Promise<boolean>
   updatePreferences: (newPreferences: Partial<UserPreferences>) => Promise<boolean>
   updateWorkspace: (updates: {
@@ -30,7 +32,13 @@ interface WorkspaceState {
 
 const defaultModules: WorkspaceModules = {
   school: false,
-  assistance: false,
+  assistance: true,
+  messaging: true,
+  scheduling: true,
+  notes: true,
+  time: true,
+  directory: true,
+  reporting: true,
 }
 
 const defaultSettings: WorkspaceSettings = {
@@ -52,11 +60,13 @@ const WorkspaceContext = createContext<WorkspaceState>({
   workspaceLogo: null,
   brandColor: '#3b82f6',
   modules: defaultModules,
+  blockSettings: {},
   settings: defaultSettings,
   preferences: defaultPreferences,
   isLoading: true,
   selectedTeamId: null,
   updateModules: async () => false,
+  updateBlockSettings: async () => false,
   updateSettings: async () => false,
   updatePreferences: async () => false,
   updateWorkspace: async () => false,
@@ -121,6 +131,7 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     isLoading: wsLoading,
     updateSettings: mutateSettings,
     updateModules: mutateModules,
+    updateBlockSettings: mutateBlockSettings,
     updateWorkspace: mutateWorkspace,
   } = useWorkspaceInfo(activeWorkspaceId)
 
@@ -132,12 +143,24 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     updatePreferences: mutatePreferences,
   } = useUserPreferences(user?.id || null)
 
-  const modules = workspaceInfo?.modules_active
-    ? {
-        school: !!workspaceInfo.modules_active.school,
-        assistance: !!workspaceInfo.modules_active.assistance,
-      }
-    : defaultModules
+  const modules = useMemo(() => {
+    if (!workspaceInfo?.modules_active) return defaultModules
+    const active = workspaceInfo.modules_active as any
+    return {
+      school: !!active.school,
+      assistance: active.assistance !== false, // Default to true if not specified
+      messaging: active.messaging !== false,
+      scheduling: active.scheduling !== false,
+      notes: active.notes !== false,
+      time: active.time !== false,
+      directory: active.directory !== false,
+      reporting: active.reporting !== false,
+    }
+  }, [workspaceInfo?.modules_active])
+  
+  const blockSettings = useMemo(() => {
+    return workspaceInfo?.block_settings || {}
+  }, [workspaceInfo?.block_settings])
 
   const settings = useMemo(() => {
     const fetched = (workspaceInfo?.settings as unknown as WorkspaceSettings) || {}
@@ -170,6 +193,16 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const updateModules = async (newModules: Partial<WorkspaceModules>) => {
     try {
       await mutateModules({ ...modules, ...newModules })
+      return true
+    } catch (e) {
+      console.error(e)
+      return false
+    }
+  }
+
+  const updateBlockSettings = async (newSettings: Record<string, any>) => {
+    try {
+      await mutateBlockSettings({ ...blockSettings, ...newSettings })
       return true
     } catch (e) {
       console.error(e)
@@ -227,11 +260,13 @@ export const WorkspaceProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         workspaceLogo: workspaceInfo?.logo_url || null,
         brandColor: workspaceInfo?.brand_color || '#3b82f6',
         modules,
+        blockSettings,
         settings,
         preferences,
         isLoading,
         selectedTeamId,
         updateModules,
+        updateBlockSettings,
         updateSettings,
         updatePreferences,
         updateWorkspace,

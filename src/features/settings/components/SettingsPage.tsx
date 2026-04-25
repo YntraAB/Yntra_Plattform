@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { useTranslation } from 'react-i18next'
-import { Building2, Globe, Mail, Check, RotateCw, User as UserIcon, Calendar } from 'lucide-react'
+import { Building2, Globe, Mail, Check, RotateCw, User as UserIcon, Calendar, LayoutGrid } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 import { GeneralSettings } from './GeneralSettings'
 import { NotificationsSettings } from './NotificationsSettings'
 import { AccountSettings } from './AccountSettings'
 import { SchedulerSettings } from './SchedulerSettings'
+import { BlockSettings } from './BlockSettings'
 
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
@@ -119,6 +120,15 @@ export const SettingsPage: React.FC = () => {
               <span>{t('settings.tabs.scheduler')}</span>
             </TabsTrigger>
           )}
+          {isAdmin && (
+            <TabsTrigger
+              value="blocks"
+              className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            >
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              <span>{t('settings.tabs.blocks', 'Blocks')}</span>
+            </TabsTrigger>
+          )}
           <TabsTrigger
             value="notifications"
             className="flex-1 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
@@ -168,6 +178,15 @@ export const SettingsPage: React.FC = () => {
                   className="mt-0 w-full space-y-6 focus-visible:outline-none focus-visible:ring-0"
                 >
                   <SchedulerSettings setIsSaving={setIsSaving} />
+                </TabsContent>
+              )}
+
+              {isAdmin && (
+                <TabsContent
+                  value="blocks"
+                  className="mt-0 w-full space-y-6 focus-visible:outline-none focus-visible:ring-0"
+                >
+                  <BlockSettings setIsSaving={setIsSaving} />
                 </TabsContent>
               )}
 

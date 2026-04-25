@@ -44,7 +44,10 @@
     "add": "Add",
     "fill_required_fields": "Please fill in all required fields",
     "create": "Create",
-    "years_old": "years old"
+    "years_old": "years old",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "actions": "Action"
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -67,7 +70,8 @@
       "notes": "Notes",
       "assistance": "Medication",
       "time": "Time Manager",
-      "timereports": "Time Reports"
+      "timereports": "Time Reports",
+      "reporting": "Reporting"
     }
   },
   "scheduler": {
@@ -153,6 +157,12 @@
     "theme_system": "System",
     "font_scale": "Font Scale",
     "success_update": "Settings updated successfully",
+    "organization_identity": "Organization Identity",
+    "identity_desc": "Manage how your organization is represented across the platform.",
+    "organization_name": "Organization Name",
+    "workspace_logo": "Workspace Logo",
+    "upload_new_logo": "Upload New Logo",
+    "localization_time": "Localization & Time",
     "workspace": {
       "title": "Workspace Settings",
       "desc": "Manage your organization's configuration and preferences.",
@@ -161,7 +171,10 @@
       "org_name": "Organization Name",
       "org_logo": "Organization Logo",
       "org_logo_desc": "Upload a custom logo for your workspace.",
-      "crop_logo": "Crop Organization Logo"
+      "crop_logo": "Crop Organization Logo",
+      "logo_preview": "Master Logo Preview",
+      "brand_color": "Organization Brand Color",
+      "brand_color_desc": "This color will be the default for all team members."
     },
     "desc": "Manage your workspace and personal preferences.",
     "localization_desc": "Language and regional settings.",
@@ -176,7 +189,43 @@
       "general": "General",
       "account": "Profile",
       "scheduler": "Scheduler",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "blocks": "Blocks"
+    },
+    "blocks": {
+      "title": "Workspace Blocks",
+      "desc": "Enable or disable functional modules for your organization.",
+      "disabled_title": "Feature Block Disabled",
+      "disabled_message": "This functional block is currently deactivated for your workspace. Please contact your administrator to enable it.",
+      "messaging": {
+        "name": "Messaging",
+        "desc": "Internal communication and chat"
+      },
+      "scheduling": {
+        "name": "Scheduling",
+        "desc": "Team and client scheduling"
+      },
+      "notes": {
+        "name": "Daily Notes",
+        "desc": "Operational logging and reports"
+      },
+      "time": {
+        "name": "Time Reporting",
+        "desc": "Employee time tracking and attest"
+      },
+      "assistance": {
+        "name": "Assistance",
+        "desc": "Care and client management"
+      },
+      "directory": {
+        "name": "Directory",
+        "desc": "Manage teams, users and roles"
+      },
+      "categories": {
+        "functional": "Functional"
+      },
+      "dependencies": "Dependencies",
+      "dependency_error": "This block requires the following modules: {{names}}"
     },
     "notifications": {
       "title": "Email Notifications",
@@ -563,5 +612,56 @@
       "description": "You are about to delete {{count}} time reports. This action cannot be undone and the reports will be permanently removed from the system.",
       "confirm": "Yes, delete reports"
     }
+  },
+  "reporting": {
+    "title": "Reporting",
+    "tabs": {
+      "send": "Send Report",
+      "my_reports": "My Reports"
+    },
+    "types": {
+      "complaint": "Views and complaints",
+      "work_injury": "Work injury",
+      "incident": "Incident",
+      "deviation": "Deviation in assistance assignment",
+      "whistleblower": "Whistleblower"
+    },
+    "form": {
+      "subject": "Subject",
+      "description": "Description / Details",
+      "select_type": "Select type...",
+      "description_help": "Select a category and fill in the details for your report.",
+      "date_of_incident": "Date of incident",
+      "is_anonymous": "Send anonymously",
+      "submit": "Send Report",
+      "success": "Report sent successfully",
+      "error": "Could not send report"
+    },
+    "list": {
+      "type": "Type",
+      "reporter": "Submitted by",
+      "description": "Here you can see all reports you have submitted.",
+      "status": "Status",
+      "date": "Date",
+      "empty": "You have not sent any reports yet"
+    },
+    "status": {
+      "pending": "Pending",
+      "reviewed": "Reviewed",
+      "resolved": "Resolved"
+    },
+    "stats": {
+      "total": "Total reports"
+    },
+    "notifications": {
+      "admin_subject": "New report: {{type}}",
+      "admin_body": "A new report has been submitted.\n\nType: {{type}}\nSubject: {{subject}}\n\nYou can view the details in the Reporting section."
+    },
+    "admin": {
+      "manage_status": "Manage Status (Admin)",
+      "select_status": "Select status..."
+    },
+    "status_updated": "Status updated successfully",
+    "status_error": "Could not update status"
   }
 }

@@ -196,7 +196,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
                   </div>
                 )}
                 <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/50">
-                  Master Logo Preview
+                  {t('settings.workspace.logo_preview')}
                 </p>
               </div>
             </div>
@@ -205,10 +205,10 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground">
-                    Organization Brand Color
+                    {t('settings.workspace.brand_color')}
                   </h4>
                   <p className="text-[10px] text-muted-foreground">
-                    This color will be the default for all team members.
+                    {t('settings.workspace.brand_color_desc')}
                   </p>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-border/40 bg-muted/30 p-2">

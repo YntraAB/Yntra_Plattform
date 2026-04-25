@@ -47,6 +47,18 @@ export const workspaceService = {
   },
 
   /**
+   * Update block settings
+   */
+  async updateBlockSettings(workspaceId: string, block_settings: Record<string, any>) {
+    const { error } = await supabase
+      .from('workspaces')
+      .update({ block_settings })
+      .eq('id', workspaceId)
+
+    if (error) throw new Error(error.message)
+  },
+
+  /**
    * Update workspace core info (name, logo_url)
    */
   async updateWorkspace(
