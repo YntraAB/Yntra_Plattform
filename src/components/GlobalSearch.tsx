@@ -29,6 +29,12 @@ import {
   Globe,
   Palette,
   BellRing,
+  AlertTriangle,
+  AlertCircle,
+  FileWarning,
+  UserX,
+  Stethoscope,
+  CalendarClock,
 } from 'lucide-react'
 
 interface GlobalSearchProps {
@@ -98,6 +104,65 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
       path: '/settings?tab=notifications',
       icon: BellRing,
     },
+    {
+      id: 'set-acc',
+      label: t('settings.tabs.account') || 'Account',
+      path: '/settings?tab=account',
+      icon: User,
+    },
+    ...(user?.role === 'admin' || user?.role === 'platform_admin' ? [
+      {
+        id: 'set-sch',
+        label: t('settings.tabs.scheduler') || 'Scheduler Settings',
+        path: '/settings?tab=scheduler',
+        icon: Calendar,
+      },
+      {
+        id: 'set-blk',
+        label: t('settings.tabs.blocks') || 'Feature Blocks',
+        path: '/settings?tab=blocks',
+        icon: LayoutGrid,
+      },
+    ] : []),
+  ]
+
+  const actionItems = [
+    {
+      id: 'action-leave',
+      label: t('reporting.types.leave_request'),
+      path: '/schedule?action=leave_request',
+      icon: CalendarClock,
+    },
+    {
+      id: 'report-complaint',
+      label: `${t('reporting.tabs.send')}: ${t('reporting.types.complaint')}`,
+      path: '/reporting?tab=send&type=complaint',
+      icon: AlertCircle,
+    },
+    {
+      id: 'report-work-injury',
+      label: `${t('reporting.tabs.send')}: ${t('reporting.types.work_injury')}`,
+      path: '/reporting?tab=send&type=work_injury',
+      icon: Stethoscope,
+    },
+    {
+      id: 'report-incident',
+      label: `${t('reporting.tabs.send')}: ${t('reporting.types.incident')}`,
+      path: '/reporting?tab=send&type=incident',
+      icon: FileWarning,
+    },
+    {
+      id: 'report-deviation',
+      label: `${t('reporting.tabs.send')}: ${t('reporting.types.deviation')}`,
+      path: '/reporting?tab=send&type=deviation',
+      icon: AlertTriangle,
+    },
+    {
+      id: 'report-whistleblower',
+      label: `${t('reporting.tabs.send')}: ${t('reporting.types.whistleblower')}`,
+      path: '/reporting?tab=send&type=whistleblower',
+      icon: UserX,
+    },
   ]
 
   const onSelect = (path: string) => {
@@ -115,6 +180,17 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
           {navigationItems.map((item) => (
             <CommandItem key={item.id} onSelect={() => onSelect(item.path)}>
               <item.icon className="mr-2 h-4 w-4" />
+              <span>{item.label}</span>
+            </CommandItem>
+          ))}
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading={t('common.actions') || 'Quick Actions'}>
+          {actionItems.map((item) => (
+            <CommandItem key={item.id} onSelect={() => onSelect(item.path)}>
+              <item.icon className="mr-2 h-4 w-4 text-primary" />
               <span>{item.label}</span>
             </CommandItem>
           ))}

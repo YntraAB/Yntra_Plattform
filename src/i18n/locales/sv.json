@@ -225,7 +225,14 @@
         "functional": "Funktionell"
       },
       "dependencies": "Beroenden",
-      "dependency_error": "Detta block kräver följande moduler: {{names}}"
+      "dependency_error": "Detta block kräver följande moduler: {{names}}",
+      "search_placeholder": "Sök efter funktionsmoduler...",
+      "filter_all": "Alla Moduler",
+      "no_results": "Inga moduler matchade din sökning.",
+      "status_active": "Aktiv",
+      "status_inactive": "Inaktiv",
+      "config_placeholder_title": "Konfiguration",
+      "config_placeholder_desc": "Specifika inställningar för detta block kommer att finnas tillgängliga i en framtida uppdatering."
     },
     "notifications": {
       "title": "E-postnotiser",
@@ -536,6 +543,7 @@
     "error_deleting": "Kunde inte ta bort meddelanden"
   },
   "auth": {
+    "securing_connection": "Säkrar anslutningen...",
     "login": {
       "title": "Välkommen till Yntra",
       "subtitle": "Logga in med din organisations godkända identitetsleverantör.",
@@ -564,7 +572,6 @@
       "error_prefix": "Fel vid kontoskapande: ",
       "sync_error": "Kunde inte uppdatera autentiseringssessionen.",
       "init_error": "Kunde inte initiera autentisering.",
-      "securing_connection": "Säkrar anslutningen...",
       "social_login_start_error": "Social inloggning kunde inte startas.",
       "logout_failed": "Utloggningen misslyckades."
     },

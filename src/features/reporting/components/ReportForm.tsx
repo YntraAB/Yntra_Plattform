@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
@@ -33,6 +34,19 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
   const [description, setDescription] = useState('')
   const [dateOfIncident, setDateOfIncident] = useState(new Date().toISOString().split('T')[0])
   const [isAnonymous, setIsAnonymous] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  React.useEffect(() => {
+    const type = searchParams.get('type')
+    if (type && ['complaint', 'work_injury', 'incident', 'deviation', 'whistleblower'].includes(type)) {
+      setReportType(type)
+      
+      // Optional: clear the param
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('type')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

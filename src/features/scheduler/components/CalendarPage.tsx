@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { MiniCalendar } from './MiniCalendar'
 import { CalendarView } from './CalendarView'
 import { useCalendar } from '@/hooks/useCalendar'
@@ -33,6 +34,17 @@ export const CalendarPage: React.FC = () => {
 
   const { data: dbTeams = [] } = useWorkspaceTeams(workspaceId || null)
   const { data: dbUsers = [] } = useWorkspaceUsers(workspaceId || null)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  useEffect(() => {
+    if (searchParams.get('action') === 'leave_request') {
+      setIsTimeOffModalOpen(true)
+      // Clear the param so it doesn't reopen on refresh
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('action')
+      setSearchParams(newParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const {
     selectedDate,
@@ -54,6 +66,14 @@ export const CalendarPage: React.FC = () => {
     selectedAssigneeId,
     setSelectedAssigneeId,
   } = useCalendar()
+
+  const upcomingEvents = React.useMemo(() => {
+    const now = new Date()
+    return [...filteredEvents]
+      .filter((event) => event.startTime >= now)
+      .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+      .slice(0, 3)
+  }, [filteredEvents])
 
   useEffect(() => {
     if (selectedTeamId === 'all' && dbTeams.length > 0) {
@@ -85,7 +105,7 @@ export const CalendarPage: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-full flex-1 overflow-hidden">
       {/* Left Panel - Mini Calendar and Filters */}
       <div className="scrollbar-dark w-72 overflow-y-auto border-r border-border bg-sidebar p-4">
         <MiniCalendar
@@ -179,12 +199,12 @@ export const CalendarPage: React.FC = () => {
               [1, 2, 3].map((i) => (
                 <div key={i} className="h-[68px] w-full animate-pulse rounded-lg bg-muted" />
               ))
-            ) : filteredEvents.length === 0 ? (
+            ) : upcomingEvents.length === 0 ? (
               <div className="rounded-lg border border-dashed border-border p-2 text-center text-sm italic text-muted-foreground">
                 {t('scheduler.no_upcoming_events')}
               </div>
             ) : (
-              filteredEvents.slice(0, 3).map((event) => (
+              upcomingEvents.map((event) => (
                 <div
                   key={event.id}
                   onClick={() => handleEventClick(event)}

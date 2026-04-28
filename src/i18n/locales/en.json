@@ -225,7 +225,14 @@
         "functional": "Functional"
       },
       "dependencies": "Dependencies",
-      "dependency_error": "This block requires the following modules: {{names}}"
+      "dependency_error": "This block requires the following modules: {{names}}",
+      "search_placeholder": "Search functional blocks...",
+      "filter_all": "All Modules",
+      "no_results": "No blocks found matching your search.",
+      "status_active": "Active",
+      "status_inactive": "Inactive",
+      "config_placeholder_title": "Configuration",
+      "config_placeholder_desc": "Specific settings for this block will be available in a future update."
     },
     "notifications": {
       "title": "Email Notifications",
@@ -536,6 +543,7 @@
     "error_deleting": "Could not delete messages"
   },
   "auth": {
+    "securing_connection": "Securing connection...",
     "login": {
       "title": "Welcome to Yntra",
       "subtitle": "Sign in with your organization-approved identity provider.",
@@ -564,7 +572,6 @@
       "error_prefix": "Error profile creation: ",
       "sync_error": "Could not update authentication session.",
       "init_error": "Could not initialize authentication.",
-      "securing_connection": "Securing connection...",
       "social_login_start_error": "Social login could not be started.",
       "logout_failed": "Logout failed."
     },
