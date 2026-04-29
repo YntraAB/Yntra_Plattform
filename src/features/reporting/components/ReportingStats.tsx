@@ -5,6 +5,7 @@ import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, Clock, FileText } from 'lucide-react'
 import { useReportingStats } from '@/hooks/queries/useReporting'
+import type { Report } from '@/types'
 
 export const ReportingStats: React.FC = () => {
   const { t } = useTranslation()
@@ -15,11 +16,11 @@ export const ReportingStats: React.FC = () => {
   const { data: reports = [] } = useReportingStats(workspaceId)
 
   const stats = React.useMemo(() => {
-    const userReports = isAdmin ? reports : reports.filter((r: any) => r.user_id === user?.id)
+    const userReports = isAdmin ? reports : reports.filter((r: Partial<Report>) => r.user_id === user?.id)
     return {
       total: userReports.length,
-      pending: userReports.filter((r: any) => r.status === 'pending').length,
-      resolved: userReports.filter((r: any) => r.status === 'resolved').length
+      pending: userReports.filter((r: Partial<Report>) => r.status === 'pending').length,
+      resolved: userReports.filter((r: Partial<Report>) => r.status === 'resolved').length
     }
   }, [reports, isAdmin, user?.id])
 

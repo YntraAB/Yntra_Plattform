@@ -666,16 +666,21 @@
       "write_new_note": "Write new daily note",
       "placeholder": "Describe how the day has been...",
       "save_note": "Save note",
+      "save_error": "Could not save the note",
+      "save_success": "Note saved",
       "previous_notes": "Previous notes",
       "no_notes": "No notes found",
       "unknown_author": "Unknown"
     },
     "medication": {
       "title": "Active Medication List",
+      "subtitle": "View current medications and dosage instructions for this client.",
       "add_button": "Add Prescription",
-      "empty_state": "The client has no active medication entered.",
+      "empty_state_title": "No medications found",
+      "empty_state": "This client has no active medications recorded.",
       "dosage_label": "Dosage:",
-      "time_label": "Time:"
+      "time_label": "Time:",
+      "instructions_label": "Instructions"
     }
   },
   "reporting": {
@@ -700,11 +705,14 @@
     },
     "form": {
       "subject": "Subject",
+      "subject_placeholder": "e.g. Kitchen incident or Equipment failure",
       "description": "Description / Details",
+      "description_placeholder": "Provide a detailed description of what happened...",
       "select_type": "Select type...",
       "description_help": "Select a category and fill in the details for your report.",
       "date_of_incident": "Date of incident",
       "is_anonymous": "Send anonymously",
+      "anonymous_hint": "Your identity will be hidden from everyone except the system.",
       "submit": "Send Report",
       "success": "Report sent successfully",
       "error": "Could not send report"

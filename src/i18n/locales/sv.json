@@ -666,16 +666,21 @@
       "write_new_note": "Skriv ny daganteckning",
       "placeholder": "Beskriv hur dagen varit...",
       "save_note": "Spara anteckning",
+      "save_error": "Kunde inte spara anteckningen",
+      "save_success": "Anteckningen sparad",
       "previous_notes": "Tidigare anteckningar",
       "no_notes": "Inga anteckningar hittades",
       "unknown_author": "Okänd"
     },
     "medication": {
       "title": "Aktiv Medicinlista",
+      "subtitle": "Här visas brukarens aktiva mediciner och instruktioner.",
       "add_button": "Lägg till recept",
+      "empty_state_title": "Inga mediciner hittades",
       "empty_state": "Brukaren har ingen aktiv medicin inlagd.",
       "dosage_label": "Dos:",
-      "time_label": "Tid:"
+      "time_label": "Tid:",
+      "instructions_label": "Instruktioner"
     }
   },
   "reporting": {
@@ -700,11 +705,14 @@
     },
     "form": {
       "subject": "Ämne",
+      "subject_placeholder": "T.ex. Olycka i köket eller Brister i utrustning",
       "description": "Beskrivning / Detaljer",
+      "description_placeholder": "Ge en utförlig beskrivning av vad som hänt...",
       "select_type": "Välj typ...",
       "description_help": "Välj en kategori och fyll i detaljerna för din rapport.",
       "date_of_incident": "Datum för händelse",
       "is_anonymous": "Skicka anonymt",
+      "anonymous_hint": "Din identitet kommer döljas för alla utom systemet.",
       "submit": "Skicka rapport",
       "success": "Rapporten har skickats",
       "error": "Kunde inte skicka rapporten"

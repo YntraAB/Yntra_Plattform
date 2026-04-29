@@ -21,7 +21,6 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     if (!workspaceId || !user) return
 
-    console.log('[Realtime] Subscribing to workspace:', workspaceId)
 
     const channel = supabase
       .channel(`global-workspace-${workspaceId}`)
@@ -96,15 +95,12 @@ export const RealtimeProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           }
         }
       )
-      .subscribe((status) => {
-        console.log('[Realtime] Subscription status:', status)
-      })
+      .subscribe()
 
     return () => {
-      console.log('[Realtime] Unsubscribing from global channel')
       supabase.removeChannel(channel)
     }
-  }, [workspaceId, user, queryClient, t])
+  }, [workspaceId, user?.id, queryClient, t])
 
   return (
     <RealtimeContext.Provider value={{}}>

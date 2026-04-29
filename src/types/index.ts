@@ -141,8 +141,25 @@ export interface Workspace {
   logo_url: string | null
   brand_color: string
   modules_active: WorkspaceModules
-  block_settings: Record<string, any>
+  block_settings: Record<string, unknown>
   settings: WorkspaceSettings
+  created_at: string
+}
+
+export type ReportingStatus = 'pending' | 'reviewed' | 'resolved'
+
+export interface Report {
+  id: string
+  workspace_id: string
+  user_id: string
+  type: string
+  is_anonymous: boolean
+  content: {
+    subject: string
+    description: string
+    date_of_incident: string
+  }
+  status: ReportingStatus
   created_at: string
 }
 

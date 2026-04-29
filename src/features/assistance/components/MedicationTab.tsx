@@ -1,81 +1,89 @@
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
-import { Loader2, Plus, Pill } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { assistanceService } from '@/services/assistanceService'
+import { Loader2, Plus, Pill, Clock, Activity } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
-interface Medication {
-  id: string
-  name: string
-  dosage: string
-  time_to_take: string
-  is_active: boolean
-}
 
 export const MedicationTab: React.FC<{ clientId: string }> = ({ clientId }) => {
   const { t } = useTranslation()
-  const [meds, setMeds] = useState<Medication[]>([])
-  const [isLoading, setIsLoading] = useState(true)
 
-  const fetchMeds = React.useCallback(async () => {
-    try {
-      const { data } = await supabase
-        .from('client_medications')
-        .select('*')
-        .eq('client_id', clientId)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-      if (data) setMeds(data as Medication[])
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [clientId])
-
-  useEffect(() => {
-    fetchMeds()
-  }, [clientId, fetchMeds])
+  const { data: meds = [], isLoading } = useQuery({
+    queryKey: ['medications', clientId],
+    queryFn: () => assistanceService.getMedications(clientId),
+  })
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{t('assistance.medication.title')}</h3>
-        <Button size="sm" variant="outline" className="border-border">
+        <div>
+          <h3 className="text-xl font-bold tracking-tight text-foreground">
+            {t('assistance.medication.title')}
+          </h3>
+          <p className="text-sm text-muted-foreground">{t('assistance.medication.subtitle')}</p>
+        </div>
+        <Button
+          size="sm"
+          className="rounded-full bg-primary/10 text-primary hover:bg-primary/20"
+        >
           <Plus className="mr-2 h-4 w-4" /> {t('assistance.medication.add_button')}
         </Button>
       </div>
 
-      {isLoading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      {isLoading && meds.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+          <p className="mt-4 text-sm font-medium text-muted-foreground">{t('common.loading')}</p>
         </div>
       ) : meds.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-sidebar py-12 text-center text-muted-foreground">
-          <Pill className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          {t('assistance.medication.empty_state')}
+        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/30 py-20 text-center shadow-inner">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/5 text-primary/30">
+            <Pill className="h-10 w-10" />
+          </div>
+          <h4 className="text-lg font-semibold text-foreground">
+            {t('assistance.medication.empty_state_title')}
+          </h4>
+          <p className="mt-1 max-w-[240px] text-sm text-muted-foreground">
+            {t('assistance.medication.empty_state')}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           {meds.map((med) => (
             <div
               key={med.id}
-              className="flex items-start gap-4 rounded-xl border border-border bg-sidebar p-5 shadow-sm"
+              className="group relative overflow-hidden rounded-3xl border border-border bg-card p-6 transition-all hover:border-primary/30 hover:shadow-xl"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-500">
-                <Pill className="h-6 w-6" />
-              </div>
-              <div>
-                <h4 className="text-lg font-bold text-foreground">{med.name}</h4>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {t('assistance.medication.dosage_label')}{' '}
-                  <span className="font-medium text-foreground">{med.dosage}</span>
+              <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-primary/5 transition-all group-hover:scale-150" />
+              
+              <div className="flex items-start gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-4 ring-primary/5">
+                  <Pill className="h-7 w-7" />
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  {t('assistance.medication.time_label')}{' '}
-                  <span className="font-medium text-foreground">{med.time_to_take}</span>
+                <div className="flex-1">
+                  <h4 className="text-xl font-extrabold text-foreground">{med.name}</h4>
+                  
+                  <div className="mt-4 space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Activity className="h-4 w-4 text-primary/60" />
+                      <span className="font-medium text-foreground/80">{med.dosage}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4 text-primary/60" />
+                      <span className="font-medium text-foreground/80">{med.frequency}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+              
+              {med.instructions && (
+                <div className="mt-5 rounded-2xl bg-muted/50 p-4 text-xs font-medium text-muted-foreground ring-1 ring-border/50">
+                  <span className="mb-1 block uppercase tracking-widest text-primary/70">
+                    {t('assistance.medication.instructions_label')}
+                  </span>
+                  {med.instructions}
+                </div>
+              )}
             </div>
           ))}
         </div>

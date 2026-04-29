@@ -1,16 +1,5 @@
 import { supabase } from '@/lib/supabase'
-
-export interface Report {
-  id: string
-  type: string
-  content: Record<string, unknown>
-  status: string
-  is_anonymous: boolean
-  created_at: string
-  user?: {
-    full_name: string
-  }
-}
+import type { Report } from '@/types'
 
 export const reportingService = {
   async getReports(workspaceId: string, options: { isAdmin: boolean; userId: string; status?: string; type?: string }) {
@@ -57,10 +46,10 @@ export const reportingService = {
   async getReportingStats(workspaceId: string) {
     const { data, error } = await supabase
       .from('reports')
-      .select('type, status')
+      .select('type, status, user_id')
       .eq('workspace_id', workspaceId)
 
     if (error) throw error
-    return data
+    return data as Partial<Report>[]
   }
 }
