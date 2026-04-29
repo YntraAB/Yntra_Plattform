@@ -1,37 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
 import { eventService } from '@/services/eventService'
 import type { CalendarEvent } from '@/types'
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 
 export function useEvents(workspaceId: string | null, userId: string | null) {
   const queryClient = useQueryClient()
   const queryKey = useMemo(() => ['events', workspaceId], [workspaceId])
 
-  useEffect(() => {
-    if (!workspaceId) return
-
-    const channelId = `events-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'events',
-          filter: `workspace_id=eq.${workspaceId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [workspaceId, queryClient, queryKey])
 
   const query = useQuery({
     queryKey,

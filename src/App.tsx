@@ -14,6 +14,7 @@ import { LoginPage } from '@/features/auth/components/LoginPage'
 import { routes } from './AppRoutes'
 import { useAuth } from '@/hooks/useAuth'
 import { WorkspaceProvider } from '@/contexts/WorkspaceContext'
+import { RealtimeProvider } from '@/contexts/RealtimeProvider'
 import { PasswordResetPage } from '@/features/auth/components/PasswordResetPage'
 import { InviteError } from '@/features/auth/components/InviteError'
 import { supabase } from '@/lib/supabase'
@@ -125,8 +126,10 @@ function App() {
         />
       ) : isAuthenticated && user ? (
         <WorkspaceProvider>
-          <VisualEffectHandler />
-          <RouterProvider router={router} />
+          <RealtimeProvider>
+            <VisualEffectHandler />
+            <RouterProvider router={router} />
+          </RealtimeProvider>
         </WorkspaceProvider>
       ) : (
         <LoginPage onLogin={handleLogin} pendingProvider={pendingProvider} error={error} />

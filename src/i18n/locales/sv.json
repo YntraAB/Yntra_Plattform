@@ -735,5 +735,13 @@
     },
     "status_updated": "Status har uppdaterats",
     "status_error": "Kunde inte uppdatera status"
+  },
+  "notifications": {
+    "new_note_title": "Ny daganteckning",
+    "new_note_description": "En kollega har lagt till en ny anteckning i journalen.",
+    "new_message_title": "Nytt meddelande",
+    "new_message_description": "Du har fått ett nytt meddelande i din inkorg.",
+    "new_event_title": "Schema uppdaterat",
+    "new_event_description": "En ny händelse eller arbetspass har lagts till i kalendern."
   }
 }

@@ -735,5 +735,13 @@
     },
     "status_updated": "Status updated successfully",
     "status_error": "Could not update status"
+  },
+  "notifications": {
+    "new_note_title": "New Daily Note",
+    "new_note_description": "A teammate just added a new note to the journal.",
+    "new_message_title": "New Message",
+    "new_message_description": "You have received a new message in your inbox.",
+    "new_event_title": "Schedule Updated",
+    "new_event_description": "A new event or shift has been added to the calendar."
   }
 }

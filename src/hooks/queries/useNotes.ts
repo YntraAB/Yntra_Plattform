@@ -1,57 +1,14 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { supabase } from '@/lib/supabase'
 import { queryKeys } from '@/lib/query-keys'
 import { noteService } from '@/services/noteService'
 import type { Json } from '@/types/database'
 
-function useNoteTeamsRealtime(scope: string | null, workspaceId?: string) {
-  const queryClient = useQueryClient()
-  const queryKey = useMemo(() => queryKeys.noteTeams(scope), [scope])
-
-  useEffect(() => {
-    if (!scope) return
-
-    const channelId = `note-teams-${scope}-${Math.random().toString(36).slice(2, 9)}`
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notes',
-          ...(workspaceId ? { filter: `workspace_id=eq.${workspaceId}` } : {}),
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey })
-        },
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'teams',
-          ...(workspaceId ? { filter: `workspace_id=eq.${workspaceId}` } : {}),
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [scope, workspaceId, queryClient, queryKey])
-}
 
 export function useNoteTeams(workspaceId?: string, includeAllWorkspaces = false) {
   const scope = includeAllWorkspaces ? 'all' : workspaceId || null
   const effectiveWorkspaceId = includeAllWorkspaces ? undefined : workspaceId
 
-  useNoteTeamsRealtime(scope, effectiveWorkspaceId)
 
   return useQuery({
     queryKey: queryKeys.noteTeams(scope),
@@ -61,33 +18,8 @@ export function useNoteTeams(workspaceId?: string, includeAllWorkspaces = false)
 }
 
 export function useTeamNotes(teamId: string | null) {
-  const queryClient = useQueryClient()
   const queryKey = useMemo(() => queryKeys.teamNotes(teamId), [teamId])
 
-  useEffect(() => {
-    if (!teamId) return
-
-    const channelId = `team-notes-${teamId}-${Math.random().toString(36).slice(2, 9)}`
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notes',
-          filter: `team_id=eq.${teamId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [teamId, queryClient, queryKey])
 
   return useQuery({
     queryKey,

@@ -5,7 +5,6 @@ import {
   type SendMessagePayload,
   type FetchMessagesParams,
 } from '@/services/messageService'
-import { supabase } from '@/lib/supabase'
 import { useEffect } from 'react'
 import { queryKeys } from '@/lib/query-keys'
 import { toast } from 'sonner'
@@ -15,49 +14,8 @@ export const useMessages = <TData = Message[]>(
   workspaceId: string | undefined,
   options?: { select?: (data: Message[]) => TData },
 ) => {
-  const queryClient = useQueryClient()
   const queryKey = queryKeys.messages(workspaceId)
 
-  useEffect(() => {
-    if (!workspaceId) return
-
-    const channelId = `messages-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `workspace_id=eq.${workspaceId}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            queryClient.setQueryData(queryKey, (old: Message[] = []) => [
-              payload.new as Message,
-              ...old,
-            ])
-          } else if (payload.eventType === 'UPDATE') {
-            queryClient.setQueryData(queryKey, (old: Message[] = []) =>
-              old.map((m) => (m.id === payload.new.id ? { ...m, ...payload.new } : m)),
-            )
-          } else if (payload.eventType === 'DELETE') {
-            queryClient.setQueryData(queryKey, (old: Message[] = []) =>
-              old.filter((m) => m.id !== payload.old.id),
-            )
-          } else {
-            queryClient.invalidateQueries({ queryKey })
-          }
-          queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [workspaceId, queryClient, queryKey])
 
   return useQuery({
     queryKey,
@@ -118,30 +76,6 @@ export const useMessagesPaginated = <TData = { messages: Message[]; count: numbe
     }
   }, [from, to, searchQuery, params, queryClient, workspaceId, enabled])
 
-  useEffect(() => {
-    if (!workspaceId || !enabled) return
-
-    const channelId = `messages-paginated-${workspaceId}-${Math.random().toString(36).slice(2, 9)}`
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `workspace_id=eq.${workspaceId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [workspaceId, queryClient, enabled])
 
   return useQuery({
     queryKey,
