@@ -54,6 +54,7 @@ export interface CalendarEvent {
   waitingTime?: { from: string; to: string }
   activeTimes?: { from: string; to: string }[]
   break?: { from: string; to: string; isPaid: boolean }
+  isUnscheduled?: boolean
 }
 
 export type EventCategory =

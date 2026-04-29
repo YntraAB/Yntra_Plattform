@@ -30,6 +30,8 @@ export function useTeamNotes(teamId: string | null) {
 
 export function useCreateNote(noteScope: string | null, teamId: string | null) {
   const queryClient = useQueryClient()
+  const teamsKey = queryKeys.noteTeams(noteScope)
+  const notesKey = queryKeys.teamNotes(teamId)
 
   return useMutation({
     mutationFn: (payload: {
@@ -40,15 +42,29 @@ export function useCreateNote(noteScope: string | null, teamId: string | null) {
       content: string
       edit_history: Json
     }) => noteService.createNote(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.noteTeams(noteScope) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.teamNotes(teamId) })
+    onMutate: async (newNote) => {
+      await queryClient.cancelQueries({ queryKey: notesKey })
+      const previousNotes = queryClient.getQueryData(notesKey)
+      queryClient.setQueryData(notesKey, (old: any) => [
+        { ...newNote, id: Math.random().toString(36).substring(2, 11), created_at: new Date().toISOString() },
+        ...(old || []),
+      ])
+      return { previousNotes }
+    },
+    onError: (_err, _newNote, context) => {
+      queryClient.setQueryData(notesKey, context?.previousNotes)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: teamsKey })
+      queryClient.invalidateQueries({ queryKey: notesKey })
     },
   })
 }
 
 export function useUpdateNote(noteScope: string | null, teamId: string | null) {
   const queryClient = useQueryClient()
+  const teamsKey = queryKeys.noteTeams(noteScope)
+  const notesKey = queryKeys.teamNotes(teamId)
 
   return useMutation({
     mutationFn: ({
@@ -62,21 +78,47 @@ export function useUpdateNote(noteScope: string | null, teamId: string | null) {
       content: string
       edit_history: Json
     }) => noteService.updateNote(noteId, { subject, content, edit_history }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.noteTeams(noteScope) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.teamNotes(teamId) })
+    onMutate: async ({ noteId, subject, content, edit_history }) => {
+      await queryClient.cancelQueries({ queryKey: notesKey })
+      const previousNotes = queryClient.getQueryData(notesKey)
+      queryClient.setQueryData(notesKey, (old: any) =>
+        old?.map((note: any) =>
+          note.id === noteId ? { ...note, subject, content, edit_history } : note,
+        ),
+      )
+      return { previousNotes }
+    },
+    onError: (_err, _variables, context) => {
+      queryClient.setQueryData(notesKey, context?.previousNotes)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: teamsKey })
+      queryClient.invalidateQueries({ queryKey: notesKey })
     },
   })
 }
 
 export function useDeleteNote(noteScope: string | null, teamId: string | null) {
   const queryClient = useQueryClient()
+  const teamsKey = queryKeys.noteTeams(noteScope)
+  const notesKey = queryKeys.teamNotes(teamId)
 
   return useMutation({
     mutationFn: (noteId: string) => noteService.deleteNote(noteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.noteTeams(noteScope) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.teamNotes(teamId) })
+    onMutate: async (noteId) => {
+      await queryClient.cancelQueries({ queryKey: notesKey })
+      const previousNotes = queryClient.getQueryData(notesKey)
+      queryClient.setQueryData(notesKey, (old: any) =>
+        old?.filter((note: any) => note.id !== noteId),
+      )
+      return { previousNotes }
+    },
+    onError: (_err, _noteId, context) => {
+      queryClient.setQueryData(notesKey, context?.previousNotes)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: teamsKey })
+      queryClient.invalidateQueries({ queryKey: notesKey })
     },
   })
 }

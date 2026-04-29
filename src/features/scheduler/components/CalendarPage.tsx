@@ -239,6 +239,7 @@ export const CalendarPage: React.FC = () => {
           onDateChange={setSelectedDate}
           onViewChange={setView}
           onEventClick={handleEventClick}
+          onEventUpdate={updateEvent}
           onNext={navigateNext}
           onPrevious={navigatePrevious}
           onToday={navigateToToday}

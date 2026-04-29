@@ -104,6 +104,8 @@ const BlockGuard: React.FC<{
   return <>{children}</>
 }
 
+import { OfflineIndicator } from './components/layout/OfflineIndicator'
+
 const AppLayoutWrapper: React.FC = () => {
   const { user } = useAuth()
   if (user?.role === 'client') {
@@ -111,6 +113,7 @@ const AppLayoutWrapper: React.FC = () => {
       <ErrorBoundary>
         <BreadcrumbProvider>
           <ClientLayout />
+          <OfflineIndicator />
         </BreadcrumbProvider>
       </ErrorBoundary>
     )
@@ -119,6 +122,7 @@ const AppLayoutWrapper: React.FC = () => {
     <ErrorBoundary>
       <BreadcrumbProvider>
         <Layout />
+        <OfflineIndicator />
       </BreadcrumbProvider>
     </ErrorBoundary>
   )

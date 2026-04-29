@@ -47,7 +47,12 @@
     "years_old": "years old",
     "filter": "Filter",
     "refresh": "Refresh",
-    "actions": "Action"
+    "actions": "Action",
+    "offline": {
+      "mode": "OFFLINE MODE",
+      "syncing": "SYNCING CHANGES...",
+      "sync_error": "SYNC ERROR - RETRYING..."
+    }
   },
   "sidebar": {
     "time_management": "Time Management",
@@ -126,7 +131,11 @@
       "week": "Week",
       "month": "Month",
       "agenda": "Agenda"
-    }
+    },
+    "unscheduled": "Unscheduled",
+    "no_unscheduled_events": "No unscheduled events",
+    "edit_mode": "Edit Mode",
+    "exit_edit_mode": "Exit Edit Mode"
   },
   "settings": {
     "title": "Settings",

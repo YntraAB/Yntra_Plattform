@@ -89,14 +89,24 @@ export const useMessagesPaginated = <TData = { messages: Message[]; count: numbe
 export const useMarkMessageAsRead = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
+  const queryKey = ['messages', workspaceId]
 
   return useMutation({
     mutationFn: (messageId: string) => messageService.markAsRead(messageId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
+    onMutate: async (messageId) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousData = queryClient.getQueryData<Message[]>(queryKey)
+      queryClient.setQueryData<Message[]>(queryKey, (old) =>
+        old?.map((m) => (m.id === messageId ? { ...m, is_read: true } : m)),
+      )
+      return { previousData }
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _messageId, context) => {
+      queryClient.setQueryData(queryKey, context?.previousData)
       toast.error(`${t('messages.error_marking_read')}: ${error.message}`)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }
@@ -104,14 +114,33 @@ export const useMarkMessageAsRead = (workspaceId: string | undefined) => {
 export const useSendMessage = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
+  const queryKey = ['messages', workspaceId]
 
   return useMutation({
     mutationFn: (payload: SendMessagePayload) => messageService.sendMessage(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
+    onMutate: async (payload) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousData = queryClient.getQueryData<Message[]>(queryKey)
+      const newMessage: Message = {
+        id: Math.random().toString(36).substring(2, 11),
+        workspace_id: workspaceId || '',
+        sender_id: payload.sender_id,
+        receiver_id: payload.receiver_id || null,
+        target_team_id: payload.target_team_id || null,
+        subject: payload.subject,
+        body: payload.body,
+        is_read: false,
+        created_at: new Date().toISOString(),
+      }
+      queryClient.setQueryData<Message[]>(queryKey, (old) => [newMessage, ...(old || [])])
+      return { previousData }
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _payload, context) => {
+      queryClient.setQueryData(queryKey, context?.previousData)
       toast.error(`${t('messages.error_sending')}: ${error.message}`)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }
@@ -119,14 +148,24 @@ export const useSendMessage = (workspaceId: string | undefined) => {
 export const useDeleteMessages = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
   const { t } = useTranslation()
+  const queryKey = ['messages', workspaceId]
 
   return useMutation({
     mutationFn: (messageIds: string[]) => messageService.deleteMessages(messageIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
+    onMutate: async (messageIds) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousData = queryClient.getQueryData<Message[]>(queryKey)
+      queryClient.setQueryData<Message[]>(queryKey, (old) =>
+        old?.filter((m) => !messageIds.includes(m.id)),
+      )
+      return { previousData }
     },
-    onError: (error: Error) => {
+    onError: (error: Error, _messageIds, context) => {
+      queryClient.setQueryData(queryKey, context?.previousData)
       toast.error(`${t('messages.error_deleting')}: ${error.message}`)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }

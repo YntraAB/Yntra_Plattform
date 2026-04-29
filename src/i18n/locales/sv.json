@@ -47,7 +47,12 @@
     "years_old": "år",
     "filter": "Filtrera",
     "refresh": "Uppdatera",
-    "actions": "Åtgärd"
+    "actions": "Åtgärd",
+    "offline": {
+      "mode": "OFFLINE-LÄGE",
+      "syncing": "SYNKRONISERAR ÄNDRINGAR...",
+      "sync_error": "SYNKRONISERINGSFEL - FÖRSÖKER IGEN..."
+    }
   },
   "sidebar": {
     "time_management": "Tidshantering",
@@ -126,7 +131,11 @@
       "week": "Vecka",
       "month": "Månad",
       "agenda": "Agenda"
-    }
+    },
+    "unscheduled": "Oplanerade",
+    "no_unscheduled_events": "Inga oplanerade händelser",
+    "edit_mode": "Redigeringsläge",
+    "exit_edit_mode": "Avsluta redigering"
   },
   "settings": {
     "title": "Inställningar",
