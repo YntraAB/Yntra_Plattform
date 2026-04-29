@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { Button } from '@/components/ui/button'
@@ -23,6 +22,9 @@ import {
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
 import { Loader2, Calendar } from 'lucide-react'
+import { useCreateReport } from '@/hooks/queries/useReporting'
+import { userService } from '@/services/userService'
+import { messageService, type SendMessagePayload } from '@/services/messageService'
 
 interface TimeOffRequestModalProps {
   isOpen: boolean
@@ -33,20 +35,20 @@ export const TimeOffRequestModal: React.FC<TimeOffRequestModalProps> = ({ isOpen
   const { t } = useTranslation()
   const { user } = useAuth()
   const { workspaceId } = useWorkspace()
-  const [loading, setLoading] = useState(false)
-
+  
   const [leaveType, setLeaveType] = useState('vacation')
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0])
   const [reason, setReason] = useState('')
 
+  const createReportMutation = useCreateReport()
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!workspaceId || !user) return
 
-    setLoading(true)
     try {
-      const { error } = await supabase.from('reports').insert({
+      await createReportMutation.mutateAsync({
         workspace_id: workspaceId,
         user_id: user.id,
         type: 'leave_request',
@@ -61,17 +63,11 @@ export const TimeOffRequestModal: React.FC<TimeOffRequestModalProps> = ({ isOpen
         status: 'pending',
       })
 
-      if (error) throw error
-
       try {
-        const { data: admins } = await supabase
-          .from('users')
-          .select('id')
-          .eq('workspace_id', workspaceId)
-          .in('role', ['admin', 'platform_admin'])
+        const admins = await userService.getWorkspaceAdmins(workspaceId)
 
         if (admins && admins.length > 0) {
-          const messagePayloads = admins.map(admin => ({
+          const messagePayloads: SendMessagePayload[] = admins.map(admin => ({
             workspace_id: workspaceId,
             sender_id: user.id,
             receiver_id: admin.id,
@@ -83,7 +79,7 @@ export const TimeOffRequestModal: React.FC<TimeOffRequestModalProps> = ({ isOpen
             is_read: false
           }))
 
-          await supabase.from('messages').insert(messagePayloads)
+          await messageService.sendMessages(messagePayloads)
         }
       } catch (msgError) {
         console.error('Failed to notify admins:', msgError)
@@ -94,8 +90,6 @@ export const TimeOffRequestModal: React.FC<TimeOffRequestModalProps> = ({ isOpen
     } catch (error: any) {
       console.error('Error sending leave request:', error)
       toast.error(t('reporting.form.error'))
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -168,8 +162,8 @@ export const TimeOffRequestModal: React.FC<TimeOffRequestModalProps> = ({ isOpen
             <Button type="button" variant="ghost" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={loading} className="px-8">
-              {loading ? (
+            <Button type="submit" disabled={createReportMutation.isPending} className="px-8">
+              {createReportMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   {t('common.saving')}

@@ -13,6 +13,20 @@ export const userService = {
   },
 
   /**
+   * Fetch all admins for a specific workspace
+   */
+  async getWorkspaceAdmins(workspaceId: string) {
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('workspace_id', workspaceId)
+      .in('role', ['admin', 'platform_admin'])
+
+    if (error) throw new Error(error.message)
+    return data || []
+  },
+
+  /**
    * Fetch details for a specific user
    */
   async getUserDetails(userId: string) {

@@ -1,47 +1,27 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle2, Clock, FileText } from 'lucide-react'
+import { useReportingStats } from '@/hooks/queries/useReporting'
 
 export const ReportingStats: React.FC = () => {
   const { t } = useTranslation()
   const { user } = useAuth()
   const { workspaceId } = useWorkspace()
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    resolved: 0
-  })
 
-  useEffect(() => {
-    async function fetchStats() {
-      if (!workspaceId || !user) return
+  const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin'
+  const { data: reports = [] } = useReportingStats(workspaceId)
 
-      const isAdmin = user.role === 'admin' || user.role === 'platform_admin'
-      let query = supabase
-        .from('reports')
-        .select('status', { count: 'exact' })
-        .eq('workspace_id', workspaceId)
-
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id)
-      }
-
-      const { data, error } = await query
-
-      if (!error && data) {
-        const total = data.length
-        const pending = data.filter(r => r.status === 'pending').length
-        const resolved = data.filter(r => r.status === 'resolved').length
-        setStats({ total, pending, resolved })
-      }
+  const stats = React.useMemo(() => {
+    const userReports = isAdmin ? reports : reports.filter((r: any) => r.user_id === user?.id)
+    return {
+      total: userReports.length,
+      pending: userReports.filter((r: any) => r.status === 'pending').length,
+      resolved: userReports.filter((r: any) => r.status === 'resolved').length
     }
-
-    fetchStats()
-  }, [workspaceId, user])
+  }, [reports, isAdmin, user?.id])
 
   return (
     <div className="grid gap-4 md:grid-cols-3">

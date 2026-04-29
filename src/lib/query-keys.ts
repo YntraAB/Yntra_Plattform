@@ -10,8 +10,9 @@ export const queryKeys = {
   noteTeams: (scope: string | null) => ['note-teams', scope] as const,
   teamNotes: (teamId: string | null) => ['team-notes', teamId] as const,
 
-  // Scheduler (to be added as needed)
   events: (workspaceId: string | null, teamId: string | null) =>
     ['events', workspaceId, teamId] as const,
   workspaceNotes: (workspaceId: string | null) => ['notes', workspaceId] as const,
+  reporting: (workspaceId: string | null) => ['reports', workspaceId] as const,
+  reportingStats: (workspaceId: string | null) => ['reporting-stats', workspaceId] as const,
 } as const

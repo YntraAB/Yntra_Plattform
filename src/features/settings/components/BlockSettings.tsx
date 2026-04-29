@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
-import { ICON_MAP, type IconName } from '@/lib/blocks/registry'
+import { ICON_MAP, type IconName } from '@/lib/blocks/icons'
 import {
   Dialog,
   DialogContent,

@@ -1,7 +1,5 @@
 /**
  * This component provides the main navigation sidebar for the scheduler.
- * It's inspired by IDE layouts (like VS Code) with collapsible sections,
- * icons, and a clean hierarchical structure.
  */
 
 import React, { useState, useEffect } from 'react'
@@ -15,8 +13,9 @@ import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Badge } from '@/components/ui/badge'
-import { BLOCK_REGISTRY, ICON_MAP } from '@/lib/blocks/registry'
-import type { UserRole } from '@/lib/blocks/registry'
+import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
+import { ICON_MAP } from '@/lib/blocks/icons'
+import type { UserRole } from '@/types'
 
 /**
  * Navigation item structure

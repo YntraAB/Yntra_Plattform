@@ -103,6 +103,13 @@ export const messageService = {
     return data
   },
 
+  async sendMessages(payloads: SendMessagePayload[]) {
+    const { data, error } = await supabase.from('messages').insert(payloads).select()
+
+    if (error) throw error
+    return data
+  },
+
   async deleteMessages(messageIds: string[]) {
     const { error } = await supabase.from('messages').delete().in('id', messageIds)
 

@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import {
@@ -33,10 +32,17 @@ import {
 } from '@/components/ui/select'
 import { toast } from 'sonner'
 
+interface ReportContent {
+  subject: string
+  description: string
+  date_of_incident?: string
+  [key: string]: unknown
+}
+
 interface Report {
   id: string
   type: string
-  content: any
+  content: ReportContent
   status: string
   is_anonymous: boolean
   created_at: string
@@ -45,79 +51,39 @@ interface Report {
   }
 }
 
+import { useReports, useUpdateReportStatus } from '@/hooks/queries/useReporting'
+
 export const ReportList: React.FC = () => {
   const { t, i18n } = useTranslation()
   const { user } = useAuth()
   const { workspaceId } = useWorkspace()
-  const [reports, setReports] = useState<Report[]>([])
-  const [loading, setLoading] = useState(true)
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<string>('all')
-  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null)
 
   const isAdmin = user?.role === 'admin' || user?.role === 'platform_admin'
 
-  const fetchReports = useCallback(async () => {
-    if (!workspaceId || !user) return
-    setLoading(true)
-    try {
-      let query = supabase
-        .from('reports')
-        .select(`
-          *,
-          user:users(full_name)
-        `)
-        .eq('workspace_id', workspaceId)
+  const { data, isLoading: loading, refetch: fetchReports } = useReports(workspaceId, {
+    isAdmin,
+    userId: user?.id || '',
+    status: statusFilter,
+    type: typeFilter
+  })
 
-      if (!isAdmin) {
-        query = query.eq('user_id', user.id)
-      }
+  const reports = (data || []) as Report[]
 
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-
-      if (typeFilter !== 'all') {
-        query = query.eq('type', typeFilter)
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false })
-
-      if (error) throw error
-      setReports(data || [])
-    } catch (error) {
-      console.error('Error fetching reports:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [workspaceId, user, isAdmin, statusFilter, typeFilter])
-
-  useEffect(() => {
-    fetchReports()
-  }, [fetchReports])
+  const updateStatusMutation = useUpdateReportStatus()
 
   const handleStatusChange = async (reportId: string, newStatus: string) => {
-    setUpdatingStatus(reportId)
     try {
-      const { error } = await supabase
-        .from('reports')
-        .update({ status: newStatus })
-        .eq('id', reportId)
-
-      if (error) throw error
-
+      await updateStatusMutation.mutateAsync({ reportId, status: newStatus })
       toast.success(t('reporting.status_updated'))
-
-      setReports(prev => prev.map(r => r.id === reportId ? { ...r, status: newStatus } : r))
       if (selectedReport?.id === reportId) {
         setSelectedReport(prev => prev ? { ...prev, status: newStatus } : null)
       }
     } catch (error) {
       console.error('Error updating status:', error)
       toast.error(t('reporting.status_error'))
-    } finally {
-      setUpdatingStatus(null)
     }
   }
 
@@ -173,7 +139,7 @@ export const ReportList: React.FC = () => {
           </Select>
         </div>
 
-        <Button variant="outline" size="sm" onClick={fetchReports} disabled={loading} className="gap-2">
+        <Button variant="outline" size="sm" onClick={() => fetchReports()} disabled={loading} className="gap-2">
           <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           {t('common.refresh')}
         </Button>
@@ -295,7 +261,7 @@ export const ReportList: React.FC = () => {
                                 <Select 
                                   value={report.status} 
                                   onValueChange={(val) => handleStatusChange(report.id, val)}
-                                  disabled={updatingStatus === report.id}
+                                  disabled={updateStatusMutation.isPending && updateStatusMutation.variables?.reportId === report.id}
                                 >
                                   <SelectTrigger className="w-full">
                                     <SelectValue placeholder={t('reporting.admin.select_status')} />
@@ -306,7 +272,7 @@ export const ReportList: React.FC = () => {
                                     <SelectItem value="resolved">{t('reporting.status.resolved')}</SelectItem>
                                   </SelectContent>
                                 </Select>
-                                {updatingStatus === report.id && (
+                                {updateStatusMutation.isPending && updateStatusMutation.variables?.reportId === report.id && (
                                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                 )}
                               </div>
