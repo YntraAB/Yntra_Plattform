@@ -332,7 +332,7 @@ export const MessagesPage: React.FC = () => {
     toast.success(t('messages.messages_deleted'), {
       duration: 5000,
       action: {
-        label: t('common.undo') || 'Ångra',
+        label: t('common.undo'),
         onClick: () => {
           if (deleteTimeoutRef.current) {
             clearTimeout(deleteTimeoutRef.current)
@@ -340,7 +340,7 @@ export const MessagesPage: React.FC = () => {
           }
           queryClient.setQueryData(queryKey, previousMessages)
           toast.dismiss()
-          toast.info(t('messages.undo_successful') || 'Radering ångrad')
+          toast.info(t('messages.undo_successful'))
         },
       },
     })

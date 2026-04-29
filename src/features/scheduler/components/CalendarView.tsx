@@ -52,6 +52,7 @@ const EventCard: React.FC<EventCardProps> = ({
   currentDate,
   users = [],
 }) => {
+  const { t } = useTranslation()
   const categoryConfig = getCategoryConfig(event.category)
 
   // Helper to format assignee name
@@ -133,7 +134,7 @@ const EventCard: React.FC<EventCardProps> = ({
             className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
             style={{ backgroundColor: categoryConfig.bgColor, color: categoryConfig.color }}
           >
-            {categoryConfig.label}
+            {t(categoryConfig.label)}
           </span>
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <CalendarIcon className="h-3 w-3" />
@@ -182,6 +183,7 @@ interface MonthEventCardProps {
 }
 
 const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick, locale = 'en-US' }) => {
+  const { t } = useTranslation()
   const categoryConfig = getCategoryConfig(event.category)
 
   return (
@@ -209,7 +211,7 @@ const MonthEventCard: React.FC<MonthEventCardProps> = ({ event, onClick, locale 
             className="rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider"
             style={{ backgroundColor: categoryConfig.bgColor, color: categoryConfig.color }}
           >
-            {categoryConfig.label}
+            {t(categoryConfig.label)}
           </span>
           <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
             <CalendarIcon className="h-3 w-3" />
@@ -808,7 +810,7 @@ const AgendaView: React.FC<AgendaViewProps> = ({ events, onEventClick }) => {
                           color: categoryConfig.color,
                         }}
                       >
-                        {categoryConfig.label}
+                        {t(categoryConfig.label)}
                       </span>
                     </div>
                   )

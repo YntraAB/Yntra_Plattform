@@ -338,11 +338,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
             </h3>
             <div className="space-y-2">
               {[
-                { id: 'schedule', label: 'Allmänt Schema', color: 'bg-violet-500' },
-                { id: 'bookings', label: 'Bokningar', color: 'bg-blue-500' },
-                { id: 'personal', label: 'Personligt', color: 'bg-pink-500' },
-                { id: 'assistance', label: 'Assistanstid', color: 'bg-amber-500' },
-                { id: 'medical', label: 'Medicineringsavvikelser', color: 'bg-cyan-500' },
+                { id: 'schedule', label: t('sidebar.general_schedule'), color: 'bg-violet-500' },
+                { id: 'bookings', label: t('sidebar.bookings'), color: 'bg-blue-500' },
+                { id: 'personal', label: t('sidebar.personal'), color: 'bg-pink-500' },
+                { id: 'assistance', label: t('sidebar.assistance_time'), color: 'bg-amber-500' },
+                { id: 'medical', label: t('sidebar.medication_deviations'), color: 'bg-cyan-500' },
               ].map((filter) => (
                 <label
                   key={filter.id}

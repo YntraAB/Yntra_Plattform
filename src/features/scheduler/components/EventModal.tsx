@@ -94,7 +94,7 @@ export const EventModal: React.FC<EventModalProps> = ({ event, onClose, onEdit, 
                 className="rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide shadow-sm"
                 style={{ backgroundColor: category.bgColor, color: category.color }}
               >
-                {category.label}
+                {t(category.label)}
               </span>
             </div>
           </div>

@@ -29,5 +29,4 @@ export const MOCK_USERS = [
   { id: 'u4', name: 'Lisa Andersson' },
 ]
 
-// Detta är den fiktiva "inloggade" personen när vi switchar till Assistent-rollen.
 export const CURRENT_ASSISTANT_ID = 'u1'

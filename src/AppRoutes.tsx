@@ -23,7 +23,7 @@ import { BreadcrumbProvider, useBreadcrumbContext } from '@/contexts/BreadcrumbC
 import { ErrorBoundary, RouteErrorBoundary } from './components/layout/ErrorBoundary'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
 import { BLOCK_REGISTRY } from '@/lib/blocks/registry'
-import type { WorkspaceModules } from '@/types'
+import type { WorkspaceModules, UserRole } from '@/types'
 import type { TFunction } from 'i18next'
 
 interface BreadcrumbHandle {
@@ -213,7 +213,7 @@ export const Layout: React.FC = () => {
           </div>
           <div className="flex items-center gap-4">
             {isPlatformAdmin && (
-              <Select value={user?.role || ''} onValueChange={(val) => simulateRole(val)}>
+              <Select value={user?.role || ''} onValueChange={(val) => simulateRole(val as UserRole)}>
                 <SelectTrigger className="h-8 w-[120px] rounded-lg border-border bg-secondary/50 text-[11px] font-bold shadow-none duration-300 animate-in fade-in zoom-in focus:ring-0 focus:ring-offset-0">
                   <SelectValue placeholder={t('auth.role_simulator.placeholder')} />
                 </SelectTrigger>

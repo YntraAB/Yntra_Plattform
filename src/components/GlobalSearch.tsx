@@ -88,32 +88,32 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
   const settingsItems = [
     {
       id: 'set-gen',
-      label: t('settings.localization') || 'Språk & Tidszon',
+      label: t('settings.localization'),
       path: '/settings?tab=general',
       icon: Globe,
     },
     {
       id: 'set-app',
-      label: t('settings.theme') || 'Tema & Utseende',
+      label: t('settings.theme'),
       path: '/settings?tab=general',
       icon: Palette,
     },
     {
       id: 'set-not',
-      label: t('settings.notifications.title') || 'Notiser',
+      label: t('settings.notifications.title'),
       path: '/settings?tab=notifications',
       icon: BellRing,
     },
     {
       id: 'set-acc',
-      label: t('settings.tabs.account') || 'Account',
+      label: t('settings.tabs.account'),
       path: '/settings?tab=account',
       icon: User,
     },
     ...(user?.role === 'admin' || user?.role === 'platform_admin' ? [
       {
         id: 'set-sch',
-        label: t('settings.tabs.scheduler') || 'Scheduler Settings',
+        label: t('settings.tabs.scheduler'),
         path: '/settings?tab=scheduler',
         icon: Calendar,
       },
@@ -187,7 +187,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
 
         <CommandSeparator />
 
-        <CommandGroup heading={t('common.actions') || 'Quick Actions'}>
+        <CommandGroup heading={t('common.actions')}>
           {actionItems.map((item) => (
             <CommandItem key={item.id} onSelect={() => onSelect(item.path)}>
               <item.icon className="mr-2 h-4 w-4 text-primary" />

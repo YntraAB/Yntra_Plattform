@@ -60,13 +60,10 @@ export const ClientOverviewPage: React.FC = () => {
       <div className="mx-auto flex h-full max-w-4xl flex-col items-center justify-center p-8 text-center">
         <User className="mb-4 h-16 w-16 text-muted-foreground/30" />
         <h2 className="mb-2 text-xl font-bold">
-          {t('assistance.no_client_linked', 'Ingen Brukare Kopplad')}
+          {t('assistance.no_client_linked')}
         </h2>
         <p className="mx-auto max-w-md text-muted-foreground">
-          {t(
-            'assistance.no_client_description',
-            'Detta team (arbetslag) har ingen brukare associerad till sig. En chef kan lägga till och koppla en brukare till teamet via katalogen (Directory).',
-          )}
+          {t('assistance.no_client_description')}
         </p>
       </div>
     )
@@ -84,12 +81,15 @@ export const ClientOverviewPage: React.FC = () => {
             {client.first_name} {client.last_name}
           </h1>
           <p className="mt-1 text-sm font-medium text-muted-foreground">
-            {t('assistance.personal_number', 'Personnummer:')}{' '}
-            {client.personal_number || t('common.unknown', 'Okänt')}
+            {t('assistance.personal_number')}{' '}
+            {client.personal_number || t('common.unknown')}
           </p>
           <div className="mt-4 flex gap-2">
             <span className="rounded-full border border-border bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {t('assistance.care_level', 'Omvårdnadsnivå:')} {client.care_level}
+              {t('assistance.care_level')}{' '}
+              {client.care_level
+                ? t(`directory.client_manager.care_level_${client.care_level}`)
+                : t('common.unknown')}
             </span>
           </div>
         </div>
@@ -101,7 +101,7 @@ export const ClientOverviewPage: React.FC = () => {
           className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'journal' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
         >
           <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> {t('assistance.daily_notes', 'Daganteckningar')}
+            <FileText className="h-4 w-4" /> {t('assistance.daily_notes')}
           </div>
         </button>
         <button
@@ -110,7 +110,7 @@ export const ClientOverviewPage: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <Pill className="h-4 w-4" />{' '}
-            {t('assistance.active_medication_list', 'Aktiv Medicinlista')}
+            {t('assistance.active_medication_list')}
           </div>
         </button>
       </div>

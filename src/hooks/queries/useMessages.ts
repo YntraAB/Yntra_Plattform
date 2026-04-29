@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import {
   messageService,
   type SendMessagePayload,
@@ -153,6 +154,7 @@ export const useMessagesPaginated = <TData = { messages: Message[]; count: numbe
 
 export const useMarkMessageAsRead = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (messageId: string) => messageService.markAsRead(messageId),
@@ -160,13 +162,14 @@ export const useMarkMessageAsRead = (workspaceId: string | undefined) => {
       queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
     },
     onError: (error: Error) => {
-      toast.error(`Kunde inte markera som läst: ${error.message}`)
+      toast.error(`${t('messages.error_marking_read')}: ${error.message}`)
     },
   })
 }
 
 export const useSendMessage = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (payload: SendMessagePayload) => messageService.sendMessage(payload),
@@ -174,13 +177,14 @@ export const useSendMessage = (workspaceId: string | undefined) => {
       queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
     },
     onError: (error: Error) => {
-      toast.error(`Kunde inte skicka meddelande: ${error.message}`)
+      toast.error(`${t('messages.error_sending')}: ${error.message}`)
     },
   })
 }
 
 export const useDeleteMessages = (workspaceId: string | undefined) => {
   const queryClient = useQueryClient()
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (messageIds: string[]) => messageService.deleteMessages(messageIds),
@@ -188,7 +192,7 @@ export const useDeleteMessages = (workspaceId: string | undefined) => {
       queryClient.invalidateQueries({ queryKey: ['messages', workspaceId] })
     },
     onError: (error: Error) => {
-      toast.error(`Kunde inte radera meddelanden: ${error.message}`)
+      toast.error(`${t('messages.error_deleting')}: ${error.message}`)
     },
   })
 }

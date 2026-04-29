@@ -40,7 +40,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
     const type = searchParams.get('type')
     if (type && ['complaint', 'work_injury', 'incident', 'deviation', 'whistleblower'].includes(type)) {
       setReportType(type)
-      
+
       // Optional: clear the param
       const newParams = new URLSearchParams(searchParams)
       newParams.delete('type')
@@ -83,13 +83,13 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
             sender_id: user.id,
             receiver_id: admin.id,
             subject: t('reporting.notifications.admin_subject', { type: t(`reporting.types.${reportType}`) }),
-            body: t('reporting.notifications.admin_body', { 
+            body: t('reporting.notifications.admin_body', {
               type: t(`reporting.types.${reportType}`),
               subject
             }),
             is_read: false
           }))
-          
+
           await supabase.from('messages').insert(messagePayloads)
         }
       } catch (msgError) {
@@ -145,7 +145,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         <Label htmlFor="subject">{t('reporting.form.subject')}</Label>
         <Input
           id="subject"
-          placeholder={t('reporting.form.subject_placeholder', 'Kort sammanfattning...')}
+          placeholder={t('reporting.form.subject_placeholder')}
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           className="bg-background/50 border-border/50"
@@ -157,7 +157,7 @@ export const ReportForm: React.FC<ReportFormProps> = ({ onSuccess }) => {
         <Label htmlFor="description">{t('reporting.form.description')}</Label>
         <Textarea
           id="description"
-          placeholder={t('reporting.form.description_placeholder', 'Beskriv händelsen eller dina synpunkter i detalj...')}
+          placeholder={t('reporting.form.description_placeholder')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="min-h-[150px] bg-background/50 border-border/50"

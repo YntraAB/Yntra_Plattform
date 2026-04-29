@@ -30,6 +30,45 @@ serve(async (req: Request) => {
       })
     }
 
+    const { data: workspace } = await supabase
+      .from('workspaces')
+      .select('settings')
+      .eq('id', record.workspace_id)
+      .single()
+
+    const lang = (workspace?.settings?.language === 'en' ? 'en' : 'sv') as 'sv' | 'en'
+
+    const translations = {
+      sv: {
+        new_message: 'Nytt meddelande',
+        no_subject: 'Ingen rubrik',
+        alert_body: 'Du har fått ett nytt meddelande i Inkorg från {{sender}}.',
+        full_body: 'Nytt meddelande från {{sender}}:\n\n{{body}}',
+        team_message: 'Team-meddelande',
+        team_alert_body: 'Ditt team har fått ett nytt meddelande i Inkorg.',
+        team_full_body: 'Nytt team-meddelande:\n\n{{body}}',
+        report_approved_subject: 'Din tidsrapport har blivit godkänd',
+        report_approved_body:
+          'Hej!\n\nDin tidsrapport för {{date}} ({{hours}}h) har blivit godkänd av din chef.',
+        system: 'System',
+      },
+      en: {
+        new_message: 'New message',
+        no_subject: 'No subject',
+        alert_body: 'You have received a new message in Inbox from {{sender}}.',
+        full_body: 'New message from {{sender}}:\n\n{{body}}',
+        team_message: 'Team message',
+        team_alert_body: 'Your team has received a new message in Inbox.',
+        team_full_body: 'New team message:\n\n{{body}}',
+        report_approved_subject: 'Your time report has been approved',
+        report_approved_body:
+          'Hi!\n\nYour time report for {{date}} ({{hours}}h) has been approved by your manager.',
+        system: 'System',
+      },
+    }
+
+    const t = translations[lang]
+
     const notifications: { email: string; subject: string; body: string }[] = []
 
     if (table === 'messages' && type === 'INSERT') {
@@ -44,11 +83,11 @@ serve(async (req: Request) => {
         if (user?.notifications_on) {
           notifications.push({
             email: user.email,
-            subject: `Nytt meddelande: ${msg.subject || 'Ingen rubrik'}`,
+            subject: `${t.new_message}: ${msg.subject || t.no_subject}`,
             body:
               user.notification_type === 'alert_only'
-                ? `Du har fått ett nytt meddelande i Inkorg från ${msg.sender_id || 'System'}.`
-                : `Nytt meddelande från ${msg.sender_id}:\n\n${msg.body}`,
+                ? t.alert_body.replace('{{sender}}', msg.sender_id || t.system)
+                : t.full_body.replace('{{sender}}', msg.sender_id || t.system).replace('{{body}}', msg.body),
           })
         }
       } else if (msg.target_team_id) {
@@ -68,11 +107,11 @@ serve(async (req: Request) => {
               if (u.notifications_on) {
                 notifications.push({
                   email: u.email,
-                  subject: `Team-meddelande: ${msg.subject || 'Ingen rubrik'}`,
+                  subject: `${t.team_message}: ${msg.subject || t.no_subject}`,
                   body:
                     u.notification_type === 'alert_only'
-                      ? `Ditt team har fått ett nytt meddelande i Inkorg.`
-                      : `Nytt team-meddelande:\n\n${msg.body}`,
+                      ? t.team_alert_body
+                      : t.team_full_body.replace('{{body}}', msg.body),
                 })
               }
             },
@@ -90,8 +129,10 @@ serve(async (req: Request) => {
         if (user?.notifications_on) {
           notifications.push({
             email: user.email,
-            subject: `Din tidsrapport har blivit godkänd`,
-            body: `Hej!\n\nDin tidsrapport för ${report.date} (${report.hours}h) har blivit godkänd av din chef.`,
+            subject: t.report_approved_subject,
+            body: t.report_approved_body
+              .replace('{{date}}', report.date)
+              .replace('{{hours}}', report.hours.toString()),
           })
         }
       }
@@ -105,7 +146,7 @@ serve(async (req: Request) => {
           Authorization: `Bearer ${RESEND_API_KEY}`,
         },
         body: JSON.stringify({
-          from: 'Yntra <notifications@yntra.se>', // Replace with your verified domain
+          from: 'Yntra <notifications@yntra.se>',
           to: [note.email],
           subject: note.subject,
           text: note.body,
@@ -118,7 +159,8 @@ serve(async (req: Request) => {
       status: 200,
     })
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(JSON.stringify({ error: message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

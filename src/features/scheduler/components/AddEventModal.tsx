@@ -152,7 +152,7 @@ export const AddEventModal: React.FC<AddEventModalProps> = ({
         <DialogHeader className="border-b border-border bg-card px-6 py-4">
           <DialogTitle className="text-lg font-semibold text-foreground">
             {event
-              ? t('scheduler.edit_event', { defaultValue: 'Redigera händelse' })
+              ? t('scheduler.edit_event')
               : t('scheduler.new_event')}
           </DialogTitle>
         </DialogHeader>

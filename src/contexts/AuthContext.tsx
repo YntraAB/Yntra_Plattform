@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import i18n from '@/i18n/config'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import type { AuthState, SocialAuthProvider } from '@/types'
+import type { AuthState, SocialAuthProvider, UserRole } from '@/types'
 
 interface AuthContextValue {
   isAuthenticated: boolean
@@ -13,7 +13,7 @@ interface AuthContextValue {
   loginWithProvider: (provider: SocialAuthProvider) => Promise<boolean>
   logout: () => Promise<void>
   clearError: () => void
-  simulateRole: (role: string | null) => void
+  simulateRole: (role: UserRole | null) => void
   isPlatformAdmin: boolean
 }
 
@@ -73,8 +73,8 @@ async function getAuthStateFromSession(session: Session | null): Promise<AuthSta
     user: {
       id: session.user.id,
       email: session.user.email || '',
-      name: session.user.email || i18n.t('common.user', 'Användare'),
-      role: (session.user.user_metadata?.role as string) || 'user',
+      name: session.user.email || i18n.t('common.user'),
+      role: (session.user.user_metadata?.role as UserRole) || 'user',
       last_sign_in_at: session.user.last_sign_in_at,
     },
     isLoading: false,
@@ -94,7 +94,7 @@ function getAuthRedirectUrl() {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation()
   const [authState, setAuthState] = useState<AuthState>(defaultAuthState)
-  const [simulatedRole, setSimulatedRole] = useState<string | null>(null)
+  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null)
 
   const isPlatformAdmin = useMemo(() => {
     return (
@@ -127,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       ...prev.user!,
                       email: dbUser.email || prev.user!.email,
                       name: dbUser.full_name || prev.user!.email,
-                      role: (dbUser.role as string) || prev.user!.role,
+                      role: (dbUser.role as UserRole) || prev.user!.role,
                       workspaceId: dbUser.workspace_id || undefined,
                       phone: dbUser.phone || undefined,
                       location: dbUser.location || undefined,
@@ -246,7 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthState((prev: AuthState) => ({ ...prev, error: null }))
   }, [])
 
-  const simulateRole = useCallback((role: string | null) => {
+  const simulateRole = useCallback((role: UserRole | null) => {
     setSimulatedRole(role)
   }, [])
 
@@ -255,7 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!simulatedRole) return authState.user
     return {
       ...authState.user,
-      role: simulatedRole as string,
+      role: simulatedRole,
     }
   }, [authState.user, simulatedRole])
 

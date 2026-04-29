@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Calendar, ChevronRight } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { EmptyState } from './EmptyState'
@@ -25,6 +26,8 @@ export const AssistantTeams: React.FC<AssistantTeamsProps> = ({
   workspaceId,
   openTeamShifts,
 }) => {
+  const { t } = useTranslation()
+
   return (
     <div className="duration-400 relative flex h-full flex-1 flex-col bg-background animate-in fade-in slide-in-from-bottom-2">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/50 px-8">
@@ -32,15 +35,15 @@ export const AssistantTeams: React.FC<AssistantTeamsProps> = ({
           <div className="rounded-md bg-primary/10 p-1.5">
             <Calendar className="h-4 w-4 text-primary" />
           </div>
-          Mina Team / Uppdrag
+          {t('timereports.my_teams_assignments')}
         </h2>
       </div>
       <div className="scrollbar-none w-full flex-1 overflow-y-auto">
         {dbTeams.length === 0 ? (
           <EmptyState
             icon={Calendar}
-            title="Inga team"
-            description="Du har inte blivit tilldelad några team eller uppdrag ännu."
+            title={t('timereports.no_teams')}
+            description={t('timereports.no_teams_description')}
           />
         ) : (
           dbTeams
@@ -81,11 +84,11 @@ export const AssistantTeams: React.FC<AssistantTeamsProps> = ({
                   <div className="flex items-baseline gap-1">
                     <span className="text-lg font-bold text-foreground">{team.totalHours}</span>
                     <span className="text-[11px] font-medium uppercase text-muted-foreground">
-                      h
+                      {t('timereports.hours_abbr')}
                     </span>
                   </div>
                   <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground/60">
-                    Total tid
+                    {t('timereports.total_time')}
                   </span>
                 </div>
 

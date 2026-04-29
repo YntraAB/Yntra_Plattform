@@ -333,6 +333,8 @@
       "location_label": "Plats/Rum",
       "address_label": "Adress",
       "avatar_label": "Avatar URL",
+      "location_placeholder": "T.ex. Rum 102",
+      "address_placeholder": "Gatuadress",
       "name_unspecified": "Namn ej angivet",
       "default_assistant_role": "Standard Assistent",
       "update_role_error": "Kunde inte uppdatera roll:",
@@ -412,6 +414,11 @@
     },
     "client_manager": {
       "title": "Lägg till Brukare",
+      "ssn_placeholder": "ÅÅÅÅMMDD-XXXX",
+      "care_level_label": "Vårdnivå",
+      "care_level_low": "Låg",
+      "care_level_medium": "Medel",
+      "care_level_high": "Hög",
       "team_label": "Koppla till Team/Arbetslag *",
       "team_placeholder": "-- Välj Team --",
       "team_info": "Obligatoriskt. Knyter brukaren till rätt arbetsgrupp.",
@@ -540,7 +547,8 @@
     "messages_deleted": "Meddelanden har tagits bort",
     "fill_required_fields": "Vänligen fyll i alla obligatoriska fält",
     "message_sent": "Meddelandet har skickats",
-    "error_deleting": "Kunde inte ta bort meddelanden"
+    "error_deleting": "Kunde inte ta bort meddelanden",
+    "error_marking_read": "Kunde inte markera som läst"
   },
   "auth": {
     "securing_connection": "Säkrar anslutningen...",
@@ -591,6 +599,13 @@
   "client_portal": {
     "title": "Trygghetsportalen",
     "account": "Konto",
+    "welcome": "Välkommen, {{name}}",
+    "todays_assistance": "Dagens Assistans",
+    "assistance_description": "Här kommer du kunna se vem som arbetar hos dig idag och när passet börjar.",
+    "no_schedule": "Inget schema tillgängligt just nu",
+    "messages": "Meddelanden",
+    "messages_description": "Om du behöver nå din samordnare eller chef kan du skicka ett säkert meddelande i inkorgen.",
+    "go_to_inbox": "Gå till Inkorgen",
     "sections": {
       "start": "Start"
     }
@@ -614,10 +629,53 @@
     "absence": "Frånvaro",
     "salary_before_tax": "Lön före skatt",
     "client": "Brukare",
+    "team_members": "Teammedlemmar",
+    "no_members": "Inga teammedlemmar",
+    "no_members_desc": "Det finns inga anställda registrerade i detta team.",
+    "reported": "Rapporterat",
+    "hours_abbr": "h",
+    "status": {
+      "pending_attest": "Väntar attest",
+      "approved": "Godkänd",
+      "not_submitted": "Ej inlämnad"
+    },
+    "my_teams_assignments": "Mina Team / Uppdrag",
+    "no_teams": "Inga team",
+    "no_teams_description": "Du har inte blivit tilldelad några team eller uppdrag ännu.",
+    "total_time": "Total tid",
+    "unassigned_team": "Odelat team",
+    "error_fetching_data": "Kunde inte hämta data",
+    "error_approving": "Kunde inte godkänna rapporter",
+    "error_deleting": "Kunde inte radera rapporter",
+    "success_approved": "{{count}} rapporter har godkänts",
+    "success_deleted": "{{count}} rapporter har raderats",
     "delete_alert": {
       "title": "Är du helt säker?",
       "description": "Du håller på att radera {{count}} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.",
       "confirm": "Ja, radera rapporter"
+    }
+  },
+  "assistance": {
+    "no_client_linked": "Ingen brukare kopplad",
+    "no_client_description": "Detta team har ingen brukare kopplad till sig. Kontakta en administratör för att sätta upp brukaren.",
+    "personal_number": "Personnummer:",
+    "care_level": "Vårdnivå:",
+    "daily_notes": "Daganteckningar",
+    "active_medication_list": "Medicinlista",
+    "journal": {
+      "write_new_note": "Skriv ny daganteckning",
+      "placeholder": "Beskriv hur dagen varit...",
+      "save_note": "Spara anteckning",
+      "previous_notes": "Tidigare anteckningar",
+      "no_notes": "Inga anteckningar hittades",
+      "unknown_author": "Okänd"
+    },
+    "medication": {
+      "title": "Aktiv Medicinlista",
+      "add_button": "Lägg till recept",
+      "empty_state": "Brukaren har ingen aktiv medicin inlagd.",
+      "dosage_label": "Dos:",
+      "time_label": "Tid:"
     }
   },
   "reporting": {

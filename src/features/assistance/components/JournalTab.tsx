@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
 import { Button } from '@/components/ui/button'
@@ -14,6 +15,7 @@ interface JournalNote {
 }
 
 export const JournalTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const { t } = useTranslation()
   const [notes, setNotes] = useState<JournalNote[]>([])
   const [newNote, setNewNote] = useState('')
   const [isLoading, setIsLoading] = useState(true)
@@ -60,12 +62,12 @@ export const JournalTab: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-sidebar p-4">
-        <h3 className="mb-3 text-sm font-medium">Skriv ny daganteckning</h3>
+        <h3 className="mb-3 text-sm font-medium">{t('assistance.journal.write_new_note')}</h3>
         <textarea
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
           className="mb-3 min-h-[100px] w-full rounded-lg border border-border bg-background p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          placeholder="Beskriv hur dagen varit..."
+          placeholder={t('assistance.journal.placeholder')}
         />
         <div className="flex justify-end">
           <Button
@@ -73,28 +75,30 @@ export const JournalTab: React.FC<{ clientId: string }> = ({ clientId }) => {
             disabled={isSubmitting || !newNote.trim()}
             className="bg-primary text-white hover:bg-primary/90"
           >
-            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Spara
-            anteckning
+            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}{' '}
+            {t('assistance.journal.save_note')}
           </Button>
         </div>
       </form>
 
       <div className="space-y-4">
-        <h3 className="border-b border-border pb-2 text-lg font-semibold">Tidigare anteckningar</h3>
+        <h3 className="border-b border-border pb-2 text-lg font-semibold">
+          {t('assistance.journal.previous_notes')}
+        </h3>
         {isLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : notes.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-sidebar py-8 text-center text-muted-foreground">
-            Inga anteckningar hittades
+            {t('assistance.journal.no_notes')}
           </div>
         ) : (
           notes.map((note) => (
             <div key={note.id} className="rounded-xl border border-border bg-sidebar p-4">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-sm font-medium text-primary">
-                  {note.author?.full_name || 'Okänd'}
+                  {note.author?.full_name || t('assistance.journal.unknown_author')}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {new Date(note.created_at).toLocaleString()}

@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { User, ChevronRight } from 'lucide-react'
 import { StatusBadge } from './StatusBadge'
 import { EmptyState } from './EmptyState'
@@ -24,6 +25,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({
   loading,
   openEmployeeShifts,
 }) => {
+  const { t } = useTranslation()
+
   return (
     <div className="duration-400 relative flex h-full flex-1 flex-col bg-background animate-in fade-in slide-in-from-bottom-2">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-border/50 px-8">
@@ -31,7 +34,7 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({
           <div className="rounded-md bg-primary/10 p-1.5">
             <User className="h-4 w-4 text-primary" />
           </div>
-          Teammedlemmar
+          {t('timereports.team_members')}
         </h2>
       </div>
       <div className="scrollbar-none w-full flex-1 overflow-y-auto">
@@ -64,8 +67,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({
         ) : dbUsers.length === 0 ? (
           <EmptyState
             icon={User}
-            title="Inga teammedlemmar"
-            description="Det finns inga anställda registrerade i detta team."
+            title={t('timereports.no_members')}
+            description={t('timereports.no_members_desc')}
           />
         ) : (
           dbUsers
@@ -79,8 +82,8 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({
                     : 'approved'
               return {
                 id: u.id,
-                name: u.full_name || u.email || 'Okänd Agent',
-                role: u.role === 'admin' ? 'Administratör' : 'Assistent',
+                name: u.full_name || u.email || t('common.unknown_agent'),
+                role: u.role === 'admin' ? t('directory.roles.admin') : t('directory.roles.assistant'),
                 totalHours: eSh.reduce((a, b) => a + b.duration, 0),
                 status: statusStr,
               }
@@ -110,11 +113,11 @@ export const TeamOverview: React.FC<TeamOverviewProps> = ({
                   <div className="flex items-baseline gap-1">
                     <span className="text-lg font-bold text-foreground">{emp.totalHours}</span>
                     <span className="text-[11px] font-medium uppercase text-muted-foreground">
-                      h
+                      {t('timereports.hours_abbr')}
                     </span>
                   </div>
                   <span className="text-[10px] font-medium uppercase tracking-tighter text-muted-foreground/60">
-                    Rapporterat
+                    {t('timereports.reported')}
                   </span>
                 </div>
 

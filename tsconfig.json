@@ -14,5 +14,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "exclude": ["node_modules", "dist", ".agents", "coverage"]
+  "exclude": ["node_modules", "dist", ".agents", "coverage", "supabase/functions"]
 }

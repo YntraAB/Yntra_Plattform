@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useWorkspace } from '@/contexts/WorkspaceContext'
@@ -18,6 +19,7 @@ interface TeamRow {
 }
 
 export const useTimeManager = () => {
+  const { t } = useTranslation()
   const { workspaceId } = useWorkspace()
   const { user } = useAuth()
 
@@ -121,15 +123,15 @@ export const useTimeManager = () => {
         user: User | User[]
       }>).map((dbShift) => {
         const team = teamsData.find((t) => t.id === dbShift.team_id)
-        const teamName = team?.name || 'Odelat team'
+        const teamName = team?.name || t('timereports.unassigned_team')
         const uData = Array.isArray(dbShift.user) ? dbShift.user[0] : dbShift.user
-        const employeeName = uData ? uData.full_name || uData.email || 'Okänd Agent' : 'Okänd Agent'
+        const employeeName = uData ? uData.full_name || uData.email || t('common.unknown_agent') : t('common.unknown_agent')
 
         return {
           id: dbShift.id,
           employeeId: dbShift.user_id,
           employee: employeeName,
-          role: uData?.role === 'admin' ? 'Administratör' : 'Assistent',
+          role: uData?.role === 'admin' ? t('directory.roles.admin') : t('directory.roles.assistant'),
           teamId: dbShift.team_id,
           team: teamName,
           workspaceId: dbShift.workspace_id,
@@ -146,12 +148,12 @@ export const useTimeManager = () => {
       setShifts(mapped)
     } catch (error: unknown) {
       console.error('Error fetching data:', error)
-      const message = error instanceof Error ? error.message : 'Okänt fel'
-      toast.error('Kunde inte hämta data: ' + message)
+      const message = error instanceof Error ? error.message : t('common.unknown_error')
+      toast.error(t('timereports.error_fetching_data') + ': ' + message)
     } finally {
       setLoading(false)
     }
-  }, [workspaceId, activeRole, user?.id])
+  }, [workspaceId, activeRole, user?.id, t])
 
   useEffect(() => {
     fetchData().catch(console.error)
@@ -239,11 +241,11 @@ export const useTimeManager = () => {
       .update({ status: 'approved' })
       .in('id', selectedShifts)
     if (error) {
-      toast.error('Kunde inte godkänna rapporter: ' + error.message)
+      toast.error(t('timereports.error_approving') + ': ' + error.message)
       return
     }
 
-    toast.success(`${selectedShifts.length} rapporter har godkänts`)
+    toast.success(t('timereports.success_approved', { count: selectedShifts.length }))
     setSelectedShifts([])
     fetchData()
   }
@@ -253,11 +255,11 @@ export const useTimeManager = () => {
 
     const { error } = await supabase.from('time_reports').delete().in('id', selectedShifts)
     if (error) {
-      toast.error('Kunde inte radera rapporter: ' + error.message)
+      toast.error(t('timereports.error_deleting') + ': ' + error.message)
       return
     }
 
-    toast.success(`${selectedShifts.length} rapporter har raderats`)
+    toast.success(t('timereports.success_deleted', { count: selectedShifts.length }))
     setSelectedShifts([])
     setIsDeleteAlertOpen(false)
     fetchData()

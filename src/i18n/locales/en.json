@@ -333,6 +333,8 @@
       "location_label": "Location/Room",
       "address_label": "Address",
       "avatar_label": "Avatar URL",
+      "location_placeholder": "e.g. Room 102",
+      "address_placeholder": "Street Address",
       "name_unspecified": "Name not specified",
       "default_assistant_role": "Standard Assistant",
       "update_role_error": "Could not update role:",
@@ -412,6 +414,11 @@
     },
     "client_manager": {
       "title": "Add Client",
+      "ssn_placeholder": "YYYYMMDD-XXXX",
+      "care_level_label": "Care Level",
+      "care_level_low": "Low",
+      "care_level_medium": "Medium",
+      "care_level_high": "High",
       "team_label": "Link to Team *",
       "team_placeholder": "-- Select Team --",
       "team_info": "Required. Links the client to the correct working group.",
@@ -540,7 +547,8 @@
     "messages_deleted": "Messages deleted",
     "fill_required_fields": "Please fill in all required fields",
     "message_sent": "Message sent successfully",
-    "error_deleting": "Could not delete messages"
+    "error_deleting": "Could not delete messages",
+    "error_marking_read": "Could not mark as read"
   },
   "auth": {
     "securing_connection": "Securing connection...",
@@ -589,8 +597,15 @@
     }
   },
   "client_portal": {
-    "title": "Client Portal",
+    "title": "Safety Portal",
     "account": "Account",
+    "welcome": "Welcome, {{name}}",
+    "todays_assistance": "Today's Assistance",
+    "assistance_description": "Here you will be able to see who is working with you today and when the shift starts.",
+    "no_schedule": "No schedule available right now",
+    "messages": "Messages",
+    "messages_description": "If you need to reach your coordinator or manager, you can send a secure message in the inbox.",
+    "go_to_inbox": "Go to Inbox",
     "sections": {
       "start": "Start"
     }
@@ -614,10 +629,53 @@
     "absence": "Absence",
     "salary_before_tax": "Salary before tax",
     "client": "Client",
+    "team_members": "Team Members",
+    "no_members": "No team members",
+    "no_members_desc": "There are no employees registered in this team.",
+    "reported": "Reported",
+    "hours_abbr": "h",
+    "status": {
+      "pending_attest": "Pending attest",
+      "approved": "Approved",
+      "not_submitted": "Not submitted"
+    },
+    "my_teams_assignments": "My Teams / Assignments",
+    "no_teams": "No teams",
+    "no_teams_description": "You have not been assigned any teams or assignments yet.",
+    "total_time": "Total time",
+    "unassigned_team": "Unassigned team",
+    "error_fetching_data": "Could not fetch data",
+    "error_approving": "Could not approve reports",
+    "error_deleting": "Could not delete reports",
+    "success_approved": "{{count}} reports have been approved",
+    "success_deleted": "{{count}} reports have been deleted",
     "delete_alert": {
       "title": "Are you absolutely sure?",
       "description": "You are about to delete {{count}} time reports. This action cannot be undone and the reports will be permanently removed from the system.",
       "confirm": "Yes, delete reports"
+    }
+  },
+  "assistance": {
+    "no_client_linked": "No client linked",
+    "no_client_description": "This team has no client linked to it. Please contact an administrator to set up the client.",
+    "personal_number": "Personal number:",
+    "care_level": "Care level:",
+    "daily_notes": "Daily notes",
+    "active_medication_list": "Medication list",
+    "journal": {
+      "write_new_note": "Write new daily note",
+      "placeholder": "Describe how the day has been...",
+      "save_note": "Save note",
+      "previous_notes": "Previous notes",
+      "no_notes": "No notes found",
+      "unknown_author": "Unknown"
+    },
+    "medication": {
+      "title": "Active Medication List",
+      "add_button": "Add Prescription",
+      "empty_state": "The client has no active medication entered.",
+      "dosage_label": "Dosage:",
+      "time_label": "Time:"
     }
   },
   "reporting": {

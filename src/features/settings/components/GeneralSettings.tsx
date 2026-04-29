@@ -158,7 +158,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({ setIsSaving })
                       <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                        className="flex h-11 flex-1 items-center justify-center gap-2 pl-2 rounded-xl bg-primary text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                       >
                         {isUploading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />

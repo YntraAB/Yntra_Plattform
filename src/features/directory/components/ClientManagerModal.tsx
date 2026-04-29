@@ -39,7 +39,7 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({
   const [location, setLocation] = useState('')
   const [address, setAddress] = useState('')
   const [avatar, setAvatar] = useState('')
-  const [careLevel, setCareLevel] = useState('Medel')
+  const [careLevel, setCareLevel] = useState('medium')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [hasContactPerson, setHasContactPerson] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -53,7 +53,7 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({
       setLocation(initialData.location || '')
       setAddress(initialData.address || '')
       setAvatar(initialData.avatar || '')
-      setCareLevel(initialData.careLevel || 'Medel')
+      setCareLevel(initialData.careLevel || 'medium')
     } else {
       setFirstName('')
       setLastName('')
@@ -167,52 +167,56 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({
               <input
                 value={personalNumber}
                 onChange={(e) => setPersonalNumber(e.target.value)}
-                placeholder="ÅÅÅÅMMDD-XXXX"
+                placeholder={t('directory.client_manager.ssn_placeholder')}
                 className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                {t('directory.client_manager.care_level_label', 'Vårdnivå')}
+                {t('directory.client_manager.care_level_label')}
               </label>
               <Select value={careLevel} onValueChange={setCareLevel}>
                 <SelectTrigger className="h-9 w-full rounded-lg border border-border bg-background text-sm shadow-none outline-none focus:ring-1 focus:ring-primary">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Låg">Låg</SelectItem>
-                  <SelectItem value="Medel">Medel</SelectItem>
-                  <SelectItem value="Hög">Hög</SelectItem>
+                  <SelectItem value="low">{t('directory.client_manager.care_level_low')}</SelectItem>
+                  <SelectItem value="medium">
+                    {t('directory.client_manager.care_level_medium')}
+                  </SelectItem>
+                  <SelectItem value="high">
+                    {t('directory.client_manager.care_level_high')}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  {t('directory.members.location_label', 'Plats/Rum')}
+                  {t('directory.members.location_label')}
                 </label>
                 <input
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  placeholder="T.ex. Rum 102"
+                  placeholder={t('directory.members.location_placeholder')}
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  {t('directory.members.address_label', 'Adress')}
+                  {t('directory.members.address_label')}
                 </label>
                 <input
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
-                  placeholder="Gatuadress"
+                  placeholder={t('directory.members.address_placeholder')}
                   className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
             <div>
               <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                {t('directory.members.avatar_label', 'Avatar URL')}
+                {t('directory.members.avatar_label')}
               </label>
               <input
                 value={avatar}
@@ -293,40 +297,40 @@ export const ClientManagerModal: React.FC<ClientManagerModalProps> = ({
 
             {(messageSetting === 'contact_person' ||
               (messageSetting === 'open' && hasContactPerson)) && (
-              <div className="relative mt-2 animate-in fade-in slide-in-from-top-1">
-                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
-                  {t('directory.client_manager.contact_email_label')}
-                </label>
-                <input
-                  value={contactPersonEmail}
-                  onChange={(e) => {
-                    setContactPersonEmail(e.target.value)
-                    setShowSuggestions(true)
-                  }}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  placeholder={t('directory.client_manager.contact_email_placeholder')}
-                  className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
-                />
-                {showSuggestions && filteredUsers.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
-                    {filteredUsers.map((u) => (
-                      <div
-                        key={u.id}
-                        onClick={() => handleSelectUser(u.email)}
-                        className="flex cursor-pointer flex-col px-3 py-2 text-sm text-foreground hover:bg-muted"
-                      >
-                        <span className="font-medium">{u.name}</span>
-                        <span className="text-xs text-muted-foreground">{u.email}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {t('directory.client_manager.contact_info')}
-                </p>
-              </div>
-            )}
+                <div className="relative mt-2 animate-in fade-in slide-in-from-top-1">
+                  <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                    {t('directory.client_manager.contact_email_label')}
+                  </label>
+                  <input
+                    value={contactPersonEmail}
+                    onChange={(e) => {
+                      setContactPersonEmail(e.target.value)
+                      setShowSuggestions(true)
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    placeholder={t('directory.client_manager.contact_email_placeholder')}
+                    className="h-9 w-full rounded-lg border border-border bg-background px-3 text-sm outline-none focus:ring-1 focus:ring-primary"
+                  />
+                  {showSuggestions && filteredUsers.length > 0 && (
+                    <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+                      {filteredUsers.map((u) => (
+                        <div
+                          key={u.id}
+                          onClick={() => handleSelectUser(u.email)}
+                          className="flex cursor-pointer flex-col px-3 py-2 text-sm text-foreground hover:bg-muted"
+                        >
+                          <span className="font-medium">{u.name}</span>
+                          <span className="text-xs text-muted-foreground">{u.email}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-1 text-[11px] text-muted-foreground">
+                    {t('directory.client_manager.contact_info')}
+                  </p>
+                </div>
+              )}
           </div>
 
           <div className="mt-8 flex items-center justify-end gap-3">

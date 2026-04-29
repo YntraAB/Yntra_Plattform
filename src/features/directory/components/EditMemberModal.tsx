@@ -118,7 +118,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">
-                    {t('common.first_name') || 'Förnamn'}
+                    {t('common.first_name')}
                   </Label>
                   <Input
                     value={firstName}
@@ -128,7 +128,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 </div>
                 <div className="space-y-2">
                   <Label className="text-muted-foreground">
-                    {t('common.last_name') || 'Efternamn'}
+                    {t('common.last_name')}
                   </Label>
                   <Input
                     value={lastName}
@@ -138,16 +138,16 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-muted-foreground">{t('common.ssn') || 'Personnummer'}</Label>
+                <Label className="text-muted-foreground">{t('common.ssn')}</Label>
                 <Input
                   value={ssn}
                   onChange={(e) => setSsn(e.target.value)}
-                  placeholder="ÅÅÅÅMMDD-XXXX"
+                  placeholder={t('directory.client_manager.ssn_placeholder')}
                   className="border-border bg-background text-foreground"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-muted-foreground">{t('common.address') || 'Adress'}</Label>
+                <Label className="text-muted-foreground">{t('common.address')}</Label>
                 <Input
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
@@ -155,7 +155,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-muted-foreground">{t('common.notes') || 'Noteringar'}</Label>
+                <Label className="text-muted-foreground">{t('common.notes')}</Label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}

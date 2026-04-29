@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { supabase } from '@/lib/supabase'
 import { Loader2, Plus, Pill } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ interface Medication {
 }
 
 export const MedicationTab: React.FC<{ clientId: string }> = ({ clientId }) => {
+  const { t } = useTranslation()
   const [meds, setMeds] = useState<Medication[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -38,9 +40,9 @@ export const MedicationTab: React.FC<{ clientId: string }> = ({ clientId }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Aktiv Medicinlista</h3>
+        <h3 className="text-lg font-semibold">{t('assistance.medication.title')}</h3>
         <Button size="sm" variant="outline" className="border-border">
-          <Plus className="mr-2 h-4 w-4" /> Lägg till recept
+          <Plus className="mr-2 h-4 w-4" /> {t('assistance.medication.add_button')}
         </Button>
       </div>
 
@@ -51,7 +53,7 @@ export const MedicationTab: React.FC<{ clientId: string }> = ({ clientId }) => {
       ) : meds.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-sidebar py-12 text-center text-muted-foreground">
           <Pill className="mx-auto mb-4 h-12 w-12 opacity-50" />
-          Brukaren har ingen aktiv medicin inlagd.
+          {t('assistance.medication.empty_state')}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -66,10 +68,12 @@ export const MedicationTab: React.FC<{ clientId: string }> = ({ clientId }) => {
               <div>
                 <h4 className="text-lg font-bold text-foreground">{med.name}</h4>
                 <div className="mt-1 text-sm text-muted-foreground">
-                  Dos: <span className="font-medium text-foreground">{med.dosage}</span>
+                  {t('assistance.medication.dosage_label')}{' '}
+                  <span className="font-medium text-foreground">{med.dosage}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Tid: <span className="font-medium text-foreground">{med.time_to_take}</span>
+                  {t('assistance.medication.time_label')}{' '}
+                  <span className="font-medium text-foreground">{med.time_to_take}</span>
                 </div>
               </div>
             </div>
