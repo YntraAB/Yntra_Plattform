@@ -32,6 +32,7 @@ export const TimeManagerPage: React.FC = () => {
     openEmployeeShifts,
     openTeamShifts,
     handleApprove,
+    handleReport,
     handleDelete,
   } = useTimeManager()
 
@@ -76,6 +77,7 @@ export const TimeManagerPage: React.FC = () => {
             setSelectedShifts={setSelectedShifts}
             setIsDeleteAlertOpen={setIsDeleteAlertOpen}
             handleApprove={handleApprove}
+            handleReport={handleReport}
             handleDelete={handleDelete}
           />
         )}

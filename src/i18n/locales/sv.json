@@ -54,6 +54,29 @@
       "sync_error": "SYNKRONISERINGSFEL - FÖRSÖKER IGEN..."
     }
   },
+  "dashboard": {
+    "welcome": "Välkommen tillbaka",
+    "upcoming_events": "Dagens Schema",
+    "upcoming_events_desc": "Dina kommande händelser idag",
+    "no_events": "Inga fler händelser idag.",
+    "go_to_schedule": "Öppna schema",
+    "communications": "Kommunikation",
+    "communications_desc": "Olästa meddelanden och anteckningar"
+  },
+  "command_menu": {
+    "placeholder": "Skriv ett kommando eller sök...",
+    "empty": "Inga resultat hittades.",
+    "groups": {
+      "navigation": "Navigering",
+      "actions": "Åtgärder",
+      "theme": "Tema"
+    },
+    "actions": {
+      "light_theme": "Byt till ljust läge",
+      "dark_theme": "Byt till mörkt läge",
+      "system_theme": "Byt till system-tema"
+    }
+  },
   "sidebar": {
     "time_management": "Tidshantering",
     "time_reports": "Tidsrapporter",
@@ -76,7 +99,8 @@
       "assistance": "Medicinering",
       "time": "Tidshantering",
       "timereports": "Tidsrapporter",
-      "reporting": "Rapportering"
+      "reporting": "Rapportering",
+      "dashboard": "Översikt"
     }
   },
   "scheduler": {
@@ -206,6 +230,10 @@
       "desc": "Aktivera eller inaktivera funktionella block för din organisation.",
       "disabled_title": "Modul inaktiverad",
       "disabled_message": "Detta funktionella block är för närvarande inaktiverat för din arbetsyta. Kontakta din administratör för att aktivera det.",
+      "dashboard": {
+        "name": "Översikt",
+        "desc": "Central översikt och navigering"
+      },
       "messaging": {
         "name": "Meddelanden",
         "desc": "Intern kommunikation och chatt"
@@ -662,7 +690,18 @@
       "title": "Är du helt säker?",
       "description": "Du håller på att radera {{count}} tidsrapporter. Denna åtgärd går inte att ångra och rapporterna kommer att tas bort permanent från systemet.",
       "confirm": "Ja, radera rapporter"
-    }
+    },
+    "report_time_btn": "Rapportera tid",
+    "report_modal_title": "Ny tidsrapport",
+    "date_label": "Datum",
+    "start_time_label": "Starttid",
+    "end_time_label": "Sluttid",
+    "note_label": "Kommentar (valfritt)",
+    "note_placeholder": "T.ex. jobbade över pga försening...",
+    "save_report": "Skicka in rapport",
+    "calculated_hours": "Beräknade timmar",
+    "success_reported": "Tidsrapporten har skickats in för attest!",
+    "error_reporting": "Kunde inte spara tidsrapporten"
   },
   "assistance": {
     "no_client_linked": "Ingen brukare kopplad",

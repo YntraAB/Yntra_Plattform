@@ -7,6 +7,7 @@ import { directoryPlugin } from '@/features/directory'
 import { assistancePlugin } from '@/features/assistance'
 import { timePlugin } from '@/features/time'
 import { reportingPlugin } from '@/features/reporting'
+import { dashboardPlugin } from '@/features/dashboard'
 
 export type { UserRole, IconName }
 
@@ -37,6 +38,7 @@ export interface BlockDefinition {
 }
 
 export const BLOCK_REGISTRY: Record<string, BlockDefinition> = {
+  dashboard: dashboardPlugin,
   messaging: messagingPlugin,
   scheduling: schedulingPlugin,
   notes: notesPlugin,

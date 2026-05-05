@@ -37,23 +37,57 @@ import {
   CalendarClock,
 } from 'lucide-react'
 
-interface GlobalSearchProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+import { useAuth } from '@/hooks/useAuth'
+import { useTheme } from '@/components/theme-provider'
+import { Sun, Moon, Laptop } from 'lucide-react'
+
+export const openGlobalSearch = () => {
+  document.dispatchEvent(new CustomEvent('open-global-search'))
 }
 
-import { useAuth } from '@/hooks/useAuth'
-
-export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }) => {
+export const GlobalSearch: React.FC = () => {
+  const [open, setOpen] = React.useState(false)
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user } = useAuth()
   const { workspaceId } = useWorkspace()
+  const { setTheme } = useTheme()
 
   const { data: users = [] } = useWorkspaceUsers(workspaceId)
   const { data: teams = [] } = useWorkspaceTeams(workspaceId)
   const { data: notes = [] } = useWorkspaceNotes(workspaceId)
   const { data: rawMessages = [] } = useMessages(workspaceId || undefined)
+
+  React.useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        setOpen((open) => !open)
+      }
+      if (e.key === '/') {
+        const target = e.target as HTMLElement
+        const isInput =
+          target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable
+
+        if (!isInput) {
+          e.preventDefault()
+          setOpen((open) => !open)
+        }
+      }
+    }
+
+    const openListener = () => setOpen(true)
+
+    document.addEventListener('keydown', down)
+    document.addEventListener('open-global-search', openListener)
+    
+    return () => {
+      document.removeEventListener('keydown', down)
+      document.removeEventListener('open-global-search', openListener)
+    }
+  }, [])
 
   const messages = React.useMemo(() => {
     return rawMessages.map((m) => {
@@ -77,6 +111,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
   }, [rawMessages, user?.id, t])
 
   const navigationItems = [
+    { id: 'dashboard', label: t('sidebar.sections.dashboard', 'Overview'), path: '/dashboard', icon: LayoutGrid },
     { id: 'schedule', label: t('sidebar.schedule'), path: '/schedule', icon: Calendar },
     { id: 'inbox', label: t('sidebar.inbox'), path: '/inbox', icon: Mail },
     { id: 'notes', label: t('sidebar.notes'), path: '/notes', icon: FileText },
@@ -165,13 +200,15 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
     },
   ]
 
+
+
   const onSelect = (path: string) => {
     navigate(path)
-    onOpenChange(false)
+    setOpen(false)
   }
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={setOpen}>
       <CommandInput placeholder={t('common.search') + '...'} />
       <CommandList className="scrollbar-dark">
         <CommandEmpty>{t('messages.empty_state')}</CommandEmpty>
@@ -254,6 +291,23 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({ open, onOpenChange }
               <span>{item.label}</span>
             </CommandItem>
           ))}
+        </CommandGroup>
+
+        <CommandSeparator />
+
+        <CommandGroup heading={t('command_menu.groups.theme', 'Theme')}>
+          <CommandItem onSelect={() => { setTheme('light'); setOpen(false) }}>
+            <Sun className="mr-2 h-4 w-4" />
+            <span>{t('command_menu.actions.light_theme', 'Light mode')}</span>
+          </CommandItem>
+          <CommandItem onSelect={() => { setTheme('dark'); setOpen(false) }}>
+            <Moon className="mr-2 h-4 w-4" />
+            <span>{t('command_menu.actions.dark_theme', 'Dark mode')}</span>
+          </CommandItem>
+          <CommandItem onSelect={() => { setTheme('system'); setOpen(false) }}>
+            <Laptop className="mr-2 h-4 w-4" />
+            <span>{t('command_menu.actions.system_theme', 'System theme')}</span>
+          </CommandItem>
         </CommandGroup>
 
         {teams.length > 0 && (

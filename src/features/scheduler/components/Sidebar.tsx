@@ -136,7 +136,7 @@ const SidebarNavItem: React.FC<SidebarNavItemProps> = ({
 import { useUnreadNotes } from '@/hooks/useUnreadNotes'
 import { useTranslation } from 'react-i18next'
 import { TeamSwitcher } from './TeamSwitcher'
-import { GlobalSearch } from '@/components/GlobalSearch'
+import { openGlobalSearch } from '@/components/GlobalSearch'
 
 /**
  * Main Sidebar Component
@@ -181,23 +181,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
 
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['time']))
 
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-
-  // Keyboard shortcut for search (Ctrl+K)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault()
-        setIsSearchOpen(true)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
   const NAVIGATION_ITEMS: NavItem[] = Object.values(BLOCK_REGISTRY).flatMap((block) => {
-    if (!(modules as any)[block.id]) return []
+    if (block.id !== 'dashboard' && !(modules as any)[block.id]) return []
 
     return block.navigation
       .filter((item) => {
@@ -242,7 +227,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-border bg-sidebar">
-      <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
       {/* Header / Logo Area */}
       <div className="border-b border-border p-4">
@@ -299,16 +283,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange
 
       {/* Search Trigger */}
       <div className="px-3 py-3">
-        <button
-          onClick={() => setIsSearchOpen(true)}
-          className="flex h-9 w-full items-center gap-2 rounded-md border border-border bg-secondary px-3 text-muted-foreground transition-all duration-200 hover:border-primary/30 hover:bg-secondary/80"
+        <div
+          onClick={() => openGlobalSearch()}
+          className="flex cursor-pointer items-center gap-2 rounded-md border border-border/50 bg-background/50 px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted"
         >
           <Search className="h-4 w-4" />
-          <span className="text-sm font-medium">{t('common.search')}</span>
-          <span className="ml-auto rounded border border-border bg-background/50 px-1.5 py-0.5 text-[10px] text-muted-foreground opacity-60">
-            Ctrl+K
-          </span>
-        </button>
+          <span className="flex-1">{t('common.search')}...</span>
+          <kbd className="hidden rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium sm:inline-block">
+            ⌘K
+          </kbd>
+        </div>
       </div>
 
       {/* Team Switcher (Admins only) */}

@@ -91,6 +91,37 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     })
   )
 
+  // Hantera CTRL + Scroll & CTRL + +/- för zoom
+  React.useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey) {
+        e.preventDefault()
+        setZoomLevel(prev => {
+          const delta = e.deltaY > 0 ? -10 : 10
+          return Math.max(40, Math.min(160, prev + delta))
+        })
+      }
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-')) {
+        e.preventDefault()
+        setZoomLevel(prev => {
+          const delta = e.key === '-' ? -10 : 10
+          return Math.max(40, Math.min(160, prev + delta))
+        })
+      }
+    }
+
+    document.addEventListener('wheel', handleWheel, { passive: false })
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
   const { t } = useTranslation()
   const locale = settings.language === 'sv' ? 'sv-SE' : 'en-US'
   const startHour = settings.business_hours?.start ?? 0
@@ -413,19 +444,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             {/* Right side - Edit Mode & View mode selector */}
             <div className="flex items-center gap-4">
-              {/* Zoom Slider */}
-              <div className="flex items-center gap-2 bg-secondary/50 rounded-lg px-2 py-1">
-                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tighter">Detail</span>
-                <input
-                  type="range"
-                  min="40"
-                  max="120"
-                  step="10"
-                  value={zoomLevel}
-                  onChange={(e) => setZoomLevel(parseInt(e.target.value))}
-                  className="w-16 h-1 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
-                />
-              </div>
+
 
               {/* Edit Mode Toggle */}
               <button

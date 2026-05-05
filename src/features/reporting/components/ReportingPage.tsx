@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ReportForm } from './ReportForm'
 import { ReportList } from './ReportList'
-import { ReportingStats } from './ReportingStats'
-import { AlertTriangle, ClipboardList, Send } from 'lucide-react'
+import { AlertTriangle, ClipboardList, Send, Shield } from 'lucide-react'
 
 export const ReportingPage: React.FC = () => {
   const { t } = useTranslation()
@@ -17,16 +16,20 @@ export const ReportingPage: React.FC = () => {
         <h2 className="text-3xl font-bold tracking-tight">{t('reporting.title')}</h2>
       </div>
 
-      <ReportingStats />
+      {/* Trust Banner */}
+      <div className="flex items-center gap-3 rounded-md bg-emerald-500/10 p-4 border border-emerald-500/20">
+        <Shield className="h-5 w-5 text-emerald-500 shrink-0" />
+        <p className="text-[13px] font-medium text-emerald-600/90 dark:text-emerald-400/90">
+          Alla anmälningar och visselblåsningar krypteras och hanteras strikt konfidentiellt av ledningen. Vid akuta personskador, säkerställ först och främst medicinsk vård.
+        </p>
+      </div>
 
       <Tabs value={activeTab} className="space-y-4" onValueChange={setActiveTab}>
         <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="send" className="flex items-center gap-2">
-            <Send className="h-4 w-4" />
+          <TabsTrigger value="send" className="font-medium">
             {t('reporting.tabs.send')}
           </TabsTrigger>
-          <TabsTrigger value="my_reports" className="flex items-center gap-2">
-            <ClipboardList className="h-4 w-4" />
+          <TabsTrigger value="my_reports" className="font-medium">
             {t('reporting.tabs.my_reports')}
           </TabsTrigger>
         </TabsList>
@@ -35,8 +38,7 @@ export const ReportingPage: React.FC = () => {
           <div className="grid gap-4 md:grid-cols-1">
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-primary" />
+                <CardTitle>
                   {t('reporting.tabs.send')}
                 </CardTitle>
                 <CardDescription>

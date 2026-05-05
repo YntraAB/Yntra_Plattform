@@ -9,6 +9,7 @@ import {
   FileCheck,
   Calendar,
   CheckCircle2,
+  Clock,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -50,6 +51,7 @@ interface ShiftSystemProps {
   setSelectedShifts: (s: string[] | ((prev: string[]) => string[])) => void
   setIsDeleteAlertOpen: (open: boolean) => void
   handleApprove: () => void
+  handleReport: () => void
   handleDelete: () => void
 }
 
@@ -70,9 +72,11 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
   setSelectedShifts,
   setIsDeleteAlertOpen,
   handleApprove,
+  handleReport,
   handleDelete,
 }) => {
   const { t } = useTranslation()
+
   let contextShifts = shifts
   if (selectedContext.type === 'employee') {
     contextShifts = shifts.filter((s) => s.employeeId === selectedContext.id)
@@ -249,6 +253,10 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{t('timereports.all_reports')}</SelectItem>
+                    <SelectItem value="not_submitted">
+                      Ej inlämnade (
+                      {filteredShifts.filter((s) => s.status === 'not_submitted').length})
+                    </SelectItem>
                     <SelectItem value="pending_attest">
                       {t('timereports.pending')} (
                       {filteredShifts.filter((s) => s.status === 'pending_attest').length})
@@ -263,6 +271,17 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
 
               {selectedShifts.length > 0 && (
                 <div className="ml-2 flex items-center gap-2 border-l border-border/50 pl-5 duration-300 animate-in fade-in slide-in-from-left-2">
+                  {/* If user selected 'not_submitted' shifts, show Report button */}
+                  {currentShifts.filter(s => selectedShifts.includes(s.id)).some(s => s.status === 'not_submitted') && (
+                    <Button
+                      onClick={handleReport}
+                      size="sm"
+                      className="h-8 bg-emerald-600 px-4 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 hover:bg-emerald-700"
+                    >
+                      <Clock className="mr-2 h-3.5 w-3.5" />{' '}
+                      Rapportera valda ({currentShifts.filter(s => selectedShifts.includes(s.id) && s.status === 'not_submitted').length})
+                    </Button>
+                  )}
                   {hasApprovePermission && (
                     <Button
                       onClick={handleApprove}
@@ -334,41 +353,38 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
                 return (
                   <div
                     key={shift.id}
-                    className={`group flex items-center border-b border-border/40 px-8 py-3.5 transition-all duration-200 hover:bg-muted/50 ${isSelected ? 'bg-primary/5' : ''}`}
+                    className={`group flex items-center border-b border-border/30 px-8 py-3.5 transition-colors hover:bg-muted/30 ${isSelected ? 'bg-primary/5' : ''}`}
                   >
                     <div
                       className="flex w-8 shrink-0 cursor-pointer justify-center p-1"
                       onClick={(e) => toggleSelect(shift.id, e)}
                     >
                       <div
-                        className={`h-[18px] w-[18px] rounded-[5px] border-2 transition-all ${isSelected ? 'border-primary bg-primary' : 'border-border group-hover:border-primary/40'} flex items-center justify-center`}
+                        className={`h-[16px] w-[16px] rounded-[4px] border transition-all ${isSelected ? 'border-primary bg-primary' : 'border-input bg-transparent group-hover:border-primary/40'} flex items-center justify-center`}
                       >
                         {isSelected && (
-                          <Check className="h-3.5 w-3.5 stroke-[3] text-primary-foreground" />
+                          <Check className="h-3 w-3 stroke-[3] text-primary-foreground" />
                         )}
                       </div>
                     </div>
 
-                    <div className="ml-3 w-48 shrink-0 truncate pr-4 text-[15px] font-semibold text-foreground md:w-64">
+                    <div className="ml-4 w-48 shrink-0 truncate pr-4 text-sm font-medium text-foreground md:w-64">
                       <div className="transition-colors group-hover:text-primary">
                         {selectedContext.type === 'team' ? shift.employee : shift.team}
                       </div>
-                      <div className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/70">
-                        {selectedContext.type === 'team' ? shift.role : t('timereports.client')}
+                      <div className="truncate text-xs text-muted-foreground">
+                        {shift.note || (selectedContext.type === 'team' ? shift.role : t('timereports.client'))}
                       </div>
                     </div>
 
-                    <div className="flex min-w-0 flex-1 items-center pr-4">
-                      <div className="rounded-md border border-border/40 bg-secondary/60 px-2.5 py-1.5 font-mono text-[13px] font-bold text-foreground">
-                        {shift.start} - {shift.end}
+                    <div className="flex min-w-0 flex-1 items-center gap-6 pr-4">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5 opacity-70" />
+                        <span className="font-mono">{shift.start} - {shift.end}</span>
                       </div>
-                      <div className="ml-5 flex items-baseline gap-1.5">
-                        <span className="text-[16px] font-black text-foreground">
-                          {shift.duration}
-                        </span>
-                        <span className="text-[11px] font-bold uppercase tracking-tighter text-muted-foreground/60">
-                          h
-                        </span>
+                      <div className="flex items-center gap-1 text-sm font-medium">
+                        <span>{shift.duration}</span>
+                        <span className="text-xs text-muted-foreground">h</span>
                       </div>
                     </div>
 
@@ -376,8 +392,8 @@ export const ShiftSystem: React.FC<ShiftSystemProps> = ({
                       <StatusBadge status={shift.status} />
                     </div>
 
-                    <div className="flex w-[120px] shrink-0 items-center justify-end gap-3 text-right text-[14px]">
-                      <span className="font-mono text-[13px] font-bold text-foreground">
+                    <div className="flex w-[120px] shrink-0 items-center justify-end gap-3 text-right text-sm">
+                      <span className="font-mono text-muted-foreground">
                         {shift.date}
                       </span>
                     </div>

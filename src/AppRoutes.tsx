@@ -58,7 +58,7 @@ const RoleGuard: React.FC<{ children: React.ReactNode; allowedRoles: string[] }>
   const location = useLocation()
   if (!user) return <Navigate to="/" replace />
   if (!allowedRoles.includes(user.role)) {
-    const fallback = user.role === 'client' ? '/home' : '/schedule'
+    const fallback = user.role === 'client' ? '/home' : '/dashboard'
     if (location.pathname === fallback || location.pathname === fallback + '/') {
       return (
         <div className="flex flex-1 flex-col items-center justify-center bg-background p-8">
@@ -83,7 +83,7 @@ const BlockGuard: React.FC<{
   const { modules } = useWorkspace()
   const { t } = useTranslation()
 
-  if (!modules[blockId]) {
+  if (blockId !== 'dashboard' && !modules[blockId]) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-background p-8 text-center">
         <div className="mb-6 rounded-2xl bg-muted/50 p-6">
@@ -105,6 +105,7 @@ const BlockGuard: React.FC<{
 }
 
 import { OfflineIndicator } from './components/layout/OfflineIndicator'
+import { GlobalSearch } from './components/GlobalSearch'
 
 const AppLayoutWrapper: React.FC = () => {
   const { user } = useAuth()
@@ -112,6 +113,7 @@ const AppLayoutWrapper: React.FC = () => {
     return (
       <ErrorBoundary>
         <BreadcrumbProvider>
+          <GlobalSearch />
           <ClientLayout />
           <OfflineIndicator />
         </BreadcrumbProvider>
@@ -121,6 +123,7 @@ const AppLayoutWrapper: React.FC = () => {
   return (
     <ErrorBoundary>
       <BreadcrumbProvider>
+        <GlobalSearch />
         <Layout />
         <OfflineIndicator />
       </BreadcrumbProvider>
@@ -131,7 +134,7 @@ const AppLayoutWrapper: React.FC = () => {
 const RootRedirect: React.FC = () => {
   const { user } = useAuth()
   if (user?.role === 'client') return <Navigate to="/home" replace />
-  return <Navigate to="/schedule" replace />
+  return <Navigate to="/dashboard" replace />
 }
 
 export const Layout: React.FC = () => {
@@ -144,7 +147,7 @@ export const Layout: React.FC = () => {
   const matches = useMatches()
 
   const userName = user?.name || ''
-  const activeSection = location.pathname.substring(1) || 'schedule'
+  const activeSection = location.pathname.substring(1) || 'dashboard'
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

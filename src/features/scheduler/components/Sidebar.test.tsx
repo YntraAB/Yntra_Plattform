@@ -22,7 +22,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 vi.mock('@/contexts/WorkspaceContext', () => ({
   useWorkspace: () => ({
-    modules: { assistance: true },
+    modules: { assistance: true, messaging: true, notes: true, scheduling: true },
     workspaceId: 'ws-1',
     setAdminWorkspace: vi.fn(),
   }),

@@ -54,6 +54,29 @@
       "sync_error": "SYNC ERROR - RETRYING..."
     }
   },
+  "dashboard": {
+    "welcome": "Welcome back",
+    "upcoming_events": "Today's Schedule",
+    "upcoming_events_desc": "Your upcoming events for today",
+    "no_events": "No more events today.",
+    "go_to_schedule": "Open schedule",
+    "communications": "Communications",
+    "communications_desc": "Unread messages and notes"
+  },
+  "command_menu": {
+    "placeholder": "Type a command or search...",
+    "empty": "No results found.",
+    "groups": {
+      "navigation": "Navigation",
+      "actions": "Actions",
+      "theme": "Theme"
+    },
+    "actions": {
+      "light_theme": "Switch to light mode",
+      "dark_theme": "Switch to dark mode",
+      "system_theme": "Switch to system theme"
+    }
+  },
   "sidebar": {
     "time_management": "Time Management",
     "time_reports": "Time Reports",
@@ -76,7 +99,8 @@
       "assistance": "Medication",
       "time": "Time Manager",
       "timereports": "Time Reports",
-      "reporting": "Reporting"
+      "reporting": "Reporting",
+      "dashboard": "Overview"
     }
   },
   "scheduler": {
@@ -206,6 +230,10 @@
       "desc": "Enable or disable functional modules for your organization.",
       "disabled_title": "Feature Block Disabled",
       "disabled_message": "This functional block is currently deactivated for your workspace. Please contact your administrator to enable it.",
+      "dashboard": {
+        "name": "Overview",
+        "desc": "Central overview and navigation"
+      },
       "messaging": {
         "name": "Messaging",
         "desc": "Internal communication and chat"
@@ -662,7 +690,18 @@
       "title": "Are you absolutely sure?",
       "description": "You are about to delete {{count}} time reports. This action cannot be undone and the reports will be permanently removed from the system.",
       "confirm": "Yes, delete reports"
-    }
+    },
+    "report_time_btn": "Report Time",
+    "report_modal_title": "New Time Report",
+    "date_label": "Date",
+    "start_time_label": "Start Time",
+    "end_time_label": "End Time",
+    "note_label": "Note (optional)",
+    "note_placeholder": "E.g. worked overtime due to delay...",
+    "save_report": "Submit Report",
+    "calculated_hours": "Calculated hours",
+    "success_reported": "Time report submitted for approval!",
+    "error_reporting": "Could not save time report"
   },
   "assistance": {
     "no_client_linked": "No client linked",

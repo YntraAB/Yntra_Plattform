@@ -109,6 +109,38 @@ export const useTimeManager = () => {
       if (error) throw error
       reportsData = r || []
 
+      let unreportedEvents: any[] = []
+
+      // Fetch past scheduled events
+      if (user?.id) {
+        const now = new Date().toISOString()
+        let evQuery = supabase
+          .from('events')
+          .select('*')
+          .eq('workspace_id', workspaceId)
+          .lt('end_time', now)
+          .order('start_time', { ascending: false })
+          .limit(100)
+
+        if (activeRole === 'assistant') {
+          evQuery = evQuery.eq('assignee_id', user.id)
+        }
+
+        const { data: eventsData, error: evError } = await evQuery
+          
+        if (!evError && eventsData) {
+          const reportedSet = new Set(
+            (reportsData as any[]).map(r => `${r.date}_${r.start_time}`)
+          )
+          // Filter out reported events
+          unreportedEvents = eventsData.filter(e => {
+            const d = e.start_time.split('T')[0]
+            const t = new Date(e.start_time).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' })
+            return !reportedSet.has(`${d}_${t}`)
+          })
+        }
+      }
+
       const mapped: TimeReportUI[] = (reportsData as Array<{
         id: string
         user_id: string
@@ -145,7 +177,43 @@ export const useTimeManager = () => {
           note: dbShift.note || '',
         }
       })
-      setShifts(mapped)
+
+      // Map unreported events to TimeReportUI
+      const mappedEvents: TimeReportUI[] = unreportedEvents.map(e => {
+        const team = teamsData.find((t) => t.id === e.team_id)
+        const teamName = team?.name || t('timereports.unassigned_team')
+        
+        // Let's find the user name from dbUsers based on assignee_id
+        const assignedUser = dbUsers.find(u => u.id === e.assignee_id)
+        const employeeName = assignedUser ? (assignedUser.full_name || assignedUser.email || t('common.unknown_agent')) : t('common.unknown_agent')
+        
+        const startObj = new Date(e.start_time)
+        const endObj = new Date(e.end_time)
+        
+        let diffMs = endObj.getTime() - startObj.getTime()
+        if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000
+        const hours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100
+
+        return {
+          id: e.id, // Using event ID here to identify it later when submitting
+          employeeId: e.assignee_id,
+          employee: employeeName,
+          role: t('directory.roles.assistant'),
+          teamId: e.team_id,
+          team: teamName,
+          workspaceId: e.workspace_id,
+          date: startObj.toLocaleDateString('sv-SE'),
+          start: startObj.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+          end: endObj.toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }),
+          duration: hours,
+          break: 0,
+          status: 'not_submitted', // Special status
+          location: '',
+          note: e.title || '',
+        }
+      })
+
+      setShifts([...mappedEvents, ...mapped])
     } catch (error: unknown) {
       console.error('Error fetching data:', error)
       const message = error instanceof Error ? error.message : t('common.unknown_error')
@@ -250,6 +318,36 @@ export const useTimeManager = () => {
     fetchData()
   }
 
+  const handleReport = async () => {
+    if (selectedShifts.length === 0 || !user?.id || !workspaceId) return
+
+    // Find the shifts in our list that match the selected IDs
+    const shiftsToReport = shifts.filter(s => selectedShifts.includes(s.id) && s.status === 'not_submitted')
+    if (shiftsToReport.length === 0) return
+
+    const inserts = shiftsToReport.map(s => ({
+      workspace_id: workspaceId,
+      user_id: s.employeeId, // <--- Correctly attribute to the assigned employee
+      team_id: s.teamId || null,
+      date: new Date(s.date).toISOString().split('T')[0],
+      start_time: s.start,
+      end_time: s.end,
+      hours: s.duration,
+      status: 'pending_attest',
+      note: `Schemalagt pass: ${s.note}`
+    }))
+
+    const { error } = await supabase.from('time_reports').insert(inserts)
+    if (error) {
+      toast.error(t('timereports.error_reporting') + ': ' + error.message)
+      return
+    }
+
+    toast.success(t('timereports.success_reported'))
+    setSelectedShifts([])
+    fetchData()
+  }
+
   const handleDelete = async () => {
     if (selectedShifts.length === 0) return
 
@@ -291,6 +389,7 @@ export const useTimeManager = () => {
     openEmployeeShifts,
     openTeamShifts,
     handleApprove,
+    handleReport,
     handleDelete,
   }
 }
